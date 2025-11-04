@@ -8,14 +8,14 @@
             "files": {
                 "collect_list": [
                     {
-                        "file_path": "/opt/chuden-demoapp/logs/manual_generator/app.log",
-                        "log_group_name": "/aws/ec2/chuden-demoapp/manual-generator",
+                        "file_path": "/opt/kantan-ai-manual-generator/logs/manual_generator/app.log",
+                        "log_group_name": "/aws/ec2/kantan-ai-manual-generator",
                         "log_stream_name": "{instance_id}/manual-generator",
                         "timezone": "LOCAL"
                     },
                     {
                         "file_path": "/var/log/messages",
-                        "log_group_name": "/aws/ec2/chuden-demoapp/system",
+                        "log_group_name": "/aws/ec2/kantan-ai-manual-generator/system",
                         "log_stream_name": "{instance_id}/system",
                         "timezone": "LOCAL"
                     }

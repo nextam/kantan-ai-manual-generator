@@ -38,9 +38,9 @@ sudo systemctl enable --now docker
 sudo curl -L "https://github.com/docker/compose/releases/download/v2.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 
-# コード配置 (例: /opt/chuden-demoapp)
-sudo mkdir -p /opt/chuden-demoapp
-sudo chown ec2-user:ec2-user /opt/chuden-demoapp
+# コード配置 (例: /opt/kantan-ai-manual-generator)
+sudo mkdir -p /opt/kantan-ai-manual-generator
+sudo chown ec2-user:ec2-user /opt/kantan-ai-manual-generator
 # リポジトリを git clone or scp で配置
 ```
 
@@ -63,7 +63,7 @@ PROJECT_ID=career-survival
 EC2 で以下を実行:
 
 ```
-cd /opt/chuden-demoapp
+cd /opt/kantan-ai-manual-generator
 # docker-compose.yml がある場所
 sudo docker-compose pull || true
 sudo docker-compose build

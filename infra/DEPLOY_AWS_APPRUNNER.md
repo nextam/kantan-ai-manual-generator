@@ -97,7 +97,7 @@ aws iam create-role --role-name AppRunnerTaskRole --assume-role-policy-document 
 
 #### 3.1 operation_analysisディレクトリに移動
 ```powershell
-cd c:\Users\suusa\OneDrive\Documents\GitHub\chuden-demoapp\operation_analysis
+cd c:\Users\suusa\OneDrive\Documents\GitHub\kantan-ai-manual-generator\operation_analysis
 ```
 
 #### 3.2 ECRログインとイメージビルド

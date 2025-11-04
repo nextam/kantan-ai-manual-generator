@@ -10,7 +10,7 @@ param(
     [string]$AppName = "operation-analysis-app",
     
     [Parameter(Mandatory=$false)]
-    [string]$GitHubRepo = "CareerSurvival/chuden-demoapp",
+    [string]$GitHubRepo = "CareerSurvival/kantan-ai-manual-generator",
     
     [Parameter(Mandatory=$false)]
     [string]$Branch = "suzuki"

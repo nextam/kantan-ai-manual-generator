@@ -79,7 +79,7 @@
 ## 📁 ファイル構成
 
 ```
-chuden-demoapp/
+kantan-ai-manual-generator/
 ├── .vscode/
 │   └── tasks.json                    # VS Codeタスク設定
 ├── start_manual_generator_5000.bat   # Manual Generatorバッチファイル

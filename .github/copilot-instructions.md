@@ -305,7 +305,7 @@ When creating or modifying files, ensure:
 ### Deployment Target
 - **Server**: EC2 instance at `ec2-52-198-123-171.ap-northeast-1.compute.amazonaws.com`
 - **SSH Key**: `kantan-ai.pem` (in project root)
-- **Project Path**: `/opt/chuden-demoapp`
+- **Project Path**: `/opt/kantan-ai-manual-generator`
 - **User**: `ec2-user`
 
 ### Services to Restart
@@ -316,7 +316,7 @@ sudo docker-compose restart manual  # Manual Generator service
 
 ### Standard Deployment Command
 ```bash
-ssh -i kantan-ai.pem ec2-user@ec2-52-198-123-171.ap-northeast-1.compute.amazonaws.com "cd /opt/chuden-demoapp && git pull origin main && sudo docker-compose build manual && sudo docker-compose up -d manual"
+ssh -i kantan-ai.pem ec2-user@ec2-52-198-123-171.ap-northeast-1.compute.amazonaws.com "cd /opt/kantan-ai-manual-generator && git pull origin main && sudo docker-compose build manual && sudo docker-compose up -d manual"
 ```
 
 ### CRITICAL WARNINGS
@@ -420,7 +420,7 @@ If deployment causes issues:
 ssh -i "kantan-ai.pem" ec2-user@ec2-52-198-123-171.ap-northeast-1.compute.amazonaws.com
 
 # Navigate to project
-cd /opt/chuden-demoapp
+cd /opt/kantan-ai-manual-generator
 
 # Rollback to previous commit
 git log --oneline -5  # Find previous commit hash

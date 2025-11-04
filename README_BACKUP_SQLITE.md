@@ -1,7 +1,7 @@
 # SQLite バックアップ (S3 保存) ガイド
 
 ## 目的
-本番 EC2 上の Manual Generator の SQLite データベース `manual_generator.db` を安全に世代管理し、S3 バケット `chuden-demoapp` にバックアップします。
+本番 EC2 上の Manual Generator の SQLite データベース `manual_generator.db` を安全に世代管理し、S3 バケット `kantan-ai-manual-generator` にバックアップします。
 
 ## 構成概要
 - データ本体: Docker Named Volume `manual_instance` 内 `/app/instance/manual_generator.db`
@@ -12,7 +12,7 @@
 `infra/scripts/backup_sqlite_to_s3.sh`
 
 ## 事前要件
-1. S3 バケット `chuden-demoapp` が存在する (リージョン: ap-northeast-1 など)
+1. S3 バケット `kantan-ai-manual-generator` が存在する (リージョン: ap-northeast-1 など)
 2. EC2 インスタンスに IAM Role (例: `ChudenDemoAppBackupRole`) をアタッチし以下の最小ポリシー付与:
 ```json
 {
@@ -22,8 +22,8 @@
       "Effect": "Allow",
       "Action": ["s3:PutObject","s3:GetObject","s3:ListBucket"],
       "Resource": [
-        "arn:aws:s3:::chuden-demoapp",
-        "arn:aws:s3:::chuden-demoapp/sqlite-backup/*"
+        "arn:aws:s3:::kantan-ai-manual-generator",
+        "arn:aws:s3:::kantan-ai-manual-generator/sqlite-backup/*"
       ]
     }
   ]
@@ -35,7 +35,7 @@
 ## 手動実行手順 (読み取りのみ)
 SSH で EC2 に入り:
 ```bash
-cd /opt/chuden-demoapp
+cd /opt/kantan-ai-manual-generator
 chmod +x infra/scripts/backup_sqlite_to_s3.sh
 ./infra/scripts/backup_sqlite_to_s3.sh
 ```
@@ -43,8 +43,8 @@ chmod +x infra/scripts/backup_sqlite_to_s3.sh
 ```
 [sqlite-backup] Integrity: ok
 [sqlite-backup] Compressed size: 123456 bytes
-[sqlite-backup] Local saved: /opt/chuden-demoapp_backups/sqlite/manual_generator_20250908_120001.db.gz
-[sqlite-backup] Uploaded to s3://chuden-demoapp/sqlite-backup/2025/09/manual_generator_20250908_120001.db.gz
+[sqlite-backup] Local saved: /opt/kantan-ai-manual-generator_backups/sqlite/manual_generator_20250908_120001.db.gz
+[sqlite-backup] Uploaded to s3://kantan-ai-manual-generator/sqlite-backup/2025/09/manual_generator_20250908_120001.db.gz
 [sqlite-backup] Updated latest marker
 [sqlite-backup] Backup completed successfully
 ```
@@ -52,21 +52,21 @@ chmod +x infra/scripts/backup_sqlite_to_s3.sh
 ## 環境変数 (任意調整)
 | 変数 | 既定値 | 説明 |
 |------|--------|------|
-| S3_BUCKET | chuden-demoapp | バックアップ先バケット |
+| S3_BUCKET | kantan-ai-manual-generator | バックアップ先バケット |
 | SQLITE_VOLUME_NAME | manual_instance | DB を含む Docker Volume 名 |
 | DB_FILE_NAME | manual_generator.db | SQLite ファイル名 |
 | RETAIN_LOCAL_DAYS | 7 | ローカル保持日数 (古い.gz を削除) |
 
 例:
 ```bash
-S3_BUCKET=chuden-demoapp ./infra/scripts/backup_sqlite_to_s3.sh
+S3_BUCKET=kantan-ai-manual-generator ./infra/scripts/backup_sqlite_to_s3.sh
 ```
 
 ## Cron による自動化 (例: 毎時)
 ```bash
 sudo crontab -e
 # 追記
-0 * * * * /opt/chuden-demoapp/infra/scripts/backup_sqlite_to_s3.sh >> /var/log/sqlite_backup.log 2>&1
+0 * * * * /opt/kantan-ai-manual-generator/infra/scripts/backup_sqlite_to_s3.sh >> /var/log/sqlite_backup.log 2>&1
 ```
 ログ確認:
 ```bash
@@ -82,9 +82,9 @@ After=docker.service
 
 [Service]
 Type=oneshot
-Environment=S3_BUCKET=chuden-demoapp
-WorkingDirectory=/opt/chuden-demoapp
-ExecStart=/opt/chuden-demoapp/infra/scripts/backup_sqlite_to_s3.sh
+Environment=S3_BUCKET=kantan-ai-manual-generator
+WorkingDirectory=/opt/kantan-ai-manual-generator
+ExecStart=/opt/kantan-ai-manual-generator/infra/scripts/backup_sqlite_to_s3.sh
 ```
 2. タイマー `/etc/systemd/system/sqlite-backup.timer`:
 ```
@@ -108,16 +108,16 @@ systemctl list-timers | grep sqlite-backup
 ## 復元手順 (安全に停止して実施)
 1. 対象ファイル選定:
 ```bash
-aws s3 ls s3://chuden-demoapp/sqlite-backup/2025/09/
+aws s3 ls s3://kantan-ai-manual-generator/sqlite-backup/2025/09/
 ```
 2. ダウンロード:
 ```bash
-aws s3 cp s3://chuden-demoapp/sqlite-backup/2025/09/manual_generator_20250908_120001.db.gz /tmp/
+aws s3 cp s3://kantan-ai-manual-generator/sqlite-backup/2025/09/manual_generator_20250908_120001.db.gz /tmp/
 cd /tmp && gunzip manual_generator_20250908_120001.db.gz
 ```
 3. アプリ停止 (最小ダウンタイム):
 ```bash
-cd /opt/chuden-demoapp
+cd /opt/kantan-ai-manual-generator
 sudo docker-compose stop manual
 ```
 4. Volume パス特定と置換:
@@ -145,7 +145,7 @@ sqlite3 manual_generator.db '.dump' > dump.sql
 - 稼働中 SQLite のホットコピーは通常安全だが、極端な高更新負荷時は `backup api` を使う方式も検討可能。
 - 機密データが含まれる場合 S3 バケットはバージョニング + サーバーサイド暗号化(SSE-S3 もしくは KMS) 有効化推奨。
 - バケットポリシーで外部アクセスを最小化。
-- デプロイ先 `/opt/chuden-demoapp` は GitHub Actions の workflow 内で自動生成されるようになりました（消失しても次回デプロイで再作成）。手動作業で削除しない運用を推奨。
+- デプロイ先 `/opt/kantan-ai-manual-generator` は GitHub Actions の workflow 内で自動生成されるようになりました（消失しても次回デプロイで再作成）。手動作業で削除しない運用を推奨。
 - `.env` ファイルは `.dockerignore` から除外され、リポジトリの最新内容がコンテナに取り込まれます。秘匿情報を直接置く場合は GitHub 公開リスクに注意し、必要なら `secrets` / SSM Parameter Store への移行を検討してください。
 
 ## 今後の拡張案

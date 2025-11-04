@@ -33,7 +33,7 @@ docker run -d \
   --name manual-generator \
   --restart unless-stopped \
   --log-driver awslogs \
-  --log-opt awslogs-group=/aws/ec2/chuden-demoapp/manual-generator \
+  --log-opt awslogs-group=/aws/ec2/kantan-ai-manual-generator \
   --log-opt awslogs-stream=manual-generator-container \
   --log-opt awslogs-region=ap-northeast-1 \
   -p 8080:5000 \
@@ -48,12 +48,12 @@ docker run -d \
   --name operation-analysis \
   --restart unless-stopped \
   --log-driver awslogs \
-  --log-opt awslogs-group=/aws/ec2/chuden-demoapp/operation_analysis \
+  --log-opt awslogs-group=/aws/ec2/kantan-ai-manual-generator/operation_analysis \
   --log-opt awslogs-stream=operation-analysis-container \
   --log-opt awslogs-region=ap-northeast-1 \
   -p 8081:5000 \
   -v "$ANALYSIS_HOST_DIR/results":/app/results \
-  chuden-demoapp-analysis
+  kantan-ai-manual-generator-analysis
 
 echo "Containers started with CloudWatch logging"
 docker ps

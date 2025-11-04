@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory = $true)] [string]$HostName,            # EC2 パブリックIP or DNS
     [Parameter(Mandatory = $true)] [string]$User,                # 例: ec2-user
     [Parameter(Mandatory = $true)] [string]$KeyPath,             # 例: C:\keys\kantan-ai.pem
-    [string]$RemotePath = "/opt/chuden-demoapp"
+    [string]$RemotePath = "/opt/kantan-ai-manual-generator"
 )
 
 Set-StrictMode -Version Latest

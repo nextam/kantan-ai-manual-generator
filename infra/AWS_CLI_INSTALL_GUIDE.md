@@ -154,7 +154,7 @@ aws sts get-caller-identity
 AWS CLIインストール完了後：
 1. **AWS App Runner環境セットアップ**
    ```powershell
-   cd c:\Users\suusa\OneDrive\Documents\GitHub\chuden-demoapp\infra\scripts
+   cd c:\Users\suusa\OneDrive\Documents\GitHub\kantan-ai-manual-generator\infra\scripts
    .\setup-apprunner-fixed.ps1
    ```
 

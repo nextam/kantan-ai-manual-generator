@@ -12,7 +12,7 @@
 # {
 #   "Version": "2012-10-17",
 #   "Statement": [
-#     {"Effect":"Allow","Action":["s3:PutObject","s3:GetObject","s3:ListBucket"],"Resource":["arn:aws:s3:::chuden-demoapp","arn:aws:s3:::chuden-demoapp/sqlite-backup/*"]}
+#     {"Effect":"Allow","Action":["s3:PutObject","s3:GetObject","s3:ListBucket"],"Resource":["arn:aws:s3:::kantan-ai-manual-generator","arn:aws:s3:::kantan-ai-manual-generator/sqlite-backup/*"]}
 #   ]
 # }
 #
@@ -20,19 +20,19 @@
 #   chmod +x infra/scripts/backup_sqlite_to_s3.sh
 #   ./infra/scripts/backup_sqlite_to_s3.sh
 # 環境変数で調整可能:
-#   S3_BUCKET=chuden-demoapp
+#   S3_BUCKET=kantan-ai-manual-generator
 #   SQLITE_VOLUME_NAME=manual_instance
 #   DB_FILE_NAME=manual_generator.db
 #   RETAIN_LOCAL_DAYS=7
 set -euo pipefail
 
-S3_BUCKET="${S3_BUCKET:-chuden-demoapp}"
+S3_BUCKET="${S3_BUCKET:-kantan-ai-manual-generator}"
 SQLITE_VOLUME_NAME="${SQLITE_VOLUME_NAME:-manual_instance}"
 DB_FILE_NAME="${DB_FILE_NAME:-manual_generator.db}"
 RETAIN_LOCAL_DAYS="${RETAIN_LOCAL_DAYS:-7}"
 DATE_STAMP=$(date +%Y%m%d_%H%M%S)
 WORK_DIR="/tmp/sqlite_backup"
-LOCAL_ARCHIVE_DIR="/opt/chuden-demoapp_backups/sqlite"
+LOCAL_ARCHIVE_DIR="/opt/kantan-ai-manual-generator_backups/sqlite"
 LOG_PREFIX="[sqlite-backup]"
 
 log(){ echo "${LOG_PREFIX} $1"; }
