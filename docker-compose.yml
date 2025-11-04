@@ -1,7 +1,7 @@
 services:
   manual:
     build:
-      context: ./manual_generator
+      context: .
       target: production # Multi-stage buildのproduction stage
       cache_from:
         - manual-generator:latest
@@ -12,17 +12,17 @@ services:
     environment:
       PYTHONUNBUFFERED: "1"
       PORT: "5000"
-      LOG_DIR: /app/logs
+      LOG_DIR: /logs
       GOOGLE_APPLICATION_CREDENTIALS: /app/gcp-credentials.json
-      DATABASE_PATH: /app/instance/manual_generator.db
+      DATABASE_PATH: /instance/manual_generator.db
       # 既定値（アプリ側でもデフォルトが設定されています）
       GCS_BUCKET_NAME: manual_generator
       PROJECT_ID: career-survival
     env_file:
-      - ./manual_generator/.env
+      - .env
     volumes:
-      - manual_logs:/app/logs
-      - manual_instance:/app/instance
+      - ./logs:/logs
+      - ./instance:/instance
       - manual_uploads:/app/uploads
     command: >
       bash -c "
@@ -31,6 +31,4 @@ services:
       "
 
 volumes:
-  manual_logs: {}
-  manual_instance: {}
   manual_uploads: {}

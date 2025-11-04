@@ -25,15 +25,12 @@ call "%VENV_PATH%\Scripts\activate" || (
 )
 
 REM 依存関係インストール (キャッシュ利用で高速化)
-if exist manual_generator\requirements.txt (
+if exist requirements.txt (
     echo [INFO] Installing dependencies from requirements.txt
-    pip install -r manual_generator\requirements.txt >NUL
+    pip install -r requirements.txt >NUL
 )
-
-pushd manual_generator
 
 echo [INFO] Launch waitress (port 5000)
 waitress-serve --host=0.0.0.0 --port=5000 --threads=4 --connection-limit=1000 --cleanup-interval=30 --channel-timeout=120 --max-request-body-size=10737418240 app:app
-popd
 
 endlocal

@@ -5,17 +5,11 @@ echo [Manual Generator] サーバー起動準備中...
 
 REM ===== パス設定 =====
 set "ROOT_DIR=%~dp0"
-set "APP_DIR=%ROOT_DIR%manual_generator"
 set "ROOT_VENV_PY=%ROOT_DIR%.venv\Scripts\python.exe"
-set "LOCAL_VENV_PY=%APP_DIR%\.venv\Scripts\python.exe"
-
-pushd "%APP_DIR%" || ( echo APP_DIR へ移動失敗 & exit /b 1 )
 
 REM ===== 仮想環境選択 =====
 if exist "%ROOT_VENV_PY%" (
 	set "USE_PY=%ROOT_VENV_PY%"
-) else if exist "%LOCAL_VENV_PY%" (
-	set "USE_PY=%LOCAL_VENV_PY%"
 ) else (
 	echo 仮想環境が無いのでルートに作成します...
 	where py >nul 2>nul && ( py -3 -m venv "%ROOT_DIR%.venv" ) || ( python -m venv "%ROOT_DIR%.venv" )
@@ -37,7 +31,7 @@ if errorlevel 1 (
 
 REM ===== アプリ起動 =====
 echo http://localhost:5000 にアクセスできます
-"%USE_PY%" "%APP_DIR%\app.py"
+"%USE_PY%" "%ROOT_DIR%app.py"
 goto :END
 
 :ERROR
@@ -45,5 +39,4 @@ echo *** 起動失敗: 依存インストールでエラー ***
 exit /b 1
 
 :END
-popd
 endlocal

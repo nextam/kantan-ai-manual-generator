@@ -64,7 +64,7 @@ For JavaScript/TypeScript files:
 - API documentation
 - Examples: `SPECIFICATION_*.md`, `README_*.md`, `DEPLOY_*.md`
 
-**manual_generator/** folder:
+**src/** folder:
 - Main application code only
 - Production-ready modules
 - Core business logic
@@ -145,15 +145,61 @@ key_frames = await gemini_service.extract_key_frames(video_uri)
 ### Code Organization Best Practices
 
 #### Module Splitting Example
-If `app.py` exceeds 500 lines, split into:
-- `app.py` - Main application entry point (Flask app initialization)
-- `auth_routes.py` - Authentication and user management routes
-- `api_routes.py` - API endpoint definitions
-- `db_manager.py` - Database operations
-- `file_manager.py` - File and storage operations
-- `gemini_service.py` - AI/Gemini integration
+If a module file exceeds 500 lines, split into:
+- `src/core/app.py` - Main application entry point (Flask app initialization)
+- `src/api/auth_routes.py` - Authentication and user management API routes
+- `src/routes/` - Additional route definitions
+- `src/core/db_manager.py` - Database operations
+- `src/infrastructure/file_manager.py` - File and storage operations
+- `src/services/gemini_service.py` - AI/Gemini integration
 
-#### Import Organization
+### Folder Structure
+
+**Project Root (kantan-ai-manual-generator/)**:
+```
+kantan-ai-manual-generator/
+├── app.py                      # Application entry point
+├── requirements.txt            # Python dependencies
+├── Dockerfile                  # Docker configuration
+├── .env.example                # Environment variables template
+├── src/                        # Source code (main application)
+│   ├── api/                   # API endpoints
+│   │   └── auth_routes.py     # Authentication routes
+│   ├── config/                # Configuration files
+│   ├── core/                  # Core application logic
+│   │   ├── app.py             # Flask application
+│   │   ├── db_manager.py      # Database manager
+│   │   └── init_db.py         # Database initialization
+│   ├── infrastructure/        # External service integrations
+│   │   └── file_manager.py    # File/GCS operations
+│   ├── middleware/            # Middleware components
+│   │   └── auth.py            # Authentication middleware
+│   ├── models/                # Data models
+│   │   └── models.py          # SQLAlchemy models
+│   ├── routes/                # Additional routes
+│   ├── services/              # Business logic services
+│   │   ├── gemini_service.py          # Gemini AI service
+│   │   ├── pdf_generator.py           # PDF generation
+│   │   ├── video_manual_generator.py  # Video manual generation
+│   │   └── terminology_db.py          # Terminology database
+│   ├── static/                # Static files (CSS, JS, images)
+│   │   ├── icons/             # Favicon files
+│   │   └── js/                # JavaScript files
+│   ├── tasks/                 # Background tasks
+│   ├── templates/             # HTML templates
+│   ├── uploads/               # User uploaded files
+│   ├── utils/                 # Utility functions
+│   │   ├── frame_orientation.py
+│   │   └── path_normalization.py
+│   └── workers/               # Background workers
+├── instance/                   # Instance-specific data (database)
+└── logs/                       # Application logs
+```
+
+**scripts/** folder (REQUIRED):
+- **ALL temporary files** must be stored in `scripts/` folder
+- Includes: test files, check scripts, debug utilities, analysis tools, migration scripts
+- Naming patterns: `test_*.py`, `check_*.py`, `debug_*.py`, `analyze_*.py`, `migrate_*.py`
 ```python
 # Standard library imports
 import os
@@ -168,9 +214,11 @@ from google.cloud import storage
 from google.genai import Client
 
 # Local application imports
-from models import Manual, User, ManualStep
-from file_manager import FileManager
-from db_manager import init_database
+from src.models.models import Manual, User, ManualStep
+from src.infrastructure.file_manager import FileManager
+from src.core.db_manager import init_database
+from src.services.gemini_service import GeminiService
+from src.middleware.auth import require_authentication
 ```
 
 ### Error Handling
@@ -463,7 +511,7 @@ sudo docker-compose logs --tail=100 manual
 
 ### Pre-Deployment Checklist
 - [ ] Code tested locally with GCS + Gemini API
-- [ ] No syntax errors (`python -m py_compile manual_generator/**/*.py`)
+- [ ] No syntax errors (`python -m py_compile src/**/*.py`)
 - [ ] Database schema changes tested locally
 - [ ] `.env` variables documented if new ones added
 - [ ] Breaking changes documented

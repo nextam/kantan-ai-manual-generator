@@ -55,9 +55,13 @@ temp_uploads/
 */results/
 
 # GCP credentials (should already be ignored but making sure)
+gcp-credentials.json
 manual_generator/gcp-credentials.json
 
-# Environment files (manual_generator only)
+# Environment files
+.env
+.env.local
+.env.production
 manual_generator/.env
 manual_generator/.env.local
 manual_generator/.env.production

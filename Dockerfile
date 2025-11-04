@@ -48,27 +48,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /root/.local /root/.local
 
 # Create necessary directories and set proper permissions
-RUN mkdir -p instance uploads uploads/video logs temp_uploads && \
-    chmod 755 instance uploads uploads/video logs temp_uploads && \
+# Note: instance and logs will be mounted from host via docker-compose
+RUN mkdir -p uploads temp_uploads && \
+    chmod 755 uploads temp_uploads && \
     chown -R root:root /app
 
-# Copy application files (in order of change frequency)
-COPY templates ./templates
-COPY modules ./modules
-COPY utils ./utils
-COPY models.py ./
-COPY auth.py ./
-COPY file_manager.py ./
-COPY super_admin.py ./
-COPY db_manager.py ./
-COPY init_db.py ./
-COPY migrate_database.py ./
-COPY migrate_add_description.py ./
-COPY migrate_unified.py ./
+# Copy application files in new structure
+COPY src ./src
 COPY app.py ./
-
-# Copy Google Cloud credentials (provide gcp-credentials.json at build context)
+COPY requirements.txt ./
 COPY gcp-credentials.json ./gcp-credentials.json
+COPY .env.example ./.env.example
 
 # Copy startup script
 COPY startup.sh ./startup.sh

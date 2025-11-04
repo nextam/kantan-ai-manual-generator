@@ -53,10 +53,9 @@ except ImportError as e:
 
 # 新しい認証・データベースシステム
 try:
-    from models import db, Company, User, UploadedFile, Manual, ManualSourceFile, SuperAdmin
-    from auth import AuthManager, CompanyManager, require_role, init_auth_routes
-    from file_manager import create_file_manager  
-    from super_admin import SuperAdminManager, require_super_admin, require_super_admin_permission
+    from src.models.models import db, Company, User, UploadedFile, Manual, ManualSourceFile, SuperAdmin
+    from src.middleware.auth import AuthManager, CompanyManager, require_role, init_auth_routes
+    from src.infrastructure.file_manager import create_file_manager  
     from flask_login import current_user, login_required
     HAS_AUTH_SYSTEM = True
     logger.info("認証システムのインポートが成功しました")
@@ -105,7 +104,7 @@ except Exception as e:
 
 # Gemini統合サービスをインポート
 try:
-    from modules.gemini_service import GeminiUnifiedService
+    from src.services.gemini_service import GeminiUnifiedService
     HAS_GEMINI_SERVICE = True
 except ImportError:
     print("Warning: Gemini統合サービスをインポートできませんでした。基本機能のみ利用可能です。")
@@ -113,7 +112,7 @@ except ImportError:
 
 # 動画マニュアル生成システムをインポート
 try:
-    from modules.video_manual_with_images_generator import ManualWithImagesGenerator
+    from src.services.video_manual_with_images_generator import ManualWithImagesGenerator
     HAS_VIDEO_MANUAL = True
     print("✅ 動画マニュアル生成システムのインポートが成功しました (relative import)")
 except ImportError as e:
@@ -343,8 +342,8 @@ if database_path_env:
     instance_dir = os.path.dirname(db_path)
 elif os.path.exists('/app'):
     # コンテナ環境
-    instance_dir = '/app/instance'
-    db_path = '/app/instance/manual_generator.db'
+    instance_dir = '/instance'
+    db_path = '/instance/manual_generator.db'
     base_dir = '/app'
 else:
     # ローカル環境
