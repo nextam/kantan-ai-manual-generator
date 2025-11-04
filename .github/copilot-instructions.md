@@ -258,9 +258,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Google Cloud Configuration
+# Use service account authentication (gcp-credentials.json)
 GOOGLE_APPLICATION_CREDENTIALS = os.getenv('GOOGLE_APPLICATION_CREDENTIALS', 'gcp-credentials.json')
 GCS_BUCKET_NAME = os.getenv('GCS_BUCKET_NAME', 'kantan-ai-manual-generator')
-GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')  # No default for sensitive data
 PROJECT_ID = os.getenv('PROJECT_ID', 'kantan-ai-database')
 VERTEX_AI_LOCATION = os.getenv('VERTEX_AI_LOCATION', 'us-central1')
 
@@ -269,7 +269,7 @@ DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///instance/manual_generator.db
 
 # BAD: Hardcoding values
 GCS_BUCKET_NAME = 'my-hardcoded-bucket'  # NEVER DO THIS
-GOOGLE_API_KEY = 'AIza...'  # NEVER DO THIS
+# Note: API key authentication is NOT used - use service account (gcp-credentials.json) instead
 ```
 
 ### Hallucination Prevention
@@ -434,14 +434,16 @@ sudo docker-compose logs -f manual
 ```
 
 #### 4. Google Cloud Storage Integration
-- **CRITICAL**: GCS credentials must be properly configured
+- **CRITICAL**: GCS credentials must be properly configured using service account
 - Service account JSON file (`gcp-credentials.json`) must be in container
 - Verify bucket access permissions before deployment
 - **Environment Variables Required**:
   - `GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-credentials.json`
   - `GCS_BUCKET_NAME=kantan-ai-manual-generator`
   - `PROJECT_ID=kantan-ai-database`
-  - `GOOGLE_API_KEY` (for Gemini API)
+  - `VERTEX_AI_LOCATION=us-central1`
+
+**Note**: This project uses **service account authentication** via `gcp-credentials.json`, NOT API key authentication.
 
 **GCS Configuration Verification:**
 ```bash
@@ -483,8 +485,7 @@ sudo docker exec manual-generator env | grep GOOGLE
 
 **Required Environment Variables:**
 ```bash
-# Google Cloud
-GOOGLE_API_KEY=<gemini-api-key>
+# Google Cloud (Service Account Authentication)
 GCS_BUCKET_NAME=kantan-ai-manual-generator
 PROJECT_ID=kantan-ai-database
 GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-credentials.json
@@ -497,6 +498,8 @@ DATABASE_URL=sqlite:///instance/manual_generator.db
 SECRET_KEY=<random-secret-key>
 FLASK_ENV=production
 ```
+
+**Note**: Authentication uses service account (`gcp-credentials.json`), not API key.
 
 #### 6. Rollback Procedure
 If deployment causes issues:
@@ -595,11 +598,12 @@ After deploying changes to Gemini integration:
 
 If AI manual generation fails after deployment:
 
-1. **Check Gemini API Key**:
+1. **Check GCS Service Account Credentials**:
    ```bash
-   sudo docker exec manual-generator env | grep GOOGLE_API_KEY
+   sudo docker exec manual-generator env | grep GOOGLE_APPLICATION_CREDENTIALS
+   sudo docker exec manual-generator ls -la /app/gcp-credentials.json
    ```
-   Should return the API key (partially masked)
+   Verify service account file exists and has proper permissions
 
 2. **Verify Gemini SDK version**:
    ```bash
@@ -617,13 +621,13 @@ If AI manual generation fails after deployment:
    sudo docker exec manual-generator python -c "
    from google.genai import Client
    import os
-   client = Client(api_key=os.getenv('GOOGLE_API_KEY'))
+   client = Client(vertexai=True, project=os.getenv('PROJECT_ID'), location=os.getenv('VERTEX_AI_LOCATION'))
    print('Gemini client initialized successfully')
    "
    ```
 
 5. **Common Error Messages**:
-   - **"API key not valid"**: Check GOOGLE_API_KEY environment variable
+   - **"Could not automatically determine credentials"**: Check GOOGLE_APPLICATION_CREDENTIALS environment variable and gcp-credentials.json file
    - **"Quota exceeded"**: Wait for quota reset or increase quota in GCP
    - **"Video file too large"**: GCS upload failed, check bucket permissions
    - **"Invalid video format"**: Gemini supports MP4, MOV, AVI, WebM, MKV
