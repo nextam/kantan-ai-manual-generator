@@ -50,19 +50,25 @@ For JavaScript/TypeScript files:
 
 **scripts/** folder (REQUIRED):
 - **ALL temporary files** must be stored in `scripts/` folder
+- **File types**: `.py`, `.sh`, `.bat`, `.ps1`, and any other temporary script files
 - Includes: test files, check scripts, debug utilities, analysis tools, migration scripts
 - Naming patterns: `test_*.py`, `check_*.py`, `debug_*.py`, `analyze_*.py`, `migrate_*.py`
-- Markdown documentation for temporary analysis/reports
+- Temporary markdown files for analysis/reports
 - Shell scripts for one-time operations
 - Examples: `test_streaming_api.py`, `check_database_structure.py`, `analyze_db_gcs_detailed.py`
 - **NEVER create temporary files in project root**
 
-**docs/** folder:
-- Permanent markdown documentation files only
+**docs/** folder (REQUIRED):
+- **ALL permanent markdown documentation files** must be stored in `docs/` folder
 - Task completion reports
 - Architecture documents
 - API documentation
+- Technical specifications
 - Examples: `SPECIFICATION_*.md`, `README_*.md`, `DEPLOY_*.md`
+- **When creating a new markdown file**:
+  1. First, update the main `README.md` in project root with a link to the new document
+  2. Then, create the markdown file in `docs/` folder
+  3. Ensure the document follows the project's documentation structure
 
 **src/** folder:
 - Main application code only
@@ -200,6 +206,8 @@ kantan-ai-manual-generator/
 - **ALL temporary files** must be stored in `scripts/` folder
 - Includes: test files, check scripts, debug utilities, analysis tools, migration scripts
 - Naming patterns: `test_*.py`, `check_*.py`, `debug_*.py`, `analyze_*.py`, `migrate_*.py`
+- **File types**: `.py`, `.sh`, `.bat`, `.ps1`, and any other temporary script files
+- Temporary markdown files for analysis/reports
 ```python
 # Standard library imports
 import os
@@ -249,9 +257,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-GCS_BUCKET_NAME = os.getenv('GCS_BUCKET_NAME', 'manual_generator')
+# Google Cloud Configuration
+GOOGLE_APPLICATION_CREDENTIALS = os.getenv('GOOGLE_APPLICATION_CREDENTIALS', 'gcp-credentials.json')
+GCS_BUCKET_NAME = os.getenv('GCS_BUCKET_NAME', 'kantan-ai-manual-generator')
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')  # No default for sensitive data
 PROJECT_ID = os.getenv('PROJECT_ID', 'career-survival')
+VERTEX_AI_LOCATION = os.getenv('VERTEX_AI_LOCATION', 'us-central1')
+
+# Database Configuration
 DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///instance/manual_generator.db')
 
 # BAD: Hardcoding values
@@ -331,17 +344,28 @@ All files matching these patterns go in **scripts/** folder:
 - `analyze_*.py` - Analysis tools
 - `migrate_*.py` - Migration scripts
 - `*_example.py` - Example code
-- Temporary `.sh` scripts for one-time operations
+- Temporary `.sh`, `.bat`, `.ps1` scripts for one-time operations
 - Temporary `.md` files for analysis reports
+- **ANY temporary script file** regardless of extension (`.py`, `.sh`, `.bat`, `.ps1`, etc.)
 
 ### Documentation Files
 
-Permanent markdown files go in **docs/** or **project root** (for major specs only):
-- `SPECIFICATION_*.md` - System specifications (root)
-- `DEPLOY_*.md` - Deployment guides (root or docs/)
-- `README.md` - Main project README (root)
-- `VSCODE_TASKS_GUIDE.md` - VS Code tasks guide (root)
-- All other `.md` files - Place in `docs/` folder
+**IMPORTANT**: When creating a new markdown file:
+1. Update `README.md` in project root with a link to the new document
+2. Create the markdown file in `docs/` folder (not in project root)
+3. Use clear, descriptive filenames
+
+Permanent markdown files go in **docs/** folder:
+- `SPECIFICATION_*.md` - System specifications
+- `DEPLOY_*.md` - Deployment guides
+- `ARCHITECTURE_*.md` - Architecture documents
+- `API_*.md` - API documentation
+- Task completion reports
+- Technical documentation
+- All other `.md` files (except README.md in root)
+
+Exceptions (allowed in project root):
+- `README.md` - Main project README (ONLY this file in root)
 
 ## Summary Checklist
 
@@ -364,7 +388,7 @@ When creating or modifying files, ensure:
 ## Production Deployment (EC2)
 
 ### Deployment Target
-- **Server**: EC2 instance at `ec2-52-198-123-171.ap-northeast-1.compute.amazonaws.com`
+- **Server**: EC2 instance at `57.181.226.188`
 - **SSH Key**: `kantan-ai.pem` (in project root)
 - **Project Path**: `/opt/kantan-ai-manual-generator`
 - **User**: `ec2-user`
@@ -377,7 +401,7 @@ sudo docker-compose restart manual  # Manual Generator service
 
 ### Standard Deployment Command
 ```bash
-ssh -i kantan-ai.pem ec2-user@ec2-52-198-123-171.ap-northeast-1.compute.amazonaws.com "cd /opt/kantan-ai-manual-generator && git pull origin main && sudo docker-compose build manual && sudo docker-compose up -d manual"
+ssh -i kantan-ai.pem ec2-user@57.181.226.188 "cd /opt/kantan-ai-manual-generator && git pull origin main && sudo docker-compose build manual && sudo docker-compose up -d manual"
 ```
 
 ### CRITICAL WARNINGS
@@ -415,7 +439,7 @@ sudo docker-compose logs -f manual
 - Verify bucket access permissions before deployment
 - **Environment Variables Required**:
   - `GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-credentials.json`
-  - `GCS_BUCKET_NAME=manual_generator`
+  - `GCS_BUCKET_NAME=kantan-ai-manual-generator`
   - `PROJECT_ID=career-survival`
   - `GOOGLE_API_KEY` (for Gemini API)
 
@@ -428,7 +452,7 @@ sudo docker exec manual-generator ls -la /app/gcp-credentials.json
 sudo docker exec manual-generator python -c "
 from google.cloud import storage
 client = storage.Client()
-bucket = client.bucket('manual_generator')
+bucket = client.bucket('kantan-ai-manual-generator')
 print(f'Bucket exists: {bucket.exists()}')
 "
 
@@ -461,7 +485,7 @@ sudo docker exec manual-generator env | grep GOOGLE
 ```bash
 # Google Cloud
 GOOGLE_API_KEY=<gemini-api-key>
-GCS_BUCKET_NAME=manual_generator
+GCS_BUCKET_NAME=kantan-ai-manual-generator
 PROJECT_ID=career-survival
 GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-credentials.json
 VERTEX_AI_LOCATION=us-central1
@@ -478,7 +502,7 @@ FLASK_ENV=production
 If deployment causes issues:
 ```bash
 # SSH to server
-ssh -i "kantan-ai.pem" ec2-user@ec2-52-198-123-171.ap-northeast-1.compute.amazonaws.com
+ssh -i "kantan-ai.pem" ec2-user@57.181.226.188
 
 # Navigate to project
 cd /opt/kantan-ai-manual-generator
@@ -561,7 +585,7 @@ After deploying changes to Gemini integration:
 5. **Verify GCS integration**:
    ```bash
    # Check uploaded video exists in GCS
-   gsutil ls gs://manual_generator/uploads/
+   gsutil ls gs://kantan-ai-manual-generator/uploads/
    
    # Verify file access via signed URL
    # Should be visible in web interface
