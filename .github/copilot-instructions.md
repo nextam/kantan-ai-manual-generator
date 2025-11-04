@@ -46,6 +46,36 @@
   - Future use cases and requirements
 - **Test broadly**: Validate prompts against multiple scenarios, not just the immediate test case
 
+### Local Development Environment
+
+#### VS Code Tasks
+- **ALWAYS use VS Code tasks** for server start/stop and other frequent operations
+- Required tasks to be registered:
+  - Local server startup/shutdown
+  - Database migrations
+  - Test execution
+  - Frequently used scripts
+- **If a VS Code task fails**, immediately fix the underlying script to resolve the issue
+- Never bypass tasks by running commands directly in terminal for routine operations
+
+#### Python Virtual Environment
+- **ALWAYS use `.venv` virtual environment** for Python module installation and execution
+- Activate virtual environment before running any Python commands
+- Install all dependencies within `.venv`:
+  ```bash
+  .venv\Scripts\activate  # Windows
+  pip install -r requirements.txt
+  ```
+
+#### Test Account Credentials
+- **Default test account** for all development and verification:
+  - **Company ID**: `career-survival`
+  - **User ID**: `support@career-survival.com`
+  - **Password**: `0000`
+  - **Role**: Super Administrator
+- **ALWAYS use this account** for testing and verification
+- Ensure this account exists in local database before testing
+
 ### File Header Requirements
 Every source file must include a header comment block with:
 ```python
@@ -425,6 +455,9 @@ When creating or modifying files, ensure:
 - [ ] **API-first approach**: Core features testable via API endpoints for production-like testing
 - [ ] **Root cause analysis**: Errors resolved fundamentally, not with temporary workarounds
 - [ ] **Prompt design**: AI prompts designed for general use, not optimized for specific test cases only
+- [ ] **VS Code tasks**: Use tasks for server operations and frequent scripts; fix tasks if they fail
+- [ ] **Python .venv**: Use virtual environment for all Python operations
+- [ ] **Test account**: Use career-survival/support@career-survival.com/0000 for verification
 
 ## Production Deployment (EC2)
 
