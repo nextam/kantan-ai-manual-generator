@@ -97,9 +97,9 @@ def check_manual_id_range():
         else:
             print("  ❌ stage2_contentを持つマニュアルが見つかりません")
         
-        # URL例での実際のテスト（https://manual-generator.chuden-demoapp.com/manual/view/57）
+        # URL例での実際のテスト（https://manual-generator.kantan-ai.net/manual/view/57）
         print("🌐 本番環境とローカル環境の違い:")
-        print("  本番URL: https://manual-generator.chuden-demoapp.com/manual/view/57")
+        print("  本番URL: https://manual-generator.kantan-ai.net/manual/view/57")
         print("  ローカル最大ID:", max_id)
         print("  → 本番環境にはID 57のマニュアルが存在するが、ローカルには存在しない")
         print("  → データベースの同期問題の可能性")

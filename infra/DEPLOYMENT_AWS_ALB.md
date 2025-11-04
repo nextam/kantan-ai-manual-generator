@@ -2,7 +2,7 @@
 
 このドキュメントは、2つの Flask アプリ (Manual Generator / Operation Analysis) を1台の EC2 インスタンス上で docker-compose により稼働させ、外部公開は Application Load Balancer(ALB) でホストベースルーティングし、ACM 証明書で HTTPS 化する手順です。
 
-- ドメイン: chuden-demoapp.com (Route53)
+- ドメイン: kantan-ai.net (Route53)
 - 証明書(ACM): arn:aws:acm:ap-northeast-1:442042524629:certificate/ad7baf4e-7cec-4b3a-8d09-a73363098de3
 - リージョン: ap-northeast-1 (東京)
 
@@ -12,8 +12,8 @@
   - manual: Flask on port 5000 (外部 8080 に公開, ただし ALB から到達するのは EC2 の 8080)
   - analysis: Flask on port 5000 (外部 8081 に公開, 同上 8081)
 - ALB で HTTPS(443) を終端し、Host ヘッダで 2 つのターゲットグループにルーティング
-  - manual-generator.chuden-demoapp.com → EC2:8080
-  - operation-analysis.chuden-demoapp.com → EC2:8081
+  - manual-generator.kantan-ai.net → EC2:8080
+  - operation-analysis.kantan-ai.net → EC2:8081
 - Route53 で A レコード(ALIAS) を ALB に向ける
 
 ## 1. EC2 準備
@@ -90,8 +90,8 @@ curl -s http://127.0.0.1:8081/health
 
 3) リスナールール
 - 443 リスナーにルール追加:
-  - IF Host header is `manual-generator.chuden-demoapp.com` → forward to TG1
-  - IF Host header is `operation-analysis.chuden-demoapp.com` → forward to TG2
+  - IF Host header is `manual-generator.kantan-ai.net` → forward to TG1
+  - IF Host header is `operation-analysis.kantan-ai.net` → forward to TG2
   - デフォルトは 404 か任意の固定レスポンス
 
 4) 80 リスナー(任意)
@@ -99,10 +99,10 @@ curl -s http://127.0.0.1:8081/health
 
 ## 5. Route53 設定
 
-- `manual-generator.chuden-demoapp.com` A レコード(ALIAS) → ALB の DNS 名
-- `operation-analysis.chuden-demoapp.com` A レコード(ALIAS) → 同 ALB
+- `manual-generator.kantan-ai.net` A レコード(ALIAS) → ALB の DNS 名
+- `operation-analysis.kantan-ai.net` A レコード(ALIAS) → 同 ALB
 
-ACM 証明書は SAN に `manual-generator.chuden-demoapp.com` と `operation-analysis.chuden-demoapp.com` を含む必要があります。証明書 ARN がすでにマルチドメインであればそのまま利用できます。未登録なら ACM で追加作成/検証してください。
+ACM 証明書は SAN に `manual-generator.kantan-ai.net` と `operation-analysis.kantan-ai.net` を含む必要があります。証明書 ARN がすでにマルチドメインであればそのまま利用できます。未登録なら ACM で追加作成/検証してください。
 
 ## 6. セキュリティ/運用メモ
 

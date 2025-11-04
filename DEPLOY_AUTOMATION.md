@@ -13,7 +13,7 @@
 
 ```bash
 # プライベートキーの内容確認（参考）
-cat chuden-demoapp.pem
+cat kantan-ai.pem
 ```
 
 ### 2. 自動デプロイの動作確認
@@ -109,7 +109,7 @@ git push origin matsumoto
 
 ```bash
 # EC2に直接SSH接続してデバッグ
-ssh -i "chuden-demoapp.pem" ec2-user@ec2-52-198-123-171.ap-northeast-1.compute.amazonaws.com
+ssh -i "kantan-ai.pem" ec2-user@ec2-52-198-123-171.ap-northeast-1.compute.amazonaws.com
 
 # コンテナ状況確認
 sudo docker ps -a

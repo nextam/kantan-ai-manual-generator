@@ -1,7 +1,7 @@
 param(
   [Parameter(Mandatory=$true)] [string]$InstanceId,
   [Parameter(Mandatory=$true)] [string]$AcmArn,
-  [Parameter(Mandatory=$true)] [string]$RootDomain,              # chuden-demoapp.com
+  [Parameter(Mandatory=$true)] [string]$RootDomain,              # kantan-ai.net
   [string]$Region = 'ap-northeast-1',
   [string]$AlbSgName = 'chuden-alb-sg',
   [string]$DomainManual = "manual.$RootDomain",

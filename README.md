@@ -8,8 +8,8 @@
 両者は単体で動作可能ですが、将来的な連携（OASの分析結果をMGへ流用）も想定します。
 
 ### 本番環境URL
-- マニュアル自動生成システム: https://manual-generator.chuden-demoapp.com
-- 作業分析システム: https://operation-analysis.chuden-demoapp.com
+- マニュアル自動生成システム: https://manual-generator.kantan-ai.net
+- 作業分析システム: https://operation-analysis.kantan-ai.net
 
 ### 目的（MVP）
 - OAS: 現場動画/ログから基本作業の抽出・時間計測・簡易レポートを最短経路で提供

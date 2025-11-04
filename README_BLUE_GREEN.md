@@ -20,7 +20,7 @@
 ## 手動ロールバック手順 (緊急)
 1. 安定版イメージ一覧:
 ```bash
-docker images | grep chuden-demoapp_manual
+docker images | grep manual-generator
 ```
 2. 稼働確認:
 ```bash
@@ -38,11 +38,11 @@ docker run -d \
   -v manual_instance:/app/instance \
   -v manual_logs:/app/logs \
   -v manual_uploads:/app/uploads \
-  chuden-demoapp_manual:latest ./startup.sh
+  manual-generator:latest ./startup.sh
 ```
 4. 特定タグへ戻したい場合 (例: sha):
 ```bash
-docker run -d --name manual-generator ... chuden-demoapp_manual:<IMAGE_ID> ./startup.sh
+docker run -d --name manual-generator ... manual-generator:<IMAGE_ID> ./startup.sh
 ```
 
 ## 注意点

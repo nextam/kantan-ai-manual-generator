@@ -4,8 +4,8 @@ services:
       context: ./manual_generator
       target: production # Multi-stage buildのproduction stage
       cache_from:
-        - chuden-demoapp_manual:latest
-    image: chuden-demoapp_manual:latest
+        - manual-generator:latest
+    image: manual-generator:latest
     container_name: manual-generator
     ports:
       - "8080:5000"
