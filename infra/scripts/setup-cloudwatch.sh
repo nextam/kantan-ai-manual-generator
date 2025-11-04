@@ -38,12 +38,6 @@ cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json << 'EOF'
                         "timezone": "Asia/Tokyo"
                     },
                     {
-                        "file_path": "/home/ubuntu/operation_analysis/*.log",
-                        "log_group_name": "/aws/ec2/operation-analysis",
-                        "log_stream_name": "{instance_id}/operation-analysis",
-                        "timezone": "Asia/Tokyo"
-                    },
-                    {
                         "file_path": "/var/log/syslog",
                         "log_group_name": "/aws/ec2/system",
                         "log_stream_name": "{instance_id}/syslog",
@@ -100,9 +94,7 @@ EOF
 
 # ログディレクトリの権限設定
 mkdir -p /home/ubuntu/manual_generator
-mkdir -p /home/ubuntu/operation_analysis
 touch /home/ubuntu/manual_generator/app.log
 chown ubuntu:ubuntu /home/ubuntu/manual_generator/app.log
-chown ubuntu:ubuntu /home/ubuntu/operation_analysis/
 
 echo "$(date): CloudWatch エージェント設定完了"

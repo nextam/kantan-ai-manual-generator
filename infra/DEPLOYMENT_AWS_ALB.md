@@ -1,6 +1,6 @@
-# AWS デプロイ設計 (1台の EC2 + docker-compose + ALB/ACM/Route53)
+# AWS デプロイ設計 (EC2 + docker-compose + ALB/ACM/Route53)
 
-このドキュメントは、2つの Flask アプリ (Manual Generator / Operation Analysis) を1台の EC2 インスタンス上で docker-compose により稼働させ、外部公開は Application Load Balancer(ALB) でホストベースルーティングし、ACM 証明書で HTTPS 化する手順です。
+このドキュメントは、Manual Generator Flask アプリを EC2 インスタンス上で docker-compose により稼働させ、外部公開は Application Load Balancer(ALB) でルーティングし、ACM 証明書で HTTPS 化する手順です。
 
 - ドメイン: kantan-ai.net (Route53)
 - 証明書(ACM): arn:aws:acm:ap-northeast-1:442042524629:certificate/ad7baf4e-7cec-4b3a-8d09-a73363098de3
@@ -8,12 +8,10 @@
 
 ## 構成概要
 
-- EC2 上で以下の 2 サービスを起動
+- EC2 上で Manual Generator サービスを起動
   - manual: Flask on port 5000 (外部 8080 に公開, ただし ALB から到達するのは EC2 の 8080)
-  - analysis: Flask on port 5000 (外部 8081 に公開, 同上 8081)
-- ALB で HTTPS(443) を終端し、Host ヘッダで 2 つのターゲットグループにルーティング
+- ALB で HTTPS(443) を終端し、Host ヘッダでターゲットグループにルーティング
   - manual-generator.kantan-ai.net → EC2:8080
-  - operation-analysis.kantan-ai.net → EC2:8081
 - Route53 で A レコード(ALIAS) を ALB に向ける
 
 ## 1. EC2 準備
@@ -21,7 +19,7 @@
 - OS: Amazon Linux 2 または最新の Amazon Linux 2023 を推奨
 - セキュリティグループ(SG) 設定
   - インバウンド: 80/TCP, 443/TCP (ALB 用) は ALB の SG のみ許可
-  - 8080/TCP, 8081/TCP は ALB からのトラフィックのみ許可
+  - 8080/TCP は ALB からのトラフィックのみ許可
   - SSH(22/TCP) は管理者の固定IPからのみ
 - IAM ロール: CloudWatch Logs 等が必要なら付与（必須ではない）
 
@@ -71,11 +69,9 @@ sudo docker-compose up -d
 
 # 動作確認 (EC2 内部)
 curl -s http://127.0.0.1:8080/ | head -n 1
-curl -s http://127.0.0.1:8081/health
 ```
 
 - manual: http://<EC2-private-ip>:8080/
-- analysis: http://<EC2-private-ip>:8081/
 
 ## 4. ALB 作成
 
@@ -83,15 +79,13 @@ curl -s http://127.0.0.1:8081/health
 - リスナー: 443(HTTPS) を追加、ACM 証明書は指定の ARN を選択
 - オプションで 80(HTTP) も作成し、HTTP→HTTPS リダイレクトルールを設定
 
-2) ターゲットグループ(TG) を 2 つ作成
-- TG1: protocol HTTP, port 8080, health check path: `/` (manual)
-- TG2: protocol HTTP, port 8081, health check path: `/health` (analysis) 既に実装済
+2) ターゲットグループ(TG) を作成
+- TG: protocol HTTP, port 8080, health check path: `/` (manual)
 - ターゲットに EC2 を登録
 
 3) リスナールール
 - 443 リスナーにルール追加:
-  - IF Host header is `manual-generator.kantan-ai.net` → forward to TG1
-  - IF Host header is `operation-analysis.kantan-ai.net` → forward to TG2
+  - IF Host header is `manual-generator.kantan-ai.net` → forward to TG
   - デフォルトは 404 か任意の固定レスポンス
 
 4) 80 リスナー(任意)
@@ -100,13 +94,12 @@ curl -s http://127.0.0.1:8081/health
 ## 5. Route53 設定
 
 - `manual-generator.kantan-ai.net` A レコード(ALIAS) → ALB の DNS 名
-- `operation-analysis.kantan-ai.net` A レコード(ALIAS) → 同 ALB
 
-ACM 証明書は SAN に `manual-generator.kantan-ai.net` と `operation-analysis.kantan-ai.net` を含む必要があります。証明書 ARN がすでにマルチドメインであればそのまま利用できます。未登録なら ACM で追加作成/検証してください。
+ACM 証明書は SAN に `manual-generator.kantan-ai.net` を含む必要があります。証明書 ARN がすでに設定されていればそのまま利用できます。未登録なら ACM で追加作成/検証してください。
 
 ## 6. セキュリティ/運用メモ
 
-- EC2 SG は ALB SG のみを許可 (8080/8081)
+- EC2 SG は ALB SG のみを許可 (8080)
 - アプリログはコンテナログとして CloudWatch Logs (awslogs) ドライバに変更可
 - 資格情報は Secrets Manager/Parameter Store に移行推奨
 - Auto-healing: ターゲットグループのヘルスチェックで NG になれば ALB が切替
@@ -121,4 +114,4 @@ ACM 証明書は SAN に `manual-generator.kantan-ai.net` と `operation-analysi
 
 ---
 
-以上で、1台の EC2 上に 2 つの Flask アプリを docker-compose で稼働させ、ALB + ACM で HTTPS 公開し、Route53 でサブドメイン割当する構成が完成します。
+以上で、EC2 上に Manual Generator を docker-compose で稼働させ、ALB + ACM で HTTPS 公開し、Route53 でサブドメイン割当する構成が完成します。

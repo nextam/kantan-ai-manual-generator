@@ -1,25 +1,16 @@
 ## プロジェクト概要
 
-製造業に特化した以下2つの独立MVPを同一リポジトリで開発・検証するためのプロジェクトです。
-
-- 作業分析システム（Operation Analysis System, OAS）
-- マニュアル自動生成システム（Manual Generator, MG）
-
-両者は単体で動作可能ですが、将来的な連携（OASの分析結果をMGへ流用）も想定します。
+製造業に特化したマニュアル自動生成システム（Manual Generator, MG）のプロジェクトです。
 
 ### 本番環境URL
 - マニュアル自動生成システム: https://manual-generator.kantan-ai.net
-- 作業分析システム: https://operation-analysis.kantan-ai.net
 
 ### 目的（MVP）
-- OAS: 現場動画/ログから基本作業の抽出・時間計測・簡易レポートを最短経路で提供
 - MG: 作業定義やテンプレートから、現場で使える手順書（PDF/HTML）を半自動生成
 
-## リポジトリ構成（提案）
-- `SPECIFICATION_OPERATION_ANALYSIS.md` … 作業分析システムの仕様書
+## リポジトリ構成
 - `SPECIFICATION_MANUAL_GENERATOR.md` … マニュアル自動生成システムの仕様書
-- `oas/` … 作業分析MVPのソース（後日作成）
-- `mg/` … マニュアル生成MVPのソース（後日作成）
+- `manual_generator/` … マニュアル生成MVPのソース
 - `docs/` … 画面モック、設計補足、議事録等（任意）
 
 ## 技術スタック（初期案）
@@ -38,7 +29,6 @@
 - まずは仕様確定→スケルトン作成→通しデモ実装の順でコミット
 
 ## リンク
-- 作業分析システム仕様: `SPECIFICATION_OPERATION_ANALYSIS.md`
 - マニュアル自動生成システム仕様: `SPECIFICATION_MANUAL_GENERATOR.md`
 
 ## 用語

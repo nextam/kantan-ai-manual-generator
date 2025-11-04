@@ -32,7 +32,6 @@ Write-Host "[3/5] 必要ファイルのみ同期" -ForegroundColor Cyan
 # 重要: 秘密鍵(.pem)や .git は送らない
 Copy-ToRemote "./docker-compose.yml" "$RemotePath/"
 Copy-ToRemote "./manual_generator" "$RemotePath/"
-Copy-ToRemote "./operation_analysis" "$RemotePath/"
 Copy-ToRemote "./infra" "$RemotePath/"
 
 Write-Host "[4/5] docker compose 起動" -ForegroundColor Cyan

@@ -32,8 +32,7 @@ git push origin matsumoto
 
 ### 1. 変更検知システム
 - **manual_generator/**: Manual Generator関連の変更
-- **operation_analysis/**: Operation Analysis関連の変更  
-- **docker-compose.yml**: 両サービスに影響する設定変更
+- **docker-compose.yml**: サービスに影響する設定変更
 - **infra/**: インフラ関連の変更
 
 ### 2. ビルド最適化
@@ -69,11 +68,9 @@ git push origin matsumoto
 ```bash
 # 変更検知結果
 ✅ Manual Generator changes: true
-✅ Operation Analysis changes: false
 
 # ビルド実行
 🔨 Building manual service...
-ℹ️ Skipping analysis build (no changes)
 
 # デプロイ実行
 🚀 Starting deployment...

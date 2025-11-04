@@ -40,10 +40,6 @@ manual_generator/sample*.mp4
 manual_generator/sample*.mov
 manual_generator/test_*.py
 
-# Operation Analysis uploads and results
-operation_analysis/uploads/
-operation_analysis/results/
-
 # General uploads directories
 uploads/
 temp_uploads/

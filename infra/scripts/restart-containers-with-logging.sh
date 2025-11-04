@@ -5,11 +5,9 @@ set -e
 
 HOST_BASE="/home/ec2-user"
 MANUAL_HOST_DIR="$HOST_BASE/manual_generator"
-ANALYSIS_HOST_DIR="$HOST_BASE/operation_analysis"
 
 echo "Preparing host directories..."
 mkdir -p "$MANUAL_HOST_DIR/logs" "$MANUAL_HOST_DIR/instance" "$MANUAL_HOST_DIR/uploads" || true
-mkdir -p "$ANALYSIS_HOST_DIR/logs" "$ANALYSIS_HOST_DIR/results" || true
 
 # Backup existing SQLite DB from container to host volume (one-time migration)
 if docker ps -a --format '{{.Names}}' | grep -q '^manual-generator$'; then
@@ -23,8 +21,8 @@ if docker ps -a --format '{{.Names}}' | grep -q '^manual-generator$'; then
 fi
 
 echo "Stopping existing containers..."
-docker stop manual-generator operation-analysis || true
-docker rm manual-generator operation-analysis || true
+docker stop manual-generator || true
+docker rm manual-generator || true
 
 echo "Starting containers with CloudWatch logging..."
 
@@ -41,19 +39,7 @@ docker run -d \
   -v "$MANUAL_HOST_DIR/logs":/app/logs \
   -v "$MANUAL_HOST_DIR/instance":/app/instance \
   -v "$MANUAL_HOST_DIR/uploads":/app/uploads \
-  a40340375d69
-
-# Operation Analysis コンテナ  
-docker run -d \
-  --name operation-analysis \
-  --restart unless-stopped \
-  --log-driver awslogs \
-  --log-opt awslogs-group=/aws/ec2/kantan-ai-manual-generator/operation_analysis \
-  --log-opt awslogs-stream=operation-analysis-container \
-  --log-opt awslogs-region=ap-northeast-1 \
-  -p 8081:5000 \
-  -v "$ANALYSIS_HOST_DIR/results":/app/results \
-  kantan-ai-manual-generator-analysis
+  manual-generator:latest
 
 echo "Containers started with CloudWatch logging"
 docker ps

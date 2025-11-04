@@ -5,8 +5,7 @@ param(
   [Parameter(Mandatory=$true)] [string]$InstanceId,
   [Parameter(Mandatory=$true)] [string]$AcmArn,                 # 提示のARN
   [Parameter(Mandatory=$true)] [string]$HostedZoneId,           # Route53のホストゾーンID
-  [Parameter(Mandatory=$true)] [string]$DomainManual,           # manual-generator.kantan-ai.net
-  [Parameter(Mandatory=$true)] [string]$DomainAnalysis          # operation-analysis.kantan-ai.net
+  [Parameter(Mandatory=$true)] [string]$DomainManual            # manual-generator.kantan-ai.net
 )
 
 $ErrorActionPreference = 'Stop'

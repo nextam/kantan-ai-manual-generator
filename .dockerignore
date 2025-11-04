@@ -32,8 +32,6 @@ node_modules/
 *.log
 *.tmp
 tmp/
-operation_analysis/uploads/
-operation_analysis/results/
 
 # Media files
 *.mp4
