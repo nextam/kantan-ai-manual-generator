@@ -9,6 +9,43 @@
 - Follow PEP 8 style guide for Python code
 - Use consistent indentation (4 spaces for Python)
 
+### Development Task Completion Requirements
+- **CRITICAL**: Before reporting task completion to the user, you MUST:
+  1. **Fix all syntax errors and reference errors** - Ensure code is syntactically correct
+  2. **Perform thorough testing and debugging** - Test the implementation multiple times
+  3. **Verify complete functionality** - Confirm everything works perfectly in production-like conditions
+  4. **Never report completion** until the feature is fully functional and tested
+
+### API-First Development Approach
+- **Design all features to be testable via API endpoints**
+- Implement comprehensive API interfaces for all core functionality
+- Enable production-like testing through API calls rather than UI-only testing
+- This ensures:
+  - Faster and more reliable testing workflow
+  - Better integration testing capabilities
+  - Easier automation and CI/CD integration
+  - Consistent behavior between different interfaces
+
+### Problem-Solving and Debugging Guidelines
+- **Root Cause Analysis**: When errors occur during testing or development:
+  1. **Never apply temporary workarounds** or band-aid fixes
+  2. **Investigate thoroughly** to identify the root cause of the problem
+  3. **Implement fundamental solutions** that address the underlying issue
+  4. **Ask the user** if substantial system changes are required for proper resolution
+- **Avoid quick fixes** that only make tests pass without solving the actual problem
+- **Document findings** when root cause analysis reveals systemic issues
+
+### AI Prompt Design Principles
+- **Design for generality**: Always create prompts assuming diverse, real-world usage scenarios
+- **NEVER optimize prompts** solely to pass specific test cases
+- **Avoid overfitting**: Do not create narrowly-focused prompts that only work for current test data
+- **Think long-term**: Consider how the prompt will perform with:
+  - Different input variations
+  - Edge cases and unusual scenarios
+  - Production data that differs from test data
+  - Future use cases and requirements
+- **Test broadly**: Validate prompts against multiple scenarios, not just the immediate test case
+
 ### File Header Requirements
 Every source file must include a header comment block with:
 ```python
@@ -384,6 +421,10 @@ When creating or modifying files, ensure:
 - [ ] **Verify existence** - all referenced variables/tables/fields actually exist
 - [ ] Environment variables loaded from `.env` file
 - [ ] Database schema verified before querying
+- [ ] **Task completion**: All syntax/reference errors fixed and thoroughly tested before reporting completion
+- [ ] **API-first approach**: Core features testable via API endpoints for production-like testing
+- [ ] **Root cause analysis**: Errors resolved fundamentally, not with temporary workarounds
+- [ ] **Prompt design**: AI prompts designed for general use, not optimized for specific test cases only
 
 ## Production Deployment (EC2)
 
