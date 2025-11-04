@@ -39,15 +39,26 @@ For JavaScript/TypeScript files:
   - Create utility/helper files
   - Use proper imports and module structure
 
+#### Workspace Navigation
+- **ALWAYS use SERENA MCP tools** for file searching and workspace structure understanding
+- Use `mcp_oraios_serena_list_dir` to explore directory structure
+- Use `mcp_oraios_serena_find_file` to locate specific files
+- Use `mcp_oraios_serena_search_for_pattern` to search code patterns
+- Prefer SERENA tools over manual file navigation for accuracy and efficiency
+
 #### Directory Structure
 
-**Root level test/analysis files:**
-- All temporary, test, and analysis files in project root
+**scripts/** folder (REQUIRED):
+- **ALL temporary files** must be stored in `scripts/` folder
+- Includes: test files, check scripts, debug utilities, analysis tools, migration scripts
 - Naming patterns: `test_*.py`, `check_*.py`, `debug_*.py`, `analyze_*.py`, `migrate_*.py`
+- Markdown documentation for temporary analysis/reports
+- Shell scripts for one-time operations
 - Examples: `test_streaming_api.py`, `check_database_structure.py`, `analyze_db_gcs_detailed.py`
+- **NEVER create temporary files in project root**
 
 **docs/** folder:
-- All markdown documentation files
+- Permanent markdown documentation files only
 - Task completion reports
 - Architecture documents
 - API documentation
@@ -61,8 +72,8 @@ For JavaScript/TypeScript files:
 
 **infra/** folder:
 - Infrastructure and deployment configurations
-- AWS, nginx, deployment scripts
-- Examples: `DEPLOYMENT_AWS_ALB.md`, nginx configs
+- AWS deployment scripts and configurations
+- Examples: `DEPLOYMENT_AWS_ALB.md`, deployment scripts
 
 ### Naming Conventions
 
@@ -265,23 +276,24 @@ def verify_column_exists(engine, table_name, column_name):
 
 ### Testing and Development Files
 
-All files matching these patterns stay in **project root**:
+All files matching these patterns go in **scripts/** folder:
 - `test_*.py` - Test scripts
 - `check_*.py` - Validation scripts
 - `debug_*.py` - Debugging utilities
 - `analyze_*.py` - Analysis tools
 - `migrate_*.py` - Migration scripts
 - `*_example.py` - Example code
+- Temporary `.sh` scripts for one-time operations
+- Temporary `.md` files for analysis reports
 
 ### Documentation Files
 
-All markdown files go in **docs/** or **project root** (for major specs):
-- `*.md` - General documentation
-- `SPECIFICATION_*.md` - System specifications (can be in root)
-- `README_*.md` - Feature-specific documentation
-- `DEPLOY_*.md` - Deployment guides
-- `*_GUIDE.md` - Implementation guides
-- `README.md` - Main project README (in root)
+Permanent markdown files go in **docs/** or **project root** (for major specs only):
+- `SPECIFICATION_*.md` - System specifications (root)
+- `DEPLOY_*.md` - Deployment guides (root or docs/)
+- `README.md` - Main project README (root)
+- `VSCODE_TASKS_GUIDE.md` - VS Code tasks guide (root)
+- All other `.md` files - Place in `docs/` folder
 
 ## Summary Checklist
 
@@ -290,7 +302,8 @@ When creating or modifying files, ensure:
 - [ ] All comments are in English
 - [ ] File has proper header comment block
 - [ ] File is under 500 lines (split if needed)
-- [ ] Test/check files are in project root
+- [ ] **Use SERENA MCP tools** for workspace navigation and file search
+- [ ] **Test/check/temporary files are in `scripts/` folder**
 - [ ] Documentation files are in `docs/` or root for specs
 - [ ] Functions have descriptive docstrings
 - [ ] Imports are organized by type

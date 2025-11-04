@@ -40,6 +40,10 @@ manual_generator/sample*.mp4
 manual_generator/sample*.mov
 manual_generator/test_*.py
 
+# Scripts folder - temporary/test files
+# Note: scripts/ folder is tracked in git for team collaboration
+# Individual developers can add their personal test scripts here
+
 # General uploads directories
 uploads/
 temp_uploads/
