@@ -261,7 +261,7 @@ load_dotenv()
 GOOGLE_APPLICATION_CREDENTIALS = os.getenv('GOOGLE_APPLICATION_CREDENTIALS', 'gcp-credentials.json')
 GCS_BUCKET_NAME = os.getenv('GCS_BUCKET_NAME', 'kantan-ai-manual-generator')
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')  # No default for sensitive data
-PROJECT_ID = os.getenv('PROJECT_ID', 'career-survival')
+PROJECT_ID = os.getenv('PROJECT_ID', 'kantan-ai-database')
 VERTEX_AI_LOCATION = os.getenv('VERTEX_AI_LOCATION', 'us-central1')
 
 # Database Configuration
@@ -440,7 +440,7 @@ sudo docker-compose logs -f manual
 - **Environment Variables Required**:
   - `GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-credentials.json`
   - `GCS_BUCKET_NAME=kantan-ai-manual-generator`
-  - `PROJECT_ID=career-survival`
+  - `PROJECT_ID=kantan-ai-database`
   - `GOOGLE_API_KEY` (for Gemini API)
 
 **GCS Configuration Verification:**
@@ -486,7 +486,7 @@ sudo docker exec manual-generator env | grep GOOGLE
 # Google Cloud
 GOOGLE_API_KEY=<gemini-api-key>
 GCS_BUCKET_NAME=kantan-ai-manual-generator
-PROJECT_ID=career-survival
+PROJECT_ID=kantan-ai-database
 GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-credentials.json
 VERTEX_AI_LOCATION=us-central1
 

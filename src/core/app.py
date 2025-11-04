@@ -419,8 +419,8 @@ if HAS_GOOGLE_CLOUD:
         logger.warning("GOOGLE_API_KEY 未設定: 生成機能はフォールバック動作になります")
     
     # Google Cloud設定
-    GCS_BUCKET_NAME = os.getenv('GCS_BUCKET_NAME', 'manual_generator')
-    PROJECT_ID = os.getenv('PROJECT_ID', 'career-survival')
+    GCS_BUCKET_NAME = os.getenv('GCS_BUCKET_NAME', 'kantan-ai-manual-generator')
+    PROJECT_ID = os.getenv('PROJECT_ID', 'kantan-ai-database')
     
     # GCSをデフォルトストレージとして設定
     DEFAULT_STORAGE_TYPE = 'gcs'
