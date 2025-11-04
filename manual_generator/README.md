@@ -275,4 +275,174 @@ if __name__ == '__main__':
 
 ---
 
+## 🔐 企業認証機能
+
+### テナント機能
+- **企業ごとのデータ分離**: 企業コード + パスワードによる認証
+- **企業内ユーザー管理**: 管理者・一般ユーザーの権限管理
+- **データ保存**: アップロードファイル、生成マニュアル、設定の履歴管理
+
+### ストレージ選択
+- **ローカルストレージ**: EC2内でデータ完結（追加コストなし）
+- **Google Cloud Storage**: スケーラブルなクラウドストレージ
+- **Amazon S3**: AWS統合環境向けクラウドストレージ
+
+### 企業管理コマンド
+```bash
+# データベース初期化（サンプル企業作成）
+python db_manager.py init
+
+# 新規企業作成
+python db_manager.py create
+
+# 企業一覧表示
+python db_manager.py list
+
+# データベースバックアップ
+python db_manager.py backup
+
+# 孤立ファイル清掃
+python db_manager.py clean
+```
+
+### サンプル企業
+初期化時に自動作成される企業アカウント：
+- **企業1**: サンプル製造業株式会社 (コード: `sample001`, パスワード: `password123`)
+- **企業2**: テスト工業有限会社 (コード: `test002`, パスワード: `test123456`)
+
+### 認証API
+- `POST /auth/login` - ログイン
+- `POST /auth/logout` - ログアウト
+- `GET /auth/status` - 認証状態確認
+- `GET /company/settings` - 企業設定取得
+- `POST /company/settings` - 企業設定更新
+
+### セキュリティ
+- **bcryptパスワードハッシュ化**: 安全なパスワード保存
+- **セッショントークン認証**: セキュアな認証維持
+- **データ分離**: 企業間の完全なデータ隔離
+
+---
+
+## 🎨 Favicon機能
+
+### アイコンファイル
+製造業マニュアル生成システム専用のfaviconを実装：
+- `favicon.ico` - 標準favicon（16x16, 32x32, 48x48, 64x64サイズ）
+- `favicon-16x16.png` から `favicon-256x256.png` - 各サイズPNG
+- `apple-touch-icon.png` - 180×180 Apple Touch Icon
+
+### デザイン要素
+- **背景**: 青色グラデーション（#2196F3 → #1976D2）
+- **モチーフ**: 📄 文書、⚙️ ギア、🔧 レンチアイコン
+- **配色**: Material Design準拠
+
+### HTMLテンプレート適用状況
+全テンプレートファイルに以下のタグが追加済み：
+```html
+<link rel="icon" type="image/x-icon" href="/static/icons/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#2196F3">
+```
+
+### ファイル配置
+```
+manual_generator/static/icons/
+├── favicon.ico
+├── favicon-{16,32,48,64,128,256}x{16,32,48,64,128,256}.png
+├── apple-touch-icon.png
+└── manual-icon.svg
+```
+
+---
+
+## 🤖 Gemini AI 高度な機能
+
+### 包括的マニュアル生成
+Gemini 2.5 Proを活用した高度なマニュアル生成機能：
+
+#### 1. 基本マニュアル生成
+- 単一動画からの作業手順抽出
+- 構造化されたマニュアル出力
+- 製造業特化プロンプト
+
+#### 2. 比較分析マニュアル
+- 熟練者・非熟練者動画の同時分析
+- 作業技術の差異検出
+- 改善提案と研修ポイント抽出
+
+#### 3. 文書統合マニュアル
+- 見積書、図面、報告書のOCR処理
+- 専門用語の自動抽出・定義
+- 関連資料との相互リンク
+
+#### 4. 高度なカスタマイズ
+- 出力形式の柔軟な設定
+- 画像・動画の自動挿入
+- 安全性・品質重視度の調整
+
+### API エンドポイント
+
+#### 比較分析
+```bash
+POST /ai_comparison_analysis
+{
+  "expert_video_uri": "gs://bucket/expert.mp4",
+  "novice_video_uri": "gs://bucket/novice.mp4",
+  "reference_documents": ["doc1.pdf", "doc2.jpg"]
+}
+```
+
+#### 文書処理
+```bash
+POST /ai_document_processing
+{
+  "documents": [MultipartFile]  # 複数ファイル対応
+}
+```
+
+#### 包括的マニュアル生成
+```bash
+POST /ai_comprehensive_manual_generation
+{
+  "expert_video_uri": "gs://bucket/expert.mp4",
+  "output_config": {
+    "format": "detailed",
+    "sections": ["overview", "steps", "safety"],
+    "content_length": "normal",
+    "writing_style": "formal"
+  },
+  "include_images": true
+}
+```
+
+#### 重要フレーム抽出
+```bash
+POST /ai_extract_key_frames
+{
+  "video_uri": "gs://bucket/video.mp4",
+  "manual_content": "マニュアル内容..."
+}
+```
+
+### Function Calling活用
+- `extract_work_steps`: 作業手順の構造化抽出
+- `compare_work_techniques`: 技術比較分析
+- `extract_document_data`: 文書データ抽出
+- `identify_key_frames`: 重要フレーム特定
+
+### マルチモーダル処理
+- 動画・画像・テキストの同時処理
+- 大容量コンテキスト（65,535トークン）活用
+- 一貫性のある高品質出力
+
+### 期待される効果
+- **マニュアル作成時間**: 70%短縮（20時間→6時間）
+- **用語統一率**: 95%以上
+- **動作認識精度**: 95%以上
+- **文書理解精度**: 98%以上
+
+---
+
 **Manual Generator** - 製造業の未来を支えるAI駆動マニュアル生成システム
