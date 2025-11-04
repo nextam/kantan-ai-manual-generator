@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スーパー管理者ダッシュボード</title>    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/static/icons/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/static/icons/favicon-48x48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="/static/icons/favicon-64x64.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png">
+    <meta name="theme-color" content="#2196F3">
+    
+    <style>
+        h1 {
+            font-size: 24px;
+        }
+
+        h2 {
+            font-size: 20px;
+        }
+
+        h3 {
+            font-size: 18px;
+        }
+
+        h4 {
+            font-size: 16px;
+        }
+
+        h5 {
+            font-size: 14px;
+        }
+
+        h6 {
+            font-size: 14px;
+        }
+
+        p {
+            font-size: 14px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f7fafc;
+            color: #2d3748;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .admin-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .card h3 {
+            color: #2d3748;
+            margin-bottom: 1rem;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: #f7fafc;
+            border-radius: 8px;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #718096;
+            margin-top: 0.25rem;
+        }
+
+        .company-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .company-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            transition: background 0.3s ease;
+        }
+
+        .company-item:hover {
+            background: #f7fafc;
+        }
+
+        .company-info h4 {
+            color: #2d3748;
+            margin-bottom: 0.25rem;
+        }
+
+        .company-meta {
+            font-size: 0.8em;
+            color: #718096;
+        }
+
+        .company-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+        }
+
+        .btn-warning {
+            background: #ed8936;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #dd6b20;
+        }
+
+        .btn-danger {
+            background: #e53e3e;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c53030;
+        }
+
+        .btn-success {
+            background: #38a169;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #2f855a;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background: #c6f6d5;
+            color: #2f855a;
+        }
+
+        .status-inactive {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .recent-activity {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .activity-time {
+            font-size: 0.8em;
+            color: #718096;
+        }
+
+        .activity-message {
+            margin-top: 0.25rem;
+            font-size: 0.9em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #718096;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 10% auto;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #718096;
+        }
+
+        .close:hover {
+            color: #2d3748;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div>
+                <h1>🛡️ スーパー管理者ダッシュボード <span class="admin-badge">{{ current_super_admin.username }}</span></h1>
+            </div>
+            <div class="user-info">
+                <span>{{ current_super_admin.email }}</span>
+                <a href="{{ url_for('super_admin_logout') }}" class="logout-btn">ログアウト</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="dashboard-grid">
+            <!-- システム統計 -->
+            <div class="card">
+                <h3>📊 システム統計</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-number" id="total-companies">-</span>
+                        <div class="stat-label">総企業数</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="active-companies">-</span>
+                        <div class="stat-label">有効企業数</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="total-users">-</span>
+                        <div class="stat-label">総ユーザー数</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="total-manuals">-</span>
+                        <div class="stat-label">総マニュアル数</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 今日の活動 -->
+            <div class="card">
+                <h3>📈 今日の活動</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-number" id="companies-today">-</span>
+                        <div class="stat-label">新規企業</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="files-today">-</span>
+                        <div class="stat-label">ファイル数</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="manuals-today">-</span>
+                        <div class="stat-label">マニュアル数</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">📊</span>
+                        <div class="stat-label">ダッシュボード</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- 企業管理 -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h3>🏢 企業管理</h3>
+                <div class="company-list" id="company-list">
+                    <div class="loading">読み込み中...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- 最近の活動 -->
+            <div class="card">
+                <h3>📋 最近の活動</h3>
+                <div class="recent-activity" id="recent-activity">
+                    <div class="loading">読み込み中...</div>
+                </div>
+            </div>
+
+            <!-- アクション -->
+            <div class="card">
+                <h3>⚙️ 管理操作</h3>
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <button class="btn btn-primary" onclick="showCreateCompanyModal()">
+                        🏢 新規企業作成
+                    </button>
+                    <button class="btn btn-primary" onclick="refreshDashboard()">
+                        🔄 データ更新
+                    </button>
+                    <button class="btn btn-warning" onclick="exportSystemData()">
+                        📄 システムデータ出力
+                    </button>
+                    <a href="{{ url_for('login') }}" class="btn btn-success">
+                        👤 通常ログインページ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 企業作成モーダル -->
+    <div id="createCompanyModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('createCompanyModal')">&times;</span>
+            <h3>新規企業作成</h3>
+            <form id="createCompanyForm">
+                <div style="margin-bottom: 1rem;">
+                    <label>企業名:</label>
+                    <input type="text" name="company_name" required
+                        style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border: 1px solid #e2e8f0; border-radius: 4px;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label>企業コード:</label>
+                    <input type="text" name="company_code" required
+                        style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border: 1px solid #e2e8f0; border-radius: 4px;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label>パスワード:</label>
+                    <input type="password" name="password" required
+                        style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border: 1px solid #e2e8f0; border-radius: 4px;">
+                </div>
+                <button type="submit" class="btn btn-primary">作成</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ダッシュボードデータ読み込み
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/api/super-admin/overview');
+                const data = await response.json();
+
+                if (data.success) {
+                    updateStats(data.stats);
+                    updateCompanyList(data.companies);
+                } else {
+                    console.error('Dashboard data load error:', data.error);
+                }
+            } catch (error) {
+                console.error('Dashboard data load error:', error);
+            }
+        }
+
+        // 統計データ更新
+        function updateStats(stats) {
+            document.getElementById('total-companies').textContent = stats.companies_total || 0;
+            document.getElementById('active-companies').textContent = stats.companies_active || 0;
+            document.getElementById('total-users').textContent = stats.users_total || 0;
+            document.getElementById('total-manuals').textContent = stats.manuals_total || 0;
+            document.getElementById('companies-today').textContent = stats.companies_created_today || 0;
+            document.getElementById('files-today').textContent = stats.files_uploaded_today || 0;
+            document.getElementById('manuals-today').textContent = stats.manuals_created_today || 0;
+        }
+
+        // 企業リスト更新
+        function updateCompanyList(companies) {
+            const listElement = document.getElementById('company-list');
+
+            if (companies.length === 0) {
+                listElement.innerHTML = '<div class="loading">企業が登録されていません</div>';
+                return;
+            }
+
+            listElement.innerHTML = companies.map(company => `
+                <div class="company-item">
+                    <div class="company-info">
+                        <h4>${company.name} (${company.code})</h4>
+                        <div class="company-meta">
+                            作成: ${new Date(company.created_at).toLocaleDateString('ja-JP')} | 
+                            ユーザー: ${company.users_count}人 | 
+                            ファイル: ${company.files_count}件 | 
+                            マニュアル: ${company.manuals_count}件
+                        </div>
+                    </div>
+                    <div class="company-actions">
+                        <span class="status-badge ${company.is_active ? 'status-active' : 'status-inactive'}">
+                            ${company.is_active ? '有効' : '無効'}
+                        </span>
+                        <button class="btn btn-primary" onclick="viewCompanyDetails(${company.id})">詳細</button>
+                        <button class="btn btn-warning" onclick="toggleCompanyStatus(${company.id}, ${!company.is_active})">
+                            ${company.is_active ? '無効化' : '有効化'}
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteCompany(${company.id}, '${company.name}')">削除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 最近の活動読み込み
+        async function loadRecentActivity() {
+            try {
+                const response = await fetch('/api/super-admin/logs');
+                const data = await response.json();
+
+                if (data.success) {
+                    updateRecentActivity(data.logs);
+                }
+            } catch (error) {
+                console.error('Recent activity load error:', error);
+            }
+        }
+
+        // 最近の活動更新
+        function updateRecentActivity(logs) {
+            const activityElement = document.getElementById('recent-activity');
+
+            if (logs.length === 0) {
+                activityElement.innerHTML = '<div class="loading">活動履歴がありません</div>';
+                return;
+            }
+
+            activityElement.innerHTML = logs.slice(0, 10).map(log => `
+                <div class="activity-item">
+                    <div class="activity-time">${new Date(log.timestamp).toLocaleString('ja-JP')}</div>
+                    <div class="activity-message">${log.message}</div>
+                </div>
+            `).join('');
+        }
+
+        // 企業ステータス切り替え
+        async function toggleCompanyStatus(companyId, newStatus) {
+            try {
+                const response = await fetch(`/api/super-admin/companies/${companyId}/status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ is_active: newStatus })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert(data.message);
+                    loadDashboardData();
+                } else {
+                    alert(`エラー: ${data.error}`);
+                }
+            } catch (error) {
+                alert(`エラーが発生しました: ${error.message}`);
+            }
+        }
+
+        // 企業削除
+        async function deleteCompany(companyId, companyName) {
+            if (!confirm(`企業「${companyName}」とその関連データを完全に削除しますか？この操作は取り消せません。`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/super-admin/companies/${companyId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert(data.message);
+                    loadDashboardData();
+                } else {
+                    alert(`エラー: ${data.error}`);
+                }
+            } catch (error) {
+                alert(`エラーが発生しました: ${error.message}`);
+            }
+        }
+
+        // 企業詳細表示
+        function viewCompanyDetails(companyId) {
+            window.open(`/super-admin/companies/${companyId}`, '_blank');
+        }
+
+        // モーダル表示
+        function showCreateCompanyModal() {
+            document.getElementById('createCompanyModal').style.display = 'block';
+        }
+
+        // モーダル非表示
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // 企業作成フォーム送信
+        document.getElementById('createCompanyForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const data = {
+                company_name: formData.get('company_name'),
+                company_code: formData.get('company_code'),
+                password: formData.get('password')
+            };
+
+            try {
+                const response = await fetch('/api/super-admin/companies', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('企業を作成しました');
+                    closeModal('createCompanyModal');
+                    this.reset();
+                    loadDashboardData();
+                } else {
+                    alert(`エラー: ${result.error}`);
+                }
+            } catch (error) {
+                alert(`エラーが発生しました: ${error.message}`);
+            }
+        });
+
+        // ダッシュボード更新
+        function refreshDashboard() {
+            loadDashboardData();
+            loadRecentActivity();
+        }
+
+        // システムデータ出力
+        function exportSystemData() {
+            window.open('/api/super-admin/export', '_blank');
+        }
+
+        // 初期データ読み込み
+        document.addEventListener('DOMContentLoaded', function () {
+            loadDashboardData();
+            loadRecentActivity();
+
+            // 定期更新（5分ごと）
+            setInterval(refreshDashboard, 5 * 60 * 1000);
+        });
+
+        // モーダル外クリックで閉じる
+        window.onclick = function (event) {
+            const modal = document.getElementById('createCompanyModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+
+</html>

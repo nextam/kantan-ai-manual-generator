@@ -1,0 +1,349 @@
+"""
+データベースモデル定義
+企業テナント、ユーザー、ファイル、マニュアル、設定の管理
+"""
+
+from datetime import datetime, timezone, timedelta
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+import json
+
+db = SQLAlchemy()
+
+# 日本標準時（JST）の定義
+JST = timezone(timedelta(hours=9))
+
+def utc_to_jst_isoformat(utc_dt):
+    """UTC日時をJST形式のISO文字列に変換"""
+    if utc_dt is None:
+        return None
+    
+    # タイムゾーン情報がない場合はUTCとして扱う
+    if utc_dt.tzinfo is None:
+        utc_dt = utc_dt.replace(tzinfo=timezone.utc)
+    
+    # JSTに変換（UTC+9時間）
+    jst_dt = utc_dt.astimezone(JST)
+    
+    # JST形式のISO文字列を生成
+    return jst_dt.strftime('%Y-%m-%dT%H:%M:%S+09:00')
+
+class SuperAdmin(db.Model):
+    """スーパー管理者"""
+    __tablename__ = 'super_admins'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), nullable=False, unique=True)
+    email = db.Column(db.String(120), nullable=False, unique=True)
+    password_hash = db.Column(db.String(255), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_login = db.Column(db.DateTime)
+    
+    # 権限レベル
+    permission_level = db.Column(db.String(20), default='full')  # full, readonly
+    
+    def set_password(self, password):
+        """パスワードハッシュ化"""
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        """パスワード検証"""
+        return check_password_hash(self.password_hash, password)
+    
+    def is_authenticated(self):
+        return True
+    
+    def is_active_user(self):
+        return self.is_active
+    
+    def is_anonymous(self):
+        return False
+    
+    def get_id(self):
+        return str(self.id)
+
+class Company(db.Model):
+    """企業テナント"""
+    __tablename__ = 'companies'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False, unique=True)
+    company_code = db.Column(db.String(50), nullable=False, unique=True)
+    password_hash = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # 企業設定（JSON形式で保存）
+    settings = db.Column(db.Text)  # JSON形式の設定
+    
+    # ストレージは常にGCS使用のため設定カラムを削除
+    # storage_type = db.Column(db.String(20), default='local')  # 削除済み
+    # storage_config = db.Column(db.Text)  # 削除済み
+    
+    # リレーション
+    users = db.relationship('User', backref='company', lazy=True, cascade='all, delete-orphan')
+    uploaded_files = db.relationship('UploadedFile', backref='company', lazy=True, cascade='all, delete-orphan')
+    manuals = db.relationship('Manual', backref='company', lazy=True, cascade='all, delete-orphan')
+    
+    def set_password(self, password):
+        """パスワードハッシュ化"""
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        """パスワード検証"""
+        return check_password_hash(self.password_hash, password)
+    
+    def get_settings(self):
+        """設定をJSONから取得"""
+        if self.settings:
+            return json.loads(self.settings)
+        return {}
+    
+    def set_settings(self, settings_dict):
+        """設定をJSONで保存"""
+        self.settings = json.dumps(settings_dict, ensure_ascii=False)
+    
+    # ストレージ設定関連メソッドを削除
+    # def get_storage_config(self):
+    # def set_storage_config(self, config_dict):
+
+class User(UserMixin, db.Model):
+    """ユーザー（企業内のユーザー）"""
+    __tablename__ = 'users'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), nullable=False)
+    email = db.Column(db.String(120), nullable=True)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
+    role = db.Column(db.String(20), default='user')  # admin, user
+    last_login = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # 企業内でのユニーク制約
+    __table_args__ = (db.UniqueConstraint('username', 'company_id', name='unique_username_per_company'),)
+
+class UploadedFile(db.Model):
+    """アップロードファイル管理"""
+    __tablename__ = 'uploaded_files'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    original_filename = db.Column(db.String(255), nullable=False)
+    stored_filename = db.Column(db.String(255), nullable=False)
+    file_type = db.Column(db.String(50), nullable=False)  # video, document, image
+    file_path = db.Column(db.String(500), nullable=False)  # ローカルパスまたはクラウドURI
+    file_size = db.Column(db.BigInteger)
+    mime_type = db.Column(db.String(100))
+    
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
+    uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # ファイルメタデータ（JSON形式）
+    file_metadata = db.Column(db.Text)  # 動画の長さ、解像度など
+    
+    def get_metadata(self):
+        """メタデータをJSONから取得"""
+        if self.file_metadata:
+            return json.loads(self.file_metadata)
+        return {}
+    
+    def set_metadata(self, metadata_dict):
+        """メタデータをJSONで保存"""
+        self.file_metadata = json.dumps(metadata_dict, ensure_ascii=False)
+
+class Manual(db.Model):
+    """生成されたマニュアル"""
+    __tablename__ = 'manuals'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)  # マニュアルの説明文
+    content = db.Column(db.Text, nullable=False)
+    # manual_type: 現在使用中の種類は basic / multi_stage / manual_with_images
+    #   - basic: 単一動画から即時生成
+    #   - multi_stage: 旧三段階（現在は画像なし処理表示用）
+    #   - manual_with_images: 新しい画像付きマニュアル
+    # 予約されていた comparison / comprehensive は未実装のためコメント化
+    manual_type = db.Column(db.String(50), default='basic')  # basic, multi_stage, manual_with_images
+    
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # 生成ステータス管理
+    generation_status = db.Column(db.String(20), default='pending')  # pending, processing, completed, failed
+    generation_progress = db.Column(db.Integer, default=0)  # 0-100の進捗率
+    error_message = db.Column(db.Text)  # エラーメッセージ
+    
+    # マニュアル（画像あり）生成用のフィールド
+    stage1_content = db.Column(db.Text)  # 作業内容・手順の分析結果
+    stage2_content = db.Column(db.Text)  # 熟練者と非熟練者の差異比較（表形式）
+    stage3_content = db.Column(db.Text, nullable=True)
+    description = db.Column(db.Text, nullable=True)
+    generation_config = db.Column(db.Text, nullable=True)  # 生成設定（JSON形式）
+
+    def get_generation_config(self):
+        """生成設定をJSONから取得"""
+        if self.generation_config:
+            try:
+                return json.loads(self.generation_config)
+            except (json.JSONDecodeError, TypeError):
+                return {}
+        return {}
+    
+    def set_generation_config(self, config_dict):
+        """生成設定をJSONで保存"""
+        if config_dict:
+            self.generation_config = json.dumps(config_dict, ensure_ascii=False)
+        else:
+            self.generation_config = None
+
+    def to_dict(self):
+        def sanitize_string(text):
+            """JSON化の際に問題となる制御文字をサニタイズする"""
+            if not text:
+                return text
+            # 制御文字を適切にエスケープ/置換
+            import re
+            # 不正な制御文字を除去（改行やタブは保持）
+            text = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', text)
+            return text
+        
+        return {
+            'id': self.id,
+            'title': sanitize_string(self.title),
+            'content': sanitize_string(self.content),
+            'company_id': self.company_id,
+            'created_by': self.created_by,
+            'created_at': utc_to_jst_isoformat(self.created_at),
+            'updated_at': utc_to_jst_isoformat(self.updated_at),
+            'manual_type': self.manual_type,
+            'generation_status': self.generation_status,
+            'generation_progress': self.generation_progress,
+            'error_message': sanitize_string(self.error_message),
+            'stage1_content': sanitize_string(self.stage1_content),
+            'stage2_content': sanitize_string(self.stage2_content),
+            'stage3_content': sanitize_string(self.stage3_content),
+            'description': sanitize_string(self.description),
+            'generation_config': self.get_generation_config()
+        }
+
+    def to_dict_summary(self):
+        """一覧表示用の軽量データ構造を返す（巨大なcontentフィールドを除外）"""
+        def sanitize_string(text):
+            """JSON化の際に問題となる制御文字をサニタイズする"""
+            if not text:
+                return text
+            import re
+            text = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', text)
+            return text
+        
+        return {
+            'id': self.id,
+            'title': sanitize_string(self.title),
+            'company_id': self.company_id,
+            'created_by': self.created_by,
+            'created_at': utc_to_jst_isoformat(self.created_at),
+            'updated_at': utc_to_jst_isoformat(self.updated_at),
+            'manual_type': self.manual_type,
+            'generation_status': self.generation_status,
+            'generation_progress': self.generation_progress,
+            'description': sanitize_string(self.description) if self.description else None,
+            # 巨大なcontentフィールドは除外
+            # 'content', 'stage1_content', 'stage2_content', 'stage3_content', 'error_message' は除外
+        }
+
+    def to_dict_with_sources(self):
+        """関連するソース動画/ファイル情報を含めた辞書を返す。
+
+        フロントエンド manual_detail.js などが期待する manual.source_videos 配列を提供する。
+        後方互換のため既存 to_dict() は変更せず、新メソッドで拡張する。
+        """
+        base = self.to_dict()
+        # 明示的クエリ: manual_id で関連ファイルを取得し UI 用フィールドへマッピング
+        try:
+            source_links = ManualSourceFile.query.filter_by(manual_id=self.id).all()
+            if not source_links:
+                base['source_videos'] = []
+                return base
+
+            file_ids = [l.file_id for l in source_links if l.file_id]
+            files_map = {}
+            if file_ids:
+                for f in UploadedFile.query.filter(UploadedFile.id.in_(file_ids)).all():
+                    files_map[f.id] = f
+
+            from urllib.parse import quote
+            ui_items = []
+            for link in source_links:
+                f = files_map.get(link.file_id)
+                if not f:
+                    continue
+                # role を前提にフロント期待フィールドへマッピング
+                role = (link.role or '').lower()
+                vtype = role if role in ('expert', 'novice', 'document') else (f.file_type or 'video')
+                raw_path = f.file_path
+                # API 経由ストリーミング URL (エンコード) - gs:///ローカルいずれも /api/video/ に渡す
+                encoded_path = quote(raw_path, safe='') if raw_path else ''
+                stream_url = f"/api/video/{encoded_path}" if raw_path else ''
+                ui_items.append({
+                    'file_id': f.id,
+                    'role': role,
+                    'type': vtype,            # displayVideos が参照
+                    'filename': f.original_filename,
+                    'original_filename': f.original_filename,
+                    'stored_filename': f.stored_filename,
+                    'file_path': raw_path,
+                    'url': stream_url,        # <video><source src= 用
+                    'mime_type': f.mime_type,
+                    'file_type': f.file_type,
+                    'uploaded_at': utc_to_jst_isoformat(f.uploaded_at)
+                })
+
+            role_priority = {'expert': 1, 'primary': 1, 'novice': 2, 'document': 3}
+            ui_items.sort(key=lambda x: (role_priority.get(x.get('role'), 99), x.get('file_id')))
+            base['source_videos'] = ui_items
+        except Exception as e:  # noqa: F841
+            base['source_videos'] = []
+        return base
+
+class ManualSourceFile(db.Model):
+    """マニュアル生成に使用されたファイル"""
+    __tablename__ = 'manual_source_files'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    manual_id = db.Column(db.Integer, db.ForeignKey('manuals.id'), nullable=False)
+    file_id = db.Column(db.Integer, db.ForeignKey('uploaded_files.id'), nullable=False)
+    role = db.Column(db.String(50))  # expert, novice, document
+
+class ManualTemplate(db.Model):
+    """マニュアルテンプレート"""
+    __tablename__ = 'manual_templates'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    template_content = db.Column(db.Text, nullable=False)
+    
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_default = db.Column(db.Boolean, default=False)
+
+class UserSession(db.Model):
+    """ユーザーセッション管理"""
+    __tablename__ = 'user_sessions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    session_token = db.Column(db.String(255), nullable=False, unique=True)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_activity = db.Column(db.DateTime, default=datetime.utcnow)
+    ip_address = db.Column(db.String(45))
+    user_agent = db.Column(db.Text)

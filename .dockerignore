@@ -1,0 +1,47 @@
+# Python artifacts
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.pytest_cache
+.coverage
+htmlcov
+.tox
+.cache
+.eggs
+*.egg-info
+dist
+build
+
+# Git and development
+.git
+.github
+.gitignore
+.vscode
+*.md
+README.md
+
+# Environment and dependencies
+venv/
+.venv/
+node_modules/
+# NOTE: Do NOT ignore .env — we purposely include the latest repository .env in the build context.
+#       (機密値は本来 GitHub Secrets / AWS SSM 等へ移行予定。ここでは一時的にバージョン管理上の .env を反映。)
+
+# Runtime files
+*.log
+*.tmp
+tmp/
+operation_analysis/uploads/
+operation_analysis/results/
+
+# Media files
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+
+# System files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,71 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "すべてのローカルサーバーを停止",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-Command",
+        "try { Get-Process | Where-Object {$_.ProcessName -eq 'python' -and ($_.CommandLine -like '*app.py*' -or $_.CommandLine -like '*flask*' -or $_.CommandLine -like '*gunicorn*' -or $_.CommandLine -like '*streamlit*')} | Stop-Process -Force -ErrorAction SilentlyContinue; Write-Host 'すべてのローカルサーバーを停止しました' } catch { Write-Host 'サーバー停止処理完了' }"
+      ],
+      "group": "none",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      }
+    },
+    {
+      "label": "マニュアル生成サーバー起動 (ポート5000) - Waitress",
+      "type": "shell",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "run_local_gunicorn.bat"
+      ],
+      "isBackground": true,
+      "group": "none",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "サーバー状態確認",
+      "type": "shell",
+      "command": "powershell -Command \"Write-Host '=== サーバー状態確認 ==='; Write-Host ''; try { $response = Invoke-WebRequest -Uri 'http://localhost:5000' -TimeoutSec 3 -ErrorAction Stop; Write-Host '✅ Manual Generator (Port 5000): 動作中' } catch { Write-Host '❌ Manual Generator (Port 5000): 停止中' }\"",
+      "group": "none",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      }
+    },
+    {
+      "label": "マニュアル生成をブラウザで開く",
+      "type": "shell",
+      "command": "start http://localhost:5000",
+      "group": "none",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      }
+    }
+  ]
+}

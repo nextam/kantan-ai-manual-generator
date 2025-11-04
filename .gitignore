@@ -1,0 +1,65 @@
+# Python cache and compiled files
+__pycache__/
+*/__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env_python/
+
+# Ignore sample videos under src/video
+/src/video/*
+!/src/video/.gitkeep
+
+# Manual Generator uploads and temporary files
+manual_generator/uploads/
+manual_generator/temp_uploads/
+manual_generator/instance/
+manual_generator/*.db
+manual_generator/*.sqlite
+manual_generator/*.sqlite3
+manual_generator/venv/
+manual_generator/__pycache__/
+manual_generator/**/__pycache__/
+manual_generator/*.pyc
+manual_generator/app.py.backup
+manual_generator/app_*.py
+manual_generator/*_backup.py
+manual_generator/sample*.mp4
+manual_generator/sample*.mov
+manual_generator/test_*.py
+
+# Operation Analysis uploads and results
+operation_analysis/uploads/
+operation_analysis/results/
+
+# General uploads directories
+uploads/
+temp_uploads/
+*/uploads/
+*/results/
+
+# GCP credentials (should already be ignored but making sure)
+manual_generator/gcp-credentials.json
+
+# Environment files (manual_generator only)
+manual_generator/.env
+manual_generator/.env.local
+manual_generator/.env.production
+
+# Logs
+*.log
+
+# Backup
+db_backup/

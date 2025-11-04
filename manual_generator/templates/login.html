@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ログイン</title>    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/static/icons/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/static/icons/favicon-48x48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="/static/icons/favicon-64x64.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png">
+    <meta name="theme-color" content="#2196F3">
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
+    <style>
+        h1 {
+            font-size: 24px;
+        }
+
+        h2 {
+            font-size: 20px;
+        }
+
+        h3 {
+            font-size: 18px;
+        }
+
+        h4 {
+            font-size: 16px;
+        }
+
+        h5 {
+            font-size: 14px;
+        }
+
+        h6 {
+            font-size: 14px;
+        }
+
+        p {
+            font-size: 14px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            padding: 50px 40px;
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+
+        .login-header {
+            margin-bottom: 40px;
+        }
+
+        .login-header h1 {
+            font-size: 24px;
+            margin: 0 0 10px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .login-header p {
+            color: #666;
+            font-size: 16px;
+            margin: 0;
+        }
+
+        .ai-badge {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .login-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .login-button:disabled {
+            background: #ccc;
+            transform: none;
+            cursor: not-allowed;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+            display: none;
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success-message {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .info-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-section h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .info-section p {
+            margin: 0;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0 0 0;
+        }
+
+        .feature-list li {
+            padding: 5px 0;
+            color: #555;
+        }
+
+        .feature-list li::before {
+            content: "✓ ";
+            color: #28a745;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading {
+            display: none;
+        }
+
+        .admin-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            border-radius: 10px;
+            text-align: left;
+        }
+
+        .admin-section h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+        }
+
+        .toggle-link {
+            color: #667eea;
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: bold;
+        }
+
+        .toggle-link:hover {
+            color: #5a67d8;
+        }
+
+        .admin-form {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .small-input {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .login-container {
+                margin: 20px;
+                padding: 30px 25px;
+            }
+
+            .login-header h1 {
+                font-size: 24px;
+            }
+
+            .small-input {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>マニュアル自動生成システム</h1>
+        </div>
+
+        <!-- ログインフォーム -->
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="company_code">企業コード</label>
+                <input type="text" id="company_code" name="company_code" required placeholder="企業コードを入力" autocomplete="organization">
+            </div>
+
+            <div class="form-group">
+                <label for="password">企業パスワード</label>
+                <input type="password" id="password" name="password" required placeholder="企業パスワードを入力" autocomplete="current-password">
+            </div>
+
+            <div class="form-group">
+                <label for="username">ユーザー名</label>
+                <input type="text" id="username" name="username" required placeholder="ユーザー名を入力" autocomplete="username">
+            </div>
+
+            <button type="submit" id="loginButton" class="login-button">
+                <span id="loginText">ログイン</span>
+                <span id="loginSpinner" class="loading">
+                    <div class="spinner"></div>認証中...
+                </span>
+            </button>
+        </form>
+
+        <!-- メッセージ表示エリア -->
+        <div id="message" class="message"></div>
+
+    </div>
+
+    <script>
+        // ログインフォーム処理
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const button = document.getElementById('loginButton');
+            const loginText = document.getElementById('loginText');
+            const loginSpinner = document.getElementById('loginSpinner');
+
+            // ローディング状態
+            button.disabled = true;
+            loginText.style.display = 'none';
+            loginSpinner.style.display = 'inline-block';
+
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+
+            try {
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showMessage(`ログイン成功: ${result.company} - ${result.user} (${result.role})`, 'success');
+
+                    // 少し待ってからリダイレクト
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1500);
+                } else {
+                    showMessage(result.error || 'ログインに失敗しました', 'error');
+                }
+
+            } catch (error) {
+                showMessage('通信エラーが発生しました: ' + error.message, 'error');
+            } finally {
+                // ローディング解除
+                button.disabled = false;
+                loginText.style.display = 'inline';
+                loginSpinner.style.display = 'none';
+            }
+        });
+
+        // 企業作成フォーム処理（フォームが存在する場合のみ）
+        const createCompanyForm = document.getElementById('createCompanyForm');
+        if (createCompanyForm) {
+            createCompanyForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const formData = new FormData(this);
+                const data = Object.fromEntries(formData);
+
+                try {
+                    const response = await fetch('/admin/create_company', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        showMessage('企業が正常に作成されました。作成した企業コードとパスワードでログインしてください。', 'success');
+
+                        // フォームリセットと管理者セクション閉じる
+                        this.reset();
+                        toggleAdminForm();
+
+                        // 作成した企業コードを自動入力
+                        document.getElementById('company_code').value = data.company_code;
+                        document.getElementById('password').value = data.password;
+                    } else {
+                        showMessage(result.error || '企業作成に失敗しました', 'error');
+                    }
+
+                } catch (error) {
+                    showMessage('通信エラーが発生しました: ' + error.message, 'error');
+                }
+            });
+        }
+
+        function showMessage(text, type) {
+            const message = document.getElementById('message');
+            message.textContent = text;
+            message.className = `message ${type}-message`;
+            message.style.display = 'block';
+
+            // 5秒後に非表示
+            setTimeout(() => {
+                message.style.display = 'none';
+            }, 5000);
+        }
+
+        function toggleAdminForm() {
+            const form = document.getElementById('adminForm');
+            form.style.display = form.style.display === 'none' || form.style.display === '' ? 'block' : 'none';
+        }
+
+        // ページ読み込み時の認証状態チェック
+        window.addEventListener('load', async function () {
+            try {
+                const response = await fetch('/auth/status');
+                const result = await response.json();
+
+                if (result.authenticated) {
+                    // 既にログイン済みの場合はメインページにリダイレクト
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                // エラーは無視（認証システムが利用できない可能性）
+                console.log('認証状態チェックでエラー:', error);
+            }
+        });
+    </script>
+</body>
+
+</html>

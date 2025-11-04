@@ -1,0 +1,35 @@
+flask==3.0.0
+flask-cors==4.0.0
+google-cloud-storage==2.10.0
+google-genai>=0.3.0
+python-dotenv==1.0.0
+
+# Core runtime (DB / templates)
+sqlalchemy==2.0.23
+flask-login==0.6.3
+flask-sqlalchemy==3.1.1
+flask-migrate==4.0.5
+
+# Media processing with enhanced video support
+opencv-python>=4.8.0
+opencv-python-headless>=4.8.0
+Pillow>=10.1.0
+numpy>=1.24.0,<2.0
+imageio>=2.31.1
+imageio-ffmpeg>=0.4.8
+
+# Optional heavy features (removed for now): mediapipe, scikit-learn, pandas, nltk, pytesseract,
+# python-docx, reportlab, fpdf2, imageio, imageio-ffmpeg, moviepy, aiofiles, asyncio-extras
+# If needed later, re-add from requirements.backup.txt.
+
+# Utilities
+requests==2.31.0
+urllib3>=1.25.4,<2.1
+typing-extensions==4.8.0
+
+# NOTE: Removed google-cloud-aiplatform (Vertex AI) to avoid resolver explosion.
+#       Gemini は google-genai (新公式 SDK) を利用。旧 google-generativeai は非推奨につき削除。
+# NOTE: Removed boto3/botocore (S3 not in active use; GCS only).
+gunicorn==22.0.0
+waitress==3.0.0
+pytest==7.4.3

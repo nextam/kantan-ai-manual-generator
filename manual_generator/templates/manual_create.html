@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マニュアル新規作成（画像なし）</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/static/icons/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/static/icons/favicon-48x48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="/static/icons/favicon-64x64.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png">
+    <meta name="theme-color" content="#2196F3">
+    
+    <!-- Google Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        h1 {
+            font-size: 24px;
+        }
+
+        h2 {
+            font-size: 20px;
+        }
+
+        h3 {
+            font-size: 18px;
+        }
+
+        h4 {
+            font-size: 16px;
+        }
+
+        h5 {
+            font-size: 14px;
+        }
+
+        h6 {
+            font-size: 14px;
+        }
+
+        p {
+            font-size: 14px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #ffffff;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 0;
+            background-color: #007bff;
+            color: white;
+            border-radius: 8px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .breadcrumb {
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            color: #666;
+            border: 1px solid #e9ecef;
+        }
+
+        .breadcrumb a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            color: #0056b3;
+        }
+
+        .form-section {
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border: 1px solid #e9ecef;
+        }
+
+        .form-section h3 {
+            color: #333;
+            margin-top: 0;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+
+        .upload-area {
+            border: 2px dashed #007bff;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: #f8f9fa;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            border-color: #0056b3;
+            background-color: #e3f2fd;
+        }
+
+        .upload-area.dragover {
+            border-color: #0056b3;
+            background-color: #e3f2fd;
+        }
+
+        .upload-area.has-file {
+            border-color: #1976d2;
+            background-color: #e3f2fd;
+        }
+
+        .video-preview {
+            display: none;
+            margin-top: 15px;
+        }
+
+        .video-preview video {
+            width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .video-info {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 4px solid #007bff;
+            border: 1px solid #e9ecef;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background-color: #1976d2;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #1565c0;
+        }
+
+        /* Material Icons スタイル */
+        .material-icons {
+            font-family: 'Material Icons';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 18px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+
+        .btn .material-icons {
+            font-size: 16px;
+        }
+
+        /* メッセージ通知スタイル */
+        .message {
+            padding: 15px 20px;
+            border-radius: 6px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+        }
+
+        .message .material-icons {
+            margin-right: 8px;
+            font-size: 20px;
+        }
+
+        .success-message {
+            background-color: #1976d2;
+        }
+
+        .error-message {
+            background-color: #d32f2f;
+        }
+
+        .info-message {
+            background-color: #007bff;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn:disabled {
+            background: #6c757d !important;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .video-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .video-label {
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            color: white;
+            text-align: center;
+        }
+
+        .expert-label {
+            background: #1976d2;
+        }
+
+        .novice-label {
+            background: #42a5f5;
+            color: white;
+        }
+
+        .progress-section {
+            display: none;
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .message {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .error-message {
+            background: #e3f2fd;
+            color: #d32f2f;
+        }
+
+        .success-message {
+            background: #bbdefb;
+            color: #2e7d32;
+        }
+
+        .info-message {
+            background: #90caf9;
+            color: #1565c0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            .video-grid {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+        .prompt-examples {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .prompt-examples h4 {
+            margin: 0 0 10px 0;
+            color: #1976d2;
+        }
+
+        .prompt-examples ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .prompt-examples li {
+            margin-bottom: 5px;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><span class="material-icons"
+                    style="font-size: 24px; vertical-align: middle; margin-right: 15px;">create</span>マニュアル（画像なし）生成</h1>
+            <p>作業動画をアップロードしてAIマニュアルを生成します</p>
+        </div>
+
+        <!-- パンくずリスト -->
+        <div class="breadcrumb">
+            <a href="/manual/list"><span class="material-icons" style="font-size: 16px;">menu_book</span>マニュアル一覧</a> >
+            <span class="material-icons" style="font-size: 16px;">create</span>新規作成
+        </div>
+
+        <form id="manual-form">
+            <!-- 動画アップロード -->
+            <div class="form-section">
+                <h3><span class="material-icons"
+                        style="font-size: 24px; vertical-align: middle; margin-right: 8px;">videocam</span>作業動画アップロード
+                </h3>
+                <p>熟練者と非熟練者の動画がある場合は比較分析マニュアルを、動画が1つの場合は基本マニュアルを作成します。</p>
+
+                <div class="video-grid">
+                    <!-- 熟練者動画 -->
+                    <div class="video-section">
+                        <div class="video-label expert-label"><span class="material-icons"
+                                style="font-size: 20px; vertical-align: middle; margin-right: 5px;">star</span>熟練者動画
+                            (推奨)</div>
+                        <div class="upload-area" id="expert-upload-area">
+                            <input type="file" id="expert-video-input" accept="video/*" style="display: none;">
+                            <div>
+                                <h4><span class="material-icons"
+                                        style="font-size: 24px; vertical-align: middle; margin-right: 8px;">person</span>熟練者の作業動画
+                                </h4>
+                                <p>正しい手順・コツを含む動画</p>
+                                <button type="button" class="btn btn-success"
+                                    onclick="document.getElementById('expert-video-input').click()">
+                                    <span class="material-icons">upload_file</span>ファイルを選択
+                                </button>
+                                <p><small>MP4, AVI, MOV対応（最大2GB）</small></p>
+                            </div>
+                        </div>
+                        <div class="video-preview" id="expert-video-preview">
+                            <video id="expert-video" controls></video>
+                            <div class="video-info" id="expert-video-info"></div>
+                        </div>
+                    </div>
+
+                    <!-- 非熟練者動画 -->
+                    <div class="video-section">
+                        <div class="video-label novice-label"><span class="material-icons"
+                                style="font-size: 20px; vertical-align: middle; margin-right: 5px;">school</span>非熟練者動画
+                            (任意)</div>
+                        <div class="upload-area" id="novice-upload-area">
+                            <input type="file" id="novice-video-input" accept="video/*" style="display: none;">
+                            <div>
+                                <h4><span class="material-icons"
+                                        style="font-size: 24px; vertical-align: middle; margin-right: 8px;">person_outline</span>非熟練者の作業動画
+                                </h4>
+                                <p>改善が必要な作業手順の動画</p>
+                                <button type="button" class="btn btn-primary"
+                                    onclick="document.getElementById('novice-video-input').click()">
+                                    <span class="material-icons">upload_file</span>ファイルを選択
+                                </button>
+                                <p><small>比較分析に使用（任意）</small></p>
+                            </div>
+                        </div>
+                        <div class="video-preview" id="novice-video-preview">
+                            <video id="novice-video" controls></video>
+                            <div class="video-info" id="novice-video-info"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 生成設定 -->
+            <div class="form-section">
+
+                <h3><span class="material-icons" style="vertical-align: middle; margin-right: 8px;">settings</span>生成設定</h3>
+
+                <div class="form-group">
+                    <label for="manual-title">マニュアルタイトル *</label>
+                    <input type="text" id="manual-title" name="title" class="form-control"
+                        placeholder="例: 樹脂部品ネジ締め作業マニュアル" required>
+                </div>
+                <div class="form-group">
+                    <label for="manual-description">マニュアル説明</label>
+                    <textarea id="manual-description" name="description" class="form-control"
+                        placeholder="このマニュアルの目的や対象者について説明してください"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="output-detail">出力詳細度</label>
+                    <select id="output-detail" name="output_detail" class="form-control">
+                        <option value="">指定しない</option>
+                        <option value="concise">簡潔（各項目1-2行）</option>
+                        <option value="standard">標準（各項目2-4行）</option>
+                        <option value="detailed">詳細（各項目4-6行）</option>
+                    </select>
+                    <small class="form-text text-muted">選択すると、カスタムプロンプトに対応する指示が自動で追加されます</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="custom-prompt">カスタムプロンプト</label>
+                    <textarea id="custom-prompt" name="prompt" class="form-control"
+                        placeholder="特別な要求事項や出力形式の指定がある場合はここに記載してください"></textarea>
+
+                    <div class="prompt-examples">
+                        <h4><span class="material-icons"
+                                style="font-size: 20px; vertical-align: middle; margin-right: 5px;">lightbulb</span>プロンプト例:
+                        </h4>
+                        <ul>
+                            <li>「安全性を最重視したマニュアルを作成してください」</li>
+                            <li>「新入社員向けに図解を多用した分かりやすい説明にしてください」</li>
+                            <li>「品質管理チェックポイントを詳しく記載してください」</li>
+                            <li>「よくある失敗例とその対処法を含めてください」</li>
+                            <li>「簡潔な文章で生成してください」</li>
+                            <li>「各ステップは1行で簡潔に記載してください」</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- アクションボタン -->
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="/manual/list" class="btn btn-secondary"><span class="material-icons">arrow_back</span>一覧に戻る</a>
+                <button type="submit" id="create-btn" class="btn btn-primary" disabled>
+                    <span class="material-icons">play_arrow</span>マニュアル作成開始
+                </button>
+            </div>
+        </form>
+
+        <!-- 進捗表示 -->
+        <div class="progress-section" id="progress-section">
+            <div class="spinner"></div>
+            <h3 id="progress-title"><span class="material-icons"
+                    style="font-size: 24px; vertical-align: middle; margin-right: 8px;">autorenew</span>マニュアル作成中...</h3>
+            <p id="progress-message">Gemini 2.5 Proが動画を分析しています</p>
+        </div>
+    </div>
+
+    <script>
+        // ページロード時にログイン状態を確認
+        document.addEventListener('DOMContentLoaded', function () {
+            // 認証が必要な場合のチェック（バックエンドからのレスポンスで判断）
+            fetch('/manual/create')
+                .then(response => {
+                    if (response.url.includes('/login')) {
+                        // ログインページにリダイレクトされた場合
+                        window.location.href = '/login';
+                    }
+                })
+                .catch(error => {
+                    console.error('認証チェックエラー:', error);
+                });
+        });
+
+        let uploadedFiles = {
+            expert: null,
+            novice: null
+        };
+
+        let uploadedFileInfo = {
+            expert: null,
+            novice: null
+        };
+
+        document.addEventListener('DOMContentLoaded', function () {
+            setupFileUpload();
+            setupFormValidation();
+            setupOutputDetailHandler();
+        });
+
+        function setupFileUpload() {
+            setupSingleVideoUpload('expert');
+            setupSingleVideoUpload('novice');
+        }
+
+        function setupSingleVideoUpload(type) {
+            const input = document.getElementById(`${type}-video-input`);
+            const area = document.getElementById(`${type}-upload-area`);
+            const video = document.getElementById(`${type}-video`);
+            const preview = document.getElementById(`${type}-video-preview`);
+            const info = document.getElementById(`${type}-video-info`);
+
+            // ファイル選択イベント
+            input.addEventListener('change', function (e) {
+                if (e.target.files.length > 0) {
+                    handleVideoFile(e.target.files[0], type, area, video, preview, info);
+                }
+            });
+
+            // ドラッグ&ドロップ
+            area.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                area.classList.add('dragover');
+            });
+
+            area.addEventListener('dragleave', function (e) {
+                e.preventDefault();
+                area.classList.remove('dragover');
+            });
+
+            area.addEventListener('drop', function (e) {
+                e.preventDefault();
+                area.classList.remove('dragover');
+
+                if (e.dataTransfer.files.length > 0) {
+                    handleVideoFile(e.dataTransfer.files[0], type, area, video, preview, info);
+                }
+            });
+        }
+
+        async function handleVideoFile(file, type, area, video, preview, info) {
+            if (!file.type.startsWith('video/')) {
+                showMessage('動画ファイルを選択してください。', 'error');
+                return;
+            }
+
+            if (file.size > 2 * 1024 * 1024 * 1024) {
+                showMessage('ファイルサイズが大きすぎます。2GB以下のファイルを選択してください。', 'error');
+                return;
+            }
+
+            // ファイルをメモリに保存
+            uploadedFiles[type] = file;
+
+            // プレビュー表示
+            const url = URL.createObjectURL(file);
+            video.src = url;
+            preview.style.display = 'block';
+            area.classList.add('has-file');
+
+            // ファイル情報表示
+            info.innerHTML = `
+                <div><strong>ファイル名:</strong> ${file.name}</div>
+                <div><strong>サイズ:</strong> ${formatFileSize(file.size)}</div>
+                <div><strong>ステータス:</strong> <span style="color: #ffc107;">アップロード中...</span></div>
+            `;
+
+            try {
+                // ファイルを即座にアップロード
+                showMessage(`${type}動画をアップロード中...`, 'info');
+                const uploadResult = await uploadVideoToGCS(file);
+                uploadedFileInfo[type] = uploadResult;
+
+                // 成功メッセージとステータス更新
+                info.innerHTML = `
+                    <div><strong>ファイル名:</strong> ${file.name}</div>
+                    <div><strong>サイズ:</strong> ${formatFileSize(file.size)}</div>
+                    <div><strong>ステータス:</strong> <span style="color: #28a745;"><span class="material-icons" style="font-size: 16px; vertical-align: middle; margin-right: 5px;">check_circle</span>アップロード完了</span></div>
+                `;
+                showMessage(`${type}動画のアップロードが完了しました`, 'success');
+            } catch (error) {
+                info.innerHTML = `
+                    <div><strong>ファイル名:</strong> ${file.name}</div>
+                    <div><strong>サイズ:</strong> ${formatFileSize(file.size)}</div>
+                    <div><strong>ステータス:</strong> <span style="color: #dc3545;"><span class="material-icons" style="font-size: 16px; vertical-align: middle; margin-right: 5px;">error</span>アップロード失敗</span></div>
+                `;
+                showMessage(`${type}動画のアップロードに失敗しました: ${error.message}`, 'error');
+                return;
+            }
+
+            // フォームバリデーション更新
+            updateFormValidation();
+        }
+
+        function setupFormValidation() {
+            const titleInput = document.getElementById('manual-title');
+            titleInput.addEventListener('input', updateFormValidation);
+            updateFormValidation();
+        }
+
+        function setupOutputDetailHandler() {
+            const outputDetailSelect = document.getElementById('output-detail');
+            const customPromptTextarea = document.getElementById('custom-prompt');
+            let lastOutputDetail = '';
+
+            const detailTemplates = {
+                'concise': '各項目は1-2行で簡潔に記載してください。要点のみを含め、冗長な説明は避けてください。',
+                'standard': '各項目は2-4行程度で適度に詳しく記載してください。実用的な情報を含めてください。',
+                'detailed': '各項目は4-6行程度で詳細に記載してください。背景情報や注意点も含めてください。'
+            };
+
+            outputDetailSelect.addEventListener('change', function() {
+                const selectedDetail = this.value;
+                let currentPrompt = customPromptTextarea.value;
+
+                // 前回の出力詳細度テンプレートを削除
+                if (lastOutputDetail && detailTemplates[lastOutputDetail]) {
+                    const lastTemplate = detailTemplates[lastOutputDetail];
+                    currentPrompt = currentPrompt.replace(lastTemplate, '').trim();
+                }
+
+                // 新しいテンプレートを追加
+                if (selectedDetail && detailTemplates[selectedDetail]) {
+                    const newTemplate = detailTemplates[selectedDetail];
+                    if (currentPrompt) {
+                        currentPrompt = currentPrompt + '\n\n' + newTemplate;
+                    } else {
+                        currentPrompt = newTemplate;
+                    }
+                }
+
+                customPromptTextarea.value = currentPrompt;
+                lastOutputDetail = selectedDetail;
+            });
+        }
+
+        function updateFormValidation() {
+            const title = document.getElementById('manual-title').value.trim();
+            const hasExpertVideo = uploadedFiles.expert !== null;
+            const hasAnyVideo = hasExpertVideo || uploadedFiles.novice !== null;
+
+            const createBtn = document.getElementById('create-btn');
+            createBtn.disabled = !title || !hasAnyVideo;
+        }
+
+        async function uploadVideoToGCS(file) {
+            const formData = new FormData();
+            formData.append('video', file);
+
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.error || '動画アップロードに失敗しました');
+            }
+
+            return {
+                uri: result.gemini_uri || result.file_url || result.filename,
+                file_id: result.file_id,
+                filename: result.filename,
+                original_filename: result.original_filename,
+                file_url: result.file_url
+            };
+        }
+
+        document.getElementById('manual-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const title = document.getElementById('manual-title').value.trim();
+            const description = document.getElementById('manual-description').value.trim();
+            const customPrompt = document.getElementById('custom-prompt').value.trim();
+
+            if (!title) {
+                showMessage('マニュアルタイトルを入力してください', 'error');
+                return;
+            }
+
+            if (!uploadedFiles.expert && !uploadedFiles.novice) {
+                showMessage('少なくとも1つの動画をアップロードしてください', 'error');
+                return;
+            }
+
+            try {
+                showProgress('マニュアル作成を開始しています...', 'リクエストを送信中...');
+
+                const requestData = {
+                    title: title,
+                    description: description,
+                    custom_prompt: customPrompt
+                };
+
+                // 動画情報を追加
+                if (uploadedFileInfo.expert) {
+                    requestData.expert_video_uri = uploadedFileInfo.expert.uri;
+                    requestData.expert_file_id = uploadedFileInfo.expert.file_id;
+                }
+
+                if (uploadedFileInfo.novice) {
+                    requestData.novice_video_uri = uploadedFileInfo.novice.uri;
+                    requestData.novice_file_id = uploadedFileInfo.novice.file_id;
+                }
+
+                // マニュアル作成タイプを決定
+                if (uploadedFileInfo.expert && uploadedFileInfo.novice) {
+                    requestData.type = 'comparison';
+                } else {
+                    requestData.type = 'basic';
+                }
+
+                const response = await fetch('/api/manual/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('マニュアル作成を開始しました！', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/manual/list';
+                    }, 2000);
+                } else {
+                    hideProgress();
+                    showMessage('エラー: ' + result.error, 'error');
+                }
+            } catch (error) {
+                hideProgress();
+                showMessage('エラーが発生しました: ' + error.message, 'error');
+            }
+        });
+
+        function showProgress(title, message) {
+            document.getElementById('progress-title').textContent = title;
+            document.getElementById('progress-message').textContent = message;
+            document.getElementById('progress-section').style.display = 'block';
+
+            // フォームを無効化
+            document.getElementById('manual-form').style.opacity = '0.5';
+            document.getElementById('create-btn').disabled = true;
+        }
+
+        function hideProgress() {
+            document.getElementById('progress-section').style.display = 'none';
+            document.getElementById('manual-form').style.opacity = '1';
+            updateFormValidation();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            messageDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 1000;
+                max-width: 300px;
+            `;
+
+            // アイコンを追加
+            const iconMap = {
+                'success': 'check_circle',
+                'error': 'error',
+                'info': 'info'
+            };
+
+            messageDiv.innerHTML = `<span class="material-icons">${iconMap[type] || 'info'}</span>${message}`;
+
+            document.body.appendChild(messageDiv);
+
+            setTimeout(() => {
+                messageDiv.remove();
+            }, type === 'error' ? 7000 : 4000);
+        }
+    </script>
+</body>
+
+</html>

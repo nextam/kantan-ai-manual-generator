@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>エラー</title>    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/static/icons/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/static/icons/favicon-48x48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="/static/icons/favicon-64x64.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png">
+    <meta name="theme-color" content="#2196F3">
+    
+    <style>
+        :root { color-scheme: light dark; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; }
+        .wrap { min-height: 100vh; display: grid; place-items: center; background: #f6f7fb; }
+        .card { width: min(720px, 92vw); background: #fff; border-radius: 16px; padding: 28px; box-shadow: 0 8px 28px rgba(0,0,0,.08); }
+        .title { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
+        .title span { font-size: 28px; }
+        h1 { font-size: 20px; margin: 0; }
+        .msg { margin: 12px 0 0; color: #444; white-space: pre-wrap; word-break: break-word; }
+        .tips { margin-top: 18px; padding: 12px 14px; border-radius: 10px; background: #f1f3ff; color: #2b2e6f; }
+        .actions { margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; }
+        a.btn, button.btn { appearance: none; border: 0; background: linear-gradient(135deg,#667eea,#764ba2); color: #fff; padding: 12px 16px; border-radius: 10px; text-decoration: none; font-weight: 600; cursor: pointer; }
+        .btn.secondary { background: #e9ecef; color: #222; }
+        code { background: #f5f5f5; padding: 2px 6px; border-radius: 6px; }
+        @media (prefers-color-scheme: dark) {
+            .wrap { background: #0f1115; }
+            .card { background: #171923; box-shadow: none; }
+            .msg { color: #e7e7e7; }
+            .tips { background: #22253a; color: #d7dcff; }
+            .btn.secondary { background: #2a2e3f; color: #e7e7e7; }
+            code { background: #2a2e3f; }
+        }
+    </style>
+    <script>
+        function goBack(){ history.length > 1 ? history.back() : (location.href = '/manual/list'); }
+    </script>
+    <meta name="robots" content="noindex">
+    <meta http-equiv="Cache-Control" content="no-store">
+</head>
+<body>
+    <div class="wrap">
+        <div class="card" role="alert">
+            <div class="title">
+                <span>⚠️</span>
+                <h1>ページを表示できませんでした</h1>
+            </div>
+            <p class="msg">{{ error_message or '不明なエラーが発生しました。' }}</p>
+            {% if error_details %}
+            <div class="tips">
+                <strong>詳細:</strong>
+                <pre style="overflow:auto; white-space:pre-wrap; margin:8px 0 0;">{{ error_details }}</pre>
+            </div>
+            {% endif %}
+            <div class="tips">
+                <strong>ヒント:</strong>
+                <ul style="margin:8px 0 0 18px;">
+                    <li>管理者は Google Cloud の設定と認証情報(<code>gcp-credentials.json</code>)を確認してください。</li>
+                    <li>必要ライブラリが未インストールの場合は <code>google-cloud-storage</code> と <code>vertexai</code> を導入してください。</li>
+                    <li>一時的な問題の場合はページの再読み込みを試してください。</li>
+                </ul>
+            </div>
+            <div class="actions">
+                <button class="btn secondary" onclick="goBack()">戻る</button>
+                <a class="btn" href="/manual/list">マニュアル一覧へ</a>
+            </div>
+        </div>
+    </div>
+</body>
+<!-- Simple error page used when Google Cloud is disabled or other issues occur. -->
+</html>
