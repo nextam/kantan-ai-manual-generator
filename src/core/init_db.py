@@ -6,8 +6,12 @@
 
 import os
 import sys
+from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash
 from models import db, Company, User, SuperAdmin
+
+# Load environment variables
+load_dotenv()
 
 # 環境に応じてアプリケーションをインポート
 try:
@@ -24,10 +28,13 @@ def init_database():
         
         print("データベーステーブルを作成しました。")
         
+        # Get support email from environment variable
+        support_email = os.getenv('SUPPORT_EMAIL', 'support@example.com')
+        
         # スーパー管理者の作成
         super_admin = SuperAdmin(
             username='admin',
-            email='support@career-survival.com',
+            email=support_email,
             password_hash=generate_password_hash('0000')
         )
         db.session.add(super_admin)

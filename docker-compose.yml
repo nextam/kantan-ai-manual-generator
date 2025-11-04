@@ -15,9 +15,6 @@ services:
       LOG_DIR: /logs
       GOOGLE_APPLICATION_CREDENTIALS: /app/gcp-credentials.json
       DATABASE_PATH: /instance/manual_generator.db
-      # 既定値（アプリ側でもデフォルトが設定されています）
-      GCS_BUCKET_NAME: manual_generator
-      PROJECT_ID: career-survival
     env_file:
       - .env
     volumes:

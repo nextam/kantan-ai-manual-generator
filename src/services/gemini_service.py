@@ -12,8 +12,18 @@ import json
 import base64
 import time
 import asyncio
+import os
 from pathlib import Path
+from dotenv import load_dotenv
 import logging
+
+# Load environment variables
+load_dotenv()
+
+# Import GCP config helper
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from utils.gcp_config import get_gcp_project_id
 
 # ログ設定
 logging.basicConfig(level=logging.INFO)
@@ -22,17 +32,26 @@ logger = logging.getLogger(__name__)
 class GeminiUnifiedService:
     """Gemini 2.5 Pro統合サービス"""
     
-    def __init__(self, project_id: str = "career-survival"):
+    def __init__(self, project_id: str = None):
         """
         初期化
         
         Args:
-            project_id: Google Cloud Project ID
+            project_id: Google Cloud Project ID (optional, auto-detected from credentials if not provided)
         """
-        self.project_id = project_id
+        # Get configuration from environment variables or credentials file
+        if project_id:
+            self.project_id = project_id
+        else:
+            try:
+                self.project_id = get_gcp_project_id()
+            except ValueError as e:
+                raise ValueError(f"Failed to determine GCP project ID: {e}")
+        
+        location = os.getenv('VERTEX_AI_LOCATION', 'us-central1')
         
         # Vertex AI初期化
-        vertexai.init(project=project_id, location='us-central1')
+        vertexai.init(project=self.project_id, location=location)
         self.model = GenerativeModel('gemini-2.5-pro')
         
         # 安全設定

@@ -12,7 +12,16 @@ import numpy as np
 from pathlib import Path
 from typing import List, Dict, Any, Tuple
 from datetime import datetime
+from dotenv import load_dotenv
 import logging
+import sys
+
+# Load environment variables
+load_dotenv()
+
+# Import GCP config helper
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from utils.gcp_config import get_gcp_project_id
 
 try:
     import vertexai
@@ -109,8 +118,9 @@ def diagnose_vertex_ai_setup(project_id: str = None) -> Dict[str, Any]:
     # Vertex AI初期化テスト
     try:
         if diagnosis["project_id"]:
-            vertexai.init(project=diagnosis["project_id"], location="us-central1")
-            diagnosis["vertex_ai_init"] = {"success": True}
+            location = os.getenv('VERTEX_AI_LOCATION', 'us-central1')
+            vertexai.init(project=diagnosis["project_id"], location=location)
+            diagnosis["vertex_ai_init"] = {"success": True, "location": location}
             
             # モデル初期化テスト
             try:
@@ -138,22 +148,27 @@ def diagnose_vertex_ai_setup(project_id: str = None) -> Dict[str, Any]:
 class VideoManualGenerator:
     """動画解析マニュアル生成クラス"""
     
-    def __init__(self, project_id: str = None, location: str = "us-central1"):
+    def __init__(self, project_id: str = None, location: str = None):
         """
         初期化
         
         Args:
-            project_id: Google Cloud Project ID
-            location: Vertex AI の場所
+            project_id: Google Cloud Project ID (optional, auto-detected from credentials if not provided)
+            location: Vertex AI の場所 (optional, reads from env if not provided)
         """
         if not HAS_VERTEX_AI:
             raise RuntimeError(f"Vertex AI libraries are required but not available: {VERTEX_AI_ERROR}")
         
-        self.project_id = project_id or os.getenv('GOOGLE_CLOUD_PROJECT_ID')
-        self.location = location
+        # Get configuration from environment variables or credentials file
+        if project_id:
+            self.project_id = project_id
+        else:
+            try:
+                self.project_id = get_gcp_project_id()
+            except ValueError as e:
+                raise ValueError(f"Failed to determine GCP project ID: {e}")
         
-        if not self.project_id:
-            raise ValueError("Google Cloud Project ID is required. Set GOOGLE_CLOUD_PROJECT_ID environment variable.")
+        self.location = location or os.getenv('VERTEX_AI_LOCATION', 'us-central1')
         
         try:
             vertexai.init(project=self.project_id, location=self.location)
@@ -164,7 +179,7 @@ class VideoManualGenerator:
                 raise RuntimeError(
                     f"Vertex AI権限エラー: {e}\n\n"
                     "解決方法:\n"
-                    "1. Google Cloud Consoleでプロジェクト 'career-survival' にアクセス\n"
+                    f"1. Google Cloud Consoleでプロジェクト '{self.project_id}' にアクセス\n"
                     "2. Vertex AI APIが有効化されているか確認\n"
                     "3. IAM > サービスアカウントで適切な権限を確認\n"
                     "4. 必要な権限: 'Vertex AI User' または 'aiplatform.endpoints.predict'\n"
@@ -370,7 +385,7 @@ class VideoManualGenerator:
                 raise RuntimeError(
                     f"Vertex AI権限エラー: {e}\n\n"
                     "解決方法:\n"
-                    "1. Google Cloud Consoleでプロジェクト 'career-survival' にアクセス\n"
+                    f"1. Google Cloud Consoleでプロジェクト '{self.project_id}' にアクセス\n"
                     "2. IAM > サービスアカウントで適切な権限を確認\n"
                     "3. 必要な権限: 'Vertex AI User' または 'aiplatform.endpoints.predict'\n"
                     "4. サービスアカウントキーが正しく設定されているか確認\n"

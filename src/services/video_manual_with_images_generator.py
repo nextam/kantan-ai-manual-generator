@@ -4,13 +4,17 @@
 """
 from __future__ import annotations
 
-import os, cv2, json, base64, numpy as np, logging
+import os, cv2, json, base64, numpy as np, logging, sys
 from pathlib import Path
 from typing import List, Dict, Any
 from datetime import datetime
 from google import genai  # type: ignore
 from google.genai import types  # type: ignore
 Part = types.Part  # google-genai Part を直接使用
+
+# Import GCP config helper
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from utils.gcp_config import get_gcp_project_id
 
 logger = logging.getLogger(__name__)
 
@@ -21,17 +25,25 @@ _GCS_VIDEO_LOCAL_CACHE: Dict[str, str] = {}
 class ManualWithImagesGenerator:
     """マニュアル（画像あり）生成システム (google-genai / vertexモード固定)"""
 
-    def __init__(self, project_id: str | None = None, location: str = "us-central1") -> None:
+    def __init__(self, project_id: str | None = None, location: str | None = None) -> None:
         # .env 読み込み（存在すれば）
         try:
             from dotenv import load_dotenv
             load_dotenv()
         except Exception:
             pass
-        self.project_id = project_id or os.getenv('GOOGLE_CLOUD_PROJECT_ID')
-        self.location = location
-        if not self.project_id:
-            raise ValueError("GOOGLE_CLOUD_PROJECT_ID が未設定です")
+        
+        # Get configuration from environment variables or credentials file
+        if project_id:
+            self.project_id = project_id
+        else:
+            try:
+                self.project_id = get_gcp_project_id()
+            except ValueError as e:
+                raise ValueError(f"Failed to determine GCP project ID: {e}")
+        
+        self.location = location or os.getenv('VERTEX_AI_LOCATION', 'us-central1')
+        
         creds = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
         if creds and not os.path.isabs(creds):
             base = Path(__file__).resolve().parents[1]

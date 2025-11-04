@@ -246,26 +246,91 @@ gcloud services enable storage.googleapis.com
 ```
 
 ### 4. 環境変数設定
-`.env.example` をコピーして `.env` を作成：
+`.env.example` をコピーして `.env` を作成し、必要最小限の設定を行います：
+
+```bash
+cp .env.example .env
+```
+
+**推奨設定: サービスアカウント認証（本番環境）**
 
 ```env
-# Google Cloud 認証
-GOOGLE_APPLICATION_CREDENTIALS=gcp-credentials.json
-GOOGLE_API_KEY=your_actual_google_api_key_here
+# ============================================
+# 必須: Google Cloud認証（サービスアカウント）
+# ============================================
+GOOGLE_APPLICATION_CREDENTIALS="gcp-credentials.json"
 
-# Google Cloud Storage 設定
-GCS_BUCKET_NAME=manual_generator
-PROJECT_ID=your-google-cloud-project-id
+# ============================================
+# 必須: Google Cloud Storage Bucket
+# ============================================
+GCS_BUCKET_NAME="your-gcs-bucket-name"
 
-# Vertex AI 設定
-VERTEX_AI_LOCATION=us-central1
+# ============================================
+# 必須: Application Secret Key
+# ============================================
+# Generate with: python -c "import secrets; print(secrets.token_hex(32))"
+SECRET_KEY="your-random-secret-key-here"
+```
 
-# Database
-DATABASE_URL=sqlite:///instance/manual_generator.db
+**セキュリティ上の重要なポイント**:
 
-# Flask
-SECRET_KEY=your-random-secret-key-here
-FLASK_ENV=production
+| 認証方式 | セキュリティ | 推奨環境 | 理由 |
+|---------|-------------|---------|------|
+| **サービスアカウント** | ✅ **高** | **本番環境推奨** | IAMで細かい権限制御、監査ログ完備、自動ローテーション可能 |
+| API Key | ⚠️ 低 | 開発・テストのみ | プロジェクト全体の権限、監査機能限定的 |
+
+**認証方式の選択**:
+- ✅ **本番環境**: サービスアカウント認証（`gcp-credentials.json`）を使用
+- ⚠️ **開発環境のみ**: API Key認証（非推奨、レガシー）
+
+**サービスアカウントの作成方法**:
+```bash
+# 1. サービスアカウント作成
+gcloud iam service-accounts create manual-generator \
+    --display-name="Manual Generator Service Account"
+
+# 2. 必要な権限を付与
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+    --member="serviceAccount:manual-generator@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/aiplatform.user"
+
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+    --member="serviceAccount:manual-generator@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/storage.objectAdmin"
+
+# 3. キーファイル生成
+gcloud iam service-accounts keys create gcp-credentials.json \
+    --iam-account=manual-generator@YOUR_PROJECT_ID.iam.gserviceaccount.com
+```
+
+**オプション設定** (設定しない場合は自動検出またはデフォルト値を使用):
+
+```env
+# Google Cloud Project ID
+# 省略可: gcp-credentials.json から自動読み込み
+# PROJECT_ID="your-gcp-project-id"
+
+# Vertex AI Location
+# デフォルト: us-central1
+# VERTEX_AI_LOCATION="asia-northeast1"
+
+# Support Email
+# SUPPORT_EMAIL="support@your-domain.com"
+
+# Environment
+# FLASK_ENV="production"
+# DEBUG="False"
+```
+
+**自動検出される項目**:
+- ✅ `PROJECT_ID`: `gcp-credentials.json`から自動的に読み込まれます
+- ✅ `GOOGLE_CLOUD_PROJECT_ID`: 不要（PROJECT_IDと同じ）
+- ✅ その他の設定: デフォルト値が設定されているため省略可能
+
+**レガシーAPI Key認証（非推奨）**:
+```env
+# ⚠️ WARNING: セキュリティリスクあり、本番環境では使用しないでください
+# GOOGLE_API_KEY="your-api-key-here"
 ```
 
 ### 5. データベース初期化
