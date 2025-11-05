@@ -25,7 +25,7 @@
       "command": "powershell",
       "args": [
         "-Command",
-        "Write-Host '=== すべてのPythonプロセスを強制終了 ==='; Get-Process | Where-Object {$_.ProcessName -eq 'python'} | ForEach-Object { Write-Host \"終了: PID $($_.Id) (起動時刻: $($_.StartTime))\"; Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue }; Start-Sleep -Seconds 1; $remaining = Get-Process | Where-Object {$_.ProcessName -eq 'python'}; if ($remaining) { Write-Host '警告: 一部のプロセスが残っています' } else { Write-Host '✅ すべてのPythonプロセスを終了しました' }"
+        "$ErrorActionPreference = \"SilentlyContinue\"; Write-Host \"=== すべてのPythonプロセスを強制終了 ===\"; $processes = Get-Process python -ErrorAction SilentlyContinue; if ($processes) { $processes | ForEach-Object { Write-Host \"終了: PID $($_.Id)\"; Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue }; Start-Sleep -Seconds 1; $remaining = Get-Process python -ErrorAction SilentlyContinue; if ($remaining) { Write-Host \"警告: 一部のプロセスが残っています\" } else { Write-Host \"✅ すべてのPythonプロセスを終了しました\" } } else { Write-Host \"✅ Pythonプロセスは実行されていません\" }"
       ],
       "group": "none",
       "presentation": {
@@ -43,7 +43,7 @@
       "command": "powershell",
       "args": [
         "-Command",
-        "Write-Host '=== ElasticSearch & Redis 再起動 ==='; Write-Host ''; Write-Host 'Docker コンテナを再起動中...'; docker-compose restart elasticsearch redis; Start-Sleep -Seconds 3; Write-Host ''; Write-Host 'サービス状態確認中...'; docker-compose ps elasticsearch redis; Write-Host ''; Write-Host '✅ ElasticSearch & Redis 再起動完了'"
+        "Write-Host \"=== ElasticSearch and Redis 再起動 ===\"; Write-Host \"\"; Write-Host \"Docker コンテナを再起動中...\"; docker-compose restart elasticsearch redis; Start-Sleep -Seconds 3; Write-Host \"\"; Write-Host \"サービス状態確認中...\"; docker-compose ps elasticsearch redis; Write-Host \"\"; Write-Host \"✅ ElasticSearch and Redis 再起動完了\""
       ],
       "group": "none",
       "presentation": {

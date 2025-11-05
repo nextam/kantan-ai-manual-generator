@@ -470,19 +470,27 @@ def init_auth_routes(app):
             login_user(user, remember=True)
             
             # セッション作成（auth_managerがある場合のみ）
-            auth_manager = getattr(current_app, 'auth_manager', None)
-            if auth_manager:
-                user_session = auth_manager.create_user_session(user)
-                session['session_token'] = user_session.session_token
+            try:
+                auth_manager = getattr(current_app, 'auth_manager', None)
+                if auth_manager:
+                    user_session = auth_manager.create_user_session(user)
+                    session['session_token'] = user_session.session_token
+            except Exception as e:
+                # auth_manager is optional, continue without it
+                pass
             
             session['company_id'] = user.company_id
             
             # 最終ログイン日時更新
-            user.last_login = datetime.utcnow()
-            db.session.commit()
+            try:
+                user.last_login = datetime.utcnow()
+                db.session.commit()
+            except Exception as e:
+                # Continue even if last_login update fails
+                pass
             
             # メインページにリダイレクト
-            return redirect(url_for('manual_generator'))
+            return redirect(url_for('index'))
         
         return render_template('login.html')
     
