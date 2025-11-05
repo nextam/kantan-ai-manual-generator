@@ -8,7 +8,7 @@ Dependencies: celery, translation_service, models
 from src.workers.celery_app import celery
 from src.models.models import db, Manual, ManualTranslation, ProcessingJob
 from src.services.translation_service import translation_service
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import json
 

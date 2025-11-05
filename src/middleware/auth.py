@@ -358,6 +358,28 @@ def log_activity(action_type, action_detail=None, resource_type=None, resource_i
     return decorator
 
 
+def require_authentication(f):
+    """
+    Basic authentication decorator for any authenticated user
+    
+    Usage:
+        @require_authentication
+        def protected_endpoint():
+            pass
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return jsonify({'error': 'Authentication required'}), 401
+        
+        # Store user info in g for easy access
+        g.current_user = current_user
+        g.company_id = current_user.company_id
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 def require_role_enhanced(allowed_roles):
     """
     Enhanced role-based access control
