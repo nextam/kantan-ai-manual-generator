@@ -198,7 +198,14 @@ class Manual(db.Model):
     stage2_content = db.Column(db.Text)  # 熟練者と非熟練者の差異比較（表形式）
     stage3_content = db.Column(db.Text, nullable=True)
     description = db.Column(db.Text, nullable=True)
-    generation_config = db.Column(db.Text, nullable=True)  # 生成設定（JSON形式）
+    generation_config = db.Column(db.Text, nullable=True)  # 生成設定(JSON形式)
+    
+    # Phase 5: Enhanced Manual Generation fields
+    template_id = db.Column(db.Integer, db.ForeignKey('manual_templates.id'), nullable=True)
+    video_uri = db.Column(db.String(500), nullable=True)  # GCS or S3 URI
+    processing_job_id = db.Column(db.Integer, db.ForeignKey('processing_jobs.id'), nullable=True)
+    rag_sources = db.Column(db.Text, nullable=True)  # JSON: RAG sources used
+    completed_at = db.Column(db.DateTime, nullable=True)
 
     def get_generation_config(self):
         """生成設定をJSONから取得"""
@@ -349,6 +356,22 @@ class ManualTemplate(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_default = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
+    
+    def to_dict(self):
+        """Convert template to dictionary"""
+        import json
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'template_content': json.loads(self.template_content) if self.template_content else None,
+            'company_id': self.company_id,
+            'created_by': self.created_by,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'is_default': self.is_default,
+            'is_active': self.is_active
+        }
 
 class UserSession(db.Model):
     """ユーザーセッション管理"""

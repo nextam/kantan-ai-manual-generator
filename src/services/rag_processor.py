@@ -379,6 +379,19 @@ Format your response as JSON:
         except Exception as e:
             raise Exception(f"Embedding generation failed: {str(e)}")
     
+    def generate_embedding(self, text: str) -> List[float]:
+        """
+        Generate embedding for a single text (convenience method)
+        
+        Args:
+            text: Text to embed
+        
+        Returns:
+            Embedding vector (768-dim)
+        """
+        embeddings = self.generate_embeddings([text])
+        return embeddings[0] if embeddings else []
+    
     def process_material(self, material_id: int, company_id: int, file_path_s3: str,
                         file_type: str, title: str) -> Dict[str, Any]:
         """

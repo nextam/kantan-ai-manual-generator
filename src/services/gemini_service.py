@@ -1155,3 +1155,8 @@ identify_key_frames関数を呼び出して、以下を含む構造化データ�
         }
         
         return configs.get(task_type, configs["analysis"])
+
+
+
+# Alias for backward compatibility
+GeminiService = GeminiUnifiedService

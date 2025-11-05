@@ -11,6 +11,10 @@ from src.middleware.auth import require_super_admin
 from werkzeug.security import generate_password_hash
 from datetime import datetime
 from sqlalchemy import inspect
+import logging
+import json
+
+logger = logging.getLogger(__name__)
 
 test_bp = Blueprint('test', __name__, url_prefix='/api/test')
 
@@ -217,3 +221,317 @@ def get_activity_logs():
         'total': ActivityLog.query.count(),
         'logs': [log.to_dict() for log in logs]
     }), 200
+
+
+
+# ============================================================
+# Phase 5 Test Endpoints: Enhanced Manual Generation
+# ============================================================
+
+@test_bp.route('/phase5/create-test-template', methods=['POST'])
+def create_test_template():
+    """
+    Create a test manual template
+    
+    Body (optional): {
+      "name": "Test Template",
+      "company_id": 1,
+      "is_default": false
+    }
+    """
+    try:
+        from src.models.models import ManualTemplate, Company, User
+        
+        data = request.json or {}
+        
+        name = data.get('name', f'Test Template {datetime.now().strftime("%Y%m%d_%H%M%S")}')
+        is_default = data.get('is_default', False)
+        
+        # Get company_id (required field)
+        company_id = data.get('company_id')
+        if not company_id:
+            # Get first company or create test company
+            company = Company.query.first()
+            if not company:
+                return jsonify({'error': 'No company found. Please create a company first.'}), 400
+            company_id = company.id
+        
+        # Get user_id for created_by (required field)
+        user = User.query.filter_by(company_id=company_id).first()
+        if not user:
+            user = User.query.first()
+        if not user:
+            return jsonify({'error': 'No user found. Please create a user first.'}), 400
+        created_by = user.id
+        
+        # Sample template content
+        template_content = {
+            "sections": [
+                {
+                    "id": "overview",
+                    "title": "Overview",
+                    "description": "Process overview and objectives"
+                },
+                {
+                    "id": "materials",
+                    "title": "Required Materials",
+                    "description": "Tools and materials needed"
+                },
+                {
+                    "id": "safety",
+                    "title": "Safety Precautions",
+                    "description": "Safety guidelines and warnings"
+                },
+                {
+                    "id": "steps",
+                    "title": "Step-by-Step Instructions",
+                    "description": "Detailed process steps"
+                },
+                {
+                    "id": "quality",
+                    "title": "Quality Checkpoints",
+                    "description": "Quality assurance checks"
+                }
+            ],
+            "format": "structured",
+            "include_timestamps": True,
+            "include_images": True
+        }
+        
+        template = ManualTemplate(
+            name=name,
+            description=f"Test template created at {datetime.now().isoformat()}",
+            template_content=json.dumps(template_content, ensure_ascii=False),
+            company_id=company_id,
+            created_by=created_by,
+            is_default=is_default,
+            is_active=True,
+            created_at=datetime.utcnow()
+        )
+        
+        db.session.add(template)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Test template created successfully',
+            'template': template.to_dict()
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to create test template: {str(e)}")
+        return jsonify({
+            'error': 'Failed to create test template',
+            'details': str(e)
+        }), 500
+
+
+@test_bp.route('/phase5/bulk-create-templates', methods=['POST'])
+def bulk_create_templates():
+    """
+    Create multiple test templates
+    
+    Body: {
+      "count": 3,
+      "company_id": 1
+    }
+    """
+    try:
+        from src.models.models import ManualTemplate, Company, User
+        
+        data = request.json or {}
+        count = data.get('count', 3)
+        
+        # Get company_id (required field)
+        company_id = data.get('company_id')
+        if not company_id:
+            company = Company.query.first()
+            if not company:
+                return jsonify({'error': 'No company found. Please create a company first.'}), 400
+            company_id = company.id
+        
+        # Get user_id for created_by (required field)
+        user = User.query.filter_by(company_id=company_id).first()
+        if not user:
+            user = User.query.first()
+        if not user:
+            return jsonify({'error': 'No user found. Please create a user first.'}), 400
+        created_by = user.id
+        
+        created_templates = []
+        
+        template_types = [
+            ("Standard Manufacturing", "Basic manufacturing process template"),
+            ("Safety Procedure", "Safety-focused template with emphasis on precautions"),
+            ("Quality Assurance", "QA-focused template with checkpoints"),
+            ("Maintenance", "Equipment maintenance procedure template"),
+            ("Assembly", "Product assembly process template")
+        ]
+        
+        for i in range(min(count, len(template_types))):
+            name, desc = template_types[i]
+            
+            template = ManualTemplate(
+                name=f"{name} - Test {i+1}",
+                description=desc,
+                template_content=json.dumps({
+                    "sections": [
+                        {"id": f"section_{j}", "title": f"Section {j+1}"}
+                        for j in range(3)
+                    ]
+                }, ensure_ascii=False),
+                company_id=company_id,
+                created_by=created_by,
+                is_default=(i == 0),
+                is_active=True,
+                created_at=datetime.utcnow()
+            )
+            
+            db.session.add(template)
+            db.session.flush()
+            created_templates.append(template.to_dict())
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'Created {len(created_templates)} test templates',
+            'templates': created_templates
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to bulk create templates: {str(e)}")
+        return jsonify({
+            'error': 'Failed to bulk create templates',
+            'details': str(e)
+        }), 500
+
+
+@test_bp.route('/phase5/validate-template', methods=['POST'])
+def validate_template():
+    """
+    Validate template JSON structure
+    
+    Body: {
+      "template_content": {...}
+    }
+    """
+    try:
+        data = request.json
+        template_content = data.get('template_content')
+        
+        if not template_content:
+            return jsonify({
+                'valid': False,
+                'error': 'template_content is required'
+            }), 400
+        
+        # Basic validation
+        required_keys = ['sections']
+        validation_errors = []
+        
+        for key in required_keys:
+            if key not in template_content:
+                validation_errors.append(f"Missing required key: {key}")
+        
+        if 'sections' in template_content:
+            if not isinstance(template_content['sections'], list):
+                validation_errors.append("sections must be an array")
+            else:
+                for idx, section in enumerate(template_content['sections']):
+                    if 'id' not in section:
+                        validation_errors.append(f"Section {idx} missing 'id' field")
+                    if 'title' not in section:
+                        validation_errors.append(f"Section {idx} missing 'title' field")
+        
+        if validation_errors:
+            return jsonify({
+                'valid': False,
+                'errors': validation_errors
+            }), 400
+        
+        return jsonify({
+            'valid': True,
+            'message': 'Template structure is valid',
+            'section_count': len(template_content.get('sections', []))
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'valid': False,
+            'error': str(e)
+        }), 400
+
+
+@test_bp.route('/phase5/test-rag-search', methods=['POST'])
+def test_rag_search():
+    """
+    Test RAG semantic search
+    
+    Body: {
+      "query": "safety procedures",
+      "company_id": 1,
+      "max_results": 5
+    }
+    """
+    try:
+        from src.services.elasticsearch_service import elasticsearch_service
+        from src.services.rag_processor import RAGProcessor
+        
+        data = request.json or {}
+        query = data.get('query', 'test search')
+        company_id = data.get('company_id', 1)
+        max_results = data.get('max_results', 5)
+        
+        # Generate query embedding using RAG processor
+        rag_processor = RAGProcessor()
+        query_embedding = rag_processor.generate_embedding(query)
+        
+        # Perform hybrid search
+        results = elasticsearch_service.hybrid_search(
+            query_text=query,
+            query_embedding=query_embedding,
+            company_id=company_id,
+            top_k=max_results
+        )
+        
+        return jsonify({
+            'query': query,
+            'company_id': company_id,
+            'results_count': len(results),
+            'results': results
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"RAG search test failed: {str(e)}")
+        return jsonify({
+            'error': 'RAG search failed',
+            'details': str(e)
+        }), 500
+
+
+@test_bp.route('/phase5/elasticsearch-status', methods=['GET'])
+def elasticsearch_status():
+    """Check ElasticSearch connection and index status"""
+    try:
+        from src.services.elasticsearch_service import elasticsearch_service
+        
+        health = elasticsearch_service.health_check()
+        
+        # Handle both dict and bool return types
+        if isinstance(health, bool):
+            return jsonify({
+                'elasticsearch_available': health,
+                'status': 'healthy' if health else 'unavailable'
+            }), 200
+        
+        return jsonify({
+            'elasticsearch_available': health.get('status') == 'healthy' if isinstance(health, dict) else bool(health),
+            'elasticsearch': health if isinstance(health, dict) else {'status': 'healthy' if health else 'unavailable'}
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'elasticsearch_available': False,
+            'error': str(e)
+        }), 500

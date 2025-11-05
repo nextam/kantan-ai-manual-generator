@@ -1773,6 +1773,14 @@ if HAS_AUTH_SYSTEM:
         logger.info("Material routes (RAG system API) registered successfully")
     except Exception as e:
         logger.warning(f"Failed to register material routes: {e}")
+    
+    # Enhanced Manual Generation APIエンドポイント登録 (Phase 5)
+    try:
+        from src.api.manual_routes import manual_bp
+        app.register_blueprint(manual_bp)
+        logger.info("Enhanced manual generation routes (Phase 5) registered successfully")
+    except Exception as e:
+        logger.warning(f"Failed to register enhanced manual routes: {e}")
 
     # スーパー管理者用デコレーター
     def require_super_admin(f):
