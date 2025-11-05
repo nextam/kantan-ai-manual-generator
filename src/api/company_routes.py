@@ -108,6 +108,8 @@ def create_company_user():
     # Validation
     if not username:
         return jsonify({'error': 'Username is required'}), 400
+    if not email:
+        return jsonify({'error': 'Email is required'}), 400
     if not password:
         return jsonify({'error': 'Password is required'}), 400
     if role not in ['admin', 'user']:

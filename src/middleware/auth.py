@@ -108,7 +108,8 @@ class CompanyManager:
     @staticmethod
     def create_company(name: str, company_code: str, password: str, 
                       admin_username: str = 'admin', 
-                      admin_email: str = None) -> Dict[str, Any]:
+                      admin_email: str = None,
+                      admin_password: str = None) -> Dict[str, Any]:
         """新規企業作成"""
         # 重複チェック
         existing = Company.query.filter(
@@ -119,6 +120,13 @@ class CompanyManager:
             return {
                 'success': False,
                 'error': '企業名または企業コードが既に存在します'
+            }
+        
+        # メールアドレスが必須
+        if not admin_email:
+            return {
+                'success': False,
+                'error': '管理者メールアドレスが必要です'
             }
         
         try:
@@ -154,6 +162,8 @@ class CompanyManager:
                 company_id=company.id,
                 role='admin'
             )
+            # パスワードを設定（指定がなければ企業パスワードと同じ）
+            admin_user.set_password(admin_password or password)
             
             db.session.add(admin_user)
             db.session.commit()
@@ -434,52 +444,38 @@ def init_auth_routes(app):
     def login():
         """企業ログインページ"""
         if request.method == 'POST':
-            company_code = request.form.get('company_code', '')
+            email = request.form.get('email', '')
             password = request.form.get('password', '')
-            username = request.form.get('username', 'admin')
             
-            if not company_code or not password:
+            if not email or not password:
                 return render_template('login.html', 
-                                     error='企業コードとパスワードを入力してください')
+                                     error='メールアドレスとパスワードを入力してください')
             
-            # 企業認証（グローバルのauth_managerを使用）
-            auth_manager = getattr(current_app, 'auth_manager', None)
-            if not auth_manager:
-                # フォールバック: 基本的な認証処理
-                company = Company.query.filter_by(
-                    company_code=company_code, 
-                    is_active=True
-                ).first()
-                if not (company and company.check_password(password)):
-                    return render_template('login.html', 
-                                         error='企業コードまたはパスワードが正しくありません')
-            else:
-                company = auth_manager.authenticate_company(company_code, password)
-            
-            if not company:
-                return render_template('login.html', 
-                                     error='企業コードまたはパスワードが正しくありません')
-            
-            # ユーザー検索
+            # メールアドレスでユーザーを検索
             user = User.query.filter_by(
-                username=username,
-                company_id=company.id,
+                email=email,
                 is_active=True
             ).first()
             
             if not user:
                 return render_template('login.html', 
-                                     error='ユーザーが見つかりません')
+                                     error='メールアドレスまたはパスワードが正しくありません')
+            
+            # パスワード検証
+            if not user.check_password(password):
+                return render_template('login.html', 
+                                     error='メールアドレスまたはパスワードが正しくありません')
             
             # ログイン処理
             login_user(user, remember=True)
             
             # セッション作成（auth_managerがある場合のみ）
+            auth_manager = getattr(current_app, 'auth_manager', None)
             if auth_manager:
                 user_session = auth_manager.create_user_session(user)
                 session['session_token'] = user_session.session_token
             
-            session['company_id'] = company.id
+            session['company_id'] = user.company_id
             
             # 最終ログイン日時更新
             user.last_login = datetime.utcnow()
@@ -495,45 +491,35 @@ def init_auth_routes(app):
         """API用ログインエンドポイント"""
         if request.method == 'POST':
             data = request.get_json() if request.is_json else request.form
-            company_code = data.get('company_code')
+            email = data.get('email') or data.get('user_id')  # user_id は後方互換性のため
             password = data.get('password')
-            username = data.get('username', 'admin')
             
-            # 企業認証（グローバルのauth_managerを使用）
-            auth_manager = getattr(current_app, 'auth_manager', None)
-            if not auth_manager:
-                # フォールバック: 基本的な認証処理
-                company = Company.query.filter_by(
-                    company_code=company_code, 
-                    is_active=True
-                ).first()
-                if not (company and company.check_password(password)):
-                    return {'error': '企業コードまたはパスワードが正しくありません'}, 401
-            else:
-                company = auth_manager.authenticate_company(company_code, password)
+            if not email or not password:
+                return {'error': 'メールアドレスとパスワードを入力してください'}, 400
             
-            if not company:
-                return {'error': '企業コードまたはパスワードが正しくありません'}, 401
-            
-            # ユーザー検索
+            # メールアドレスでユーザーを検索
             user = User.query.filter_by(
-                username=username,
-                company_id=company.id,
+                email=email,
                 is_active=True
             ).first()
             
             if not user:
-                return {'error': 'ユーザーが見つかりません'}, 401
+                return {'error': 'メールアドレスまたはパスワードが正しくありません'}, 401
+            
+            # パスワード検証
+            if not user.check_password(password):
+                return {'error': 'メールアドレスまたはパスワードが正しくありません'}, 401
             
             # ログイン処理
             login_user(user, remember=True)
             
             # セッション作成（auth_managerがある場合のみ）
+            auth_manager = getattr(current_app, 'auth_manager', None)
             if auth_manager:
                 user_session = auth_manager.create_user_session(user)
                 session['session_token'] = user_session.session_token
             
-            session['company_id'] = company.id
+            session['company_id'] = user.company_id
             
             # 最終ログイン日時更新
             user.last_login = datetime.utcnow()
@@ -541,8 +527,9 @@ def init_auth_routes(app):
             
             return {
                 'success': True,
-                'company': company.name,
+                'company': user.company.name if user.company else None,
                 'user': user.username,
+                'email': user.email,
                 'role': user.role
             }
         

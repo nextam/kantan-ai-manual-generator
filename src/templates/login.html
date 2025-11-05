@@ -293,18 +293,13 @@
         <!-- ログインフォーム -->
         <form id="loginForm">
             <div class="form-group">
-                <label for="company_code">企業コード</label>
-                <input type="text" id="company_code" name="company_code" required placeholder="企業コードを入力" autocomplete="organization">
+                <label for="email">メールアドレス</label>
+                <input type="email" id="email" name="email" required placeholder="メールアドレスを入力" autocomplete="email">
             </div>
 
             <div class="form-group">
-                <label for="password">企業パスワード</label>
-                <input type="password" id="password" name="password" required placeholder="企業パスワードを入力" autocomplete="current-password">
-            </div>
-
-            <div class="form-group">
-                <label for="username">ユーザー名</label>
-                <input type="text" id="username" name="username" required placeholder="ユーザー名を入力" autocomplete="username">
+                <label for="password">パスワード</label>
+                <input type="password" id="password" name="password" required placeholder="パスワードを入力" autocomplete="current-password">
             </div>
 
             <button type="submit" id="loginButton" class="login-button">
@@ -349,7 +344,7 @@
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                    showMessage(`ログイン成功: ${result.company} - ${result.user} (${result.role})`, 'success');
+                    showMessage(`ログイン成功: ${result.email} (${result.role})`, 'success');
 
                     // 少し待ってからリダイレクト
                     setTimeout(() => {

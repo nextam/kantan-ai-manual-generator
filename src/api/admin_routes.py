@@ -147,9 +147,13 @@ def create_company():
         db.session.flush()
         
         # Create default admin user
+        admin_email = data.get('admin_email', f'admin@{company_code}.com')
+        if not admin_email:
+            return jsonify({'error': 'Admin email is required'}), 400
+            
         admin_user = User(
             username='admin',
-            email=data.get('admin_email', f'admin@{company_code}.com'),
+            email=admin_email,
             company_id=company.id,
             role='admin',
             is_active=True
@@ -414,6 +418,8 @@ def create_user():
     # Validation
     if not username:
         return jsonify({'error': 'Username is required'}), 400
+    if not email:
+        return jsonify({'error': 'Email is required'}), 400
     if not company_id:
         return jsonify({'error': 'Company ID is required'}), 400
     if not password:

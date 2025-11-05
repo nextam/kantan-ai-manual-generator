@@ -196,8 +196,7 @@ class CompanyAdminWorkflowTest:
         response = self.session.post(
             f"{BASE_URL}/auth/login",
             json={
-                "company_id": self.company_id,
-                "user_id": self.user_id,
+                "email": self.user_id,
                 "password": "0000"
             }
         )
@@ -294,8 +293,7 @@ class GeneralUserWorkflowTest:
         response = self.session.post(
             f"{BASE_URL}/auth/login",
             json={
-                "company_id": self.company_id,
-                "user_id": self.user_id,
+                "email": self.user_id,
                 "password": "0000"
             }
         )

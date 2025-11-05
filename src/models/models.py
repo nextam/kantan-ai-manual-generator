@@ -116,17 +116,17 @@ class User(UserMixin, db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), nullable=False)
-    email = db.Column(db.String(120), nullable=True)
+    email = db.Column(db.String(120), nullable=False, unique=True)  # メールアドレスを必須化、グローバルユニーク制約
     company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
     role = db.Column(db.String(20), default='user')  # admin, user
     last_login = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
     
-    password_hash = db.Column(db.String(255), nullable=True)
+    password_hash = db.Column(db.String(255), nullable=False)  # パスワードを必須化
     language_preference = db.Column(db.String(10), default='ja')
     
-    # 企業内でのユニーク制約
+    # 企業内でのユニーク制約は維持（互換性のため）
     __table_args__ = (db.UniqueConstraint('username', 'company_id', name='unique_username_per_company'),)
     
     def set_password(self, password):
