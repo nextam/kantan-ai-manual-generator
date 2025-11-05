@@ -8,7 +8,7 @@ import os
 import sys
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash
-from models import db, Company, User, SuperAdmin
+from src.models.models import db, Company, User, SuperAdmin
 
 # Load environment variables
 load_dotenv()

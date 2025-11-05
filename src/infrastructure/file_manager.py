@@ -15,7 +15,7 @@ import hashlib
 
 from werkzeug.utils import secure_filename
 from google.cloud import storage as gcs
-from utils.path_normalization import fix_mp4_extension
+from src.utils.path_normalization import fix_mp4_extension
 import logging
 logger = logging.getLogger(__name__)
 

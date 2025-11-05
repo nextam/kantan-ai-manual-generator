@@ -10,9 +10,10 @@ from functools import wraps
 from flask import session, request, redirect, url_for, current_app, g, render_template, jsonify
 from flask_login import LoginManager, current_user, login_user, logout_user
 from itsdangerous import URLSafeTimedSerializer
+from sqlalchemy import func
 import secrets
 
-from models import db, Company, User, UserSession
+from src.models.models import db, Company, User, UserSession
 
 class AuthManager:
     """認証管理システム"""
@@ -173,17 +174,25 @@ class CompanyManager:
     @staticmethod
     def get_company_stats(company_id: int) -> Dict[str, Any]:
         """企業統計情報取得"""
-        from models import UploadedFile, Manual
+        from src.models.models import UploadedFile, Manual
         
         company = Company.query.get(company_id)
         if not company:
             return {}
         
+        # Calculate storage usage for this company
+        total_storage_bytes = db.session.query(
+            func.sum(UploadedFile.file_size)
+        ).filter(
+            UploadedFile.company_id == company_id
+        ).scalar() or 0
+        storage_used_mb = round(total_storage_bytes / (1024 ** 2), 2)
+        
         stats = {
             'users_count': User.query.filter_by(company_id=company_id, is_active=True).count(),
             'files_count': UploadedFile.query.filter_by(company_id=company_id).count(),
             'manuals_count': Manual.query.filter_by(company_id=company_id).count(),
-            'storage_used_mb': 0,  # TODO: 実際のストレージ使用量計算
+            'storage_used_mb': storage_used_mb,
             'last_activity': None
         }
         

@@ -23,7 +23,7 @@ load_dotenv()
 # Import GCP config helper
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from utils.gcp_config import get_gcp_project_id
+from src.utils.gcp_config import get_gcp_project_id
 
 # ログ設定
 logging.basicConfig(level=logging.INFO)

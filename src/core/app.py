@@ -44,8 +44,8 @@ try:
     from google.cloud import storage  # type: ignore
     from google import genai  # type: ignore  # new google-genai library
     from google.genai import types  # type: ignore
-    print("✅ google.cloud.storage インポート成功")
-    print("✅ google-genai (google.genai) インポート成功")
+    print("[OK] google.cloud.storage import successful")
+    print("[OK] google-genai (google.genai) import successful")
     HAS_GOOGLE_CLOUD = True
 except ImportError as e:
     print(f"❌ 必要ライブラリ不足: {e}")
@@ -54,6 +54,7 @@ except ImportError as e:
 # 新しい認証・データベースシステム
 try:
     from src.models.models import db, Company, User, UploadedFile, Manual, ManualSourceFile, SuperAdmin
+    from sqlalchemy import func
     from src.middleware.auth import AuthManager, CompanyManager, require_role, init_auth_routes
     from src.infrastructure.file_manager import create_file_manager  
     from flask_login import current_user, login_required
@@ -114,7 +115,7 @@ except ImportError:
 try:
     from src.services.video_manual_with_images_generator import ManualWithImagesGenerator
     HAS_VIDEO_MANUAL = True
-    print("✅ 動画マニュアル生成システムのインポートが成功しました (relative import)")
+    print("[OK] Video manual generation system import successful (relative import)")
 except ImportError as e:
     print(f"❌ 動画マニュアル生成システムをインポートできませんでした: {e}")
     HAS_VIDEO_MANUAL = False
@@ -234,7 +235,19 @@ def rotate_image_data_url(data_url, rotation_degrees):
         logger.error(f"画像回転エラー: {e}")
         raise Exception(f"画像回転に失敗しました: {str(e)}")
 
-app = Flask(__name__)
+# Flaskアプリケーション初期化
+# テンプレートとstaticフォルダのパスを明示的に指定
+import os
+from pathlib import Path
+
+# src/core/app.pyから見たsrcディレクトリのパスを取得
+src_dir = Path(__file__).parent.parent
+template_folder = str(src_dir / 'templates')
+static_folder = str(src_dir / 'static')
+
+app = Flask(__name__, 
+            template_folder=template_folder,
+            static_folder=static_folder)
 CORS(app)
 
 # 設定
@@ -337,8 +350,8 @@ def request_entity_too_large(error):
 # 環境変数から直接パスを取得するか、コンテナ/ローカル環境に応じてパスを設定
 database_path_env = os.getenv('DATABASE_PATH')
 if database_path_env:
-    # 環境変数で指定されている場合
-    db_path = database_path_env
+    # 環境変数で指定されている場合 - 絶対パスに変換
+    db_path = os.path.abspath(database_path_env)
     instance_dir = os.path.dirname(db_path)
 elif os.path.exists('/app'):
     # コンテナ環境
@@ -348,7 +361,7 @@ elif os.path.exists('/app'):
 else:
     # ローカル環境
     instance_dir = os.path.join(os.getcwd(), 'instance')
-    db_path = os.path.join(instance_dir, 'manual_generator.db')
+    db_path = os.path.abspath(os.path.join(instance_dir, 'manual_generator.db'))
     base_dir = os.getcwd()
 
 os.makedirs(instance_dir, exist_ok=True)  # instanceディレクトリを確実に作成
@@ -390,9 +403,11 @@ if HAS_GOOGLE_CLOUD:
     # .envファイルから認証ファイルパスを取得（デフォルトは正しいファイル名）
     credentials_file = os.getenv('GOOGLE_APPLICATION_CREDENTIALS', 'gcp-credentials.json')
     
-    # 相対パスの場合は絶対パスに変換
+    # 相対パスの場合はプロジェクトルートからの絶対パスに変換
     if not os.path.isabs(credentials_file):
-        credentials_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), credentials_file)
+        # src/core/app.py から見たプロジェクトルートは2階層上
+        project_root = Path(__file__).parent.parent.parent
+        credentials_path = str(project_root / credentials_file)
     else:
         credentials_path = credentials_file
     
@@ -400,14 +415,15 @@ if HAS_GOOGLE_CLOUD:
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials_path
     
     # Google Cloud Project IDを.envから取得して設定
-    project_id = os.getenv('GOOGLE_CLOUD_PROJECT_ID')
+    project_id = os.getenv('PROJECT_ID') or os.getenv('GOOGLE_CLOUD_PROJECT_ID')
     if project_id:
         os.environ['GOOGLE_CLOUD_PROJECT_ID'] = project_id
+        os.environ['PROJECT_ID'] = project_id
     
     # 設定確認ログ
-    print(f"🔧 Google Cloud認証ファイル（強制設定）: {credentials_path}")
-    print(f"📁 ファイル存在確認: {os.path.exists(credentials_path)}")
-    print(f"🏷️  GOOGLE_CLOUD_PROJECT_ID: {os.environ.get('GOOGLE_CLOUD_PROJECT_ID')}")
+    print(f"[CONFIG] Google Cloud credentials file (forced): {credentials_path}")
+    print(f"[CHECK] File exists: {os.path.exists(credentials_path)}")
+    print(f"[INFO] PROJECT_ID: {os.environ.get('PROJECT_ID')}")
     
     GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
     # google-genai では従来の genai.configure は存在しないため呼び出さない。
@@ -463,7 +479,7 @@ def find_alternative_video_file(video_path):
                 original_part = parts[1]
                 
                 # 同じ元ファイル名の最新版を検索
-                from models import UploadedFile
+                from src.models.models import UploadedFile
                 
                 # 元ファイル名を推測（UUIDプレフィックスを除去）
                 # 例: "0111____VID_20250620_111337.mp4" -> "0111_ボルト締結_熟練者_スマートグラス_VID_20250620_111337.mp4"
@@ -1642,14 +1658,6 @@ def run_multi_stage_generation_background(manual_id, expert_uri, novice_uri, con
                 db.session.commit()
 
 
-def generate_final_manual_background(manual_id):
-    """バックグラウンドで最終マニュアルを生成"""
-    # TODO: 実装が不完全のため一時的にコメントアウト
-    print(f"Manual generation requested for ID: {manual_id}")
-    print("This function needs to be properly implemented with required imports and configurations.")
-    return
-
-
 # 企業管理エンドポイント
 if HAS_AUTH_SYSTEM:
     
@@ -1733,6 +1741,213 @@ if HAS_AUTH_SYSTEM:
     
     # 認証ルート初期化
     init_auth_routes(app)
+
+    # スーパー管理者用デコレーター
+    def require_super_admin(f):
+        """スーパー管理者認証が必要なエンドポイントのデコレーター"""
+        from functools import wraps
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if 'super_admin_id' not in session:
+                return redirect(url_for('super_admin_login'))
+            # スーパー管理者情報をgに設定
+            g.current_super_admin = SuperAdmin.query.get(session['super_admin_id'])
+            if not g.current_super_admin:
+                session.pop('super_admin_id', None)
+                return redirect(url_for('super_admin_login'))
+            return f(*args, **kwargs)
+        return decorated_function
+
+    # スーパー管理者マネージャー
+    class SuperAdminManager:
+        """スーパー管理者管理システム"""
+        
+        @staticmethod
+        def authenticate_super_admin(username: str, password: str):
+            """スーパー管理者認証"""
+            admin = SuperAdmin.query.filter_by(username=username).first()
+            if admin and admin.check_password(password):
+                return admin
+            return None
+        
+        @staticmethod
+        def get_system_overview():
+            """システム概要取得"""
+            try:
+                companies = Company.query.all()
+                users = User.query.all()
+                manuals = Manual.query.all()
+                
+                # Calculate total storage usage from uploaded files
+                total_storage_bytes = db.session.query(
+                    func.sum(UploadedFile.file_size)
+                ).scalar() or 0
+                storage_used_gb = round(total_storage_bytes / (1024 ** 3), 2)
+                
+                return {
+                    'success': True,
+                    'companies_count': len(companies),
+                    'users_count': len(users),
+                    'manuals_count': len(manuals),
+                    'active_companies': sum(1 for c in companies if c.is_active),
+                    'storage_used_gb': storage_used_gb,
+                    'companies': [
+                        {
+                            'id': c.id,
+                            'name': c.name,
+                            'code': c.company_code,
+                            'is_active': c.is_active,
+                            'created_at': c.created_at.isoformat() if c.created_at else None,
+                            'users_count': User.query.filter_by(company_id=c.id).count(),
+                            'manuals_count': Manual.query.filter_by(company_id=c.id).count()
+                        } for c in companies
+                    ]
+                }
+            except Exception as e:
+                logger.error(f"System overview error: {e}")
+                return {
+                    'success': False,
+                    'error': str(e)
+                }
+        
+        @staticmethod
+        def delete_company(company_id: int):
+            """企業削除"""
+            try:
+                company = Company.query.get(company_id)
+                if not company:
+                    return {
+                        'success': False,
+                        'error': '企業が見つかりません'
+                    }
+                
+                # 関連データを削除
+                User.query.filter_by(company_id=company_id).delete()
+                Manual.query.filter_by(company_id=company_id).delete()
+                UploadedFile.query.filter_by(company_id=company_id).delete()
+                
+                db.session.delete(company)
+                db.session.commit()
+                
+                return {
+                    'success': True,
+                    'message': f'企業「{company.name}」を削除しました'
+                }
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f"Company deletion error: {e}")
+                return {
+                    'success': False,
+                    'error': str(e)
+                }
+        
+        @staticmethod
+        def update_company_status(company_id: int, is_active: bool):
+            """企業ステータス更新"""
+            try:
+                company = Company.query.get(company_id)
+                if not company:
+                    return {
+                        'success': False,
+                        'error': '企業が見つかりません'
+                    }
+                
+                company.is_active = is_active
+                company.updated_at = datetime.utcnow()
+                db.session.commit()
+                
+                return {
+                    'success': True,
+                    'message': f'企業「{company.name}」のステータスを更新しました',
+                    'is_active': is_active
+                }
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f"Company status update error: {e}")
+                return {
+                    'success': False,
+                    'error': str(e)
+                }
+        
+        @staticmethod
+        def get_company_details(company_id: int):
+            """企業詳細取得"""
+            try:
+                company = Company.query.get(company_id)
+                if not company:
+                    return {
+                        'success': False,
+                        'error': '企業が見つかりません'
+                    }
+                
+                users = User.query.filter_by(company_id=company_id).all()
+                manuals = Manual.query.filter_by(company_id=company_id).all()
+                
+                return {
+                    'success': True,
+                    'company': {
+                        'id': company.id,
+                        'name': company.name,
+                        'code': company.company_code,
+                        'is_active': company.is_active,
+                        'created_at': company.created_at.isoformat() if company.created_at else None,
+                        'updated_at': company.updated_at.isoformat() if company.updated_at else None,
+                        'settings': company.get_settings() if hasattr(company, 'get_settings') else {},
+                        'users': [
+                            {
+                                'id': u.id,
+                                'username': u.username,
+                                'email': u.email,
+                                'role': u.role,
+                                'is_active': u.is_active,
+                                'last_login': u.last_login.isoformat() if u.last_login else None
+                            } for u in users
+                        ],
+                        'manuals': [
+                            {
+                                'id': m.id,
+                                'title': m.title,
+                                'created_at': m.created_at.isoformat() if m.created_at else None,
+                                'generation_status': m.generation_status
+                            } for m in manuals[:10]  # 最新10件
+                        ]
+                    }
+                }
+            except Exception as e:
+                logger.error(f"Company details error: {e}")
+                return {
+                    'success': False,
+                    'error': str(e)
+                }
+        
+        @staticmethod
+        def get_system_logs(limit: int = 100):
+            """システムログ取得"""
+            try:
+                # ログファイルから取得（実装例）
+                log_file = os.path.join(os.getcwd(), 'logs', 'app.log')
+                logs = []
+                
+                if os.path.exists(log_file):
+                    with open(log_file, 'r', encoding='utf-8') as f:
+                        lines = f.readlines()
+                        # 最新のログから取得
+                        for line in reversed(lines[-limit:]):
+                            logs.append(line.strip())
+                
+                return {
+                    'success': True,
+                    'logs': logs,
+                    'count': len(logs)
+                }
+            except Exception as e:
+                logger.error(f"System logs error: {e}")
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'logs': []
+                }
+
 
     # スーパー管理者ルート
     @app.route('/super-admin/login', methods=['GET', 'POST'])
@@ -2296,6 +2511,154 @@ def api_get_user_info():
             'error': str(e)
         }), 500
 
+@app.route('/api/upload', methods=['POST'])
+def api_upload_file():
+    """
+    File upload API endpoint
+    Supports video file uploads for manual generation
+    """
+    logger.info("=== API Upload Processing Started ===")
+    logger.info(f"Request method: {request.method}")
+    logger.info(f"Request files keys: {list(request.files.keys())}")
+    logger.info(f"Request form keys: {list(request.form.keys())}")
+    
+    try:
+        # Authentication check
+        if HAS_AUTH_SYSTEM and not current_user.is_authenticated:
+            logger.warning("Unauthorized upload attempt")
+            return jsonify({
+                'success': False,
+                'error': 'Authentication required'
+            }), 401
+        
+        # Check if file is in request
+        if 'file' not in request.files:
+            logger.error("'file' key not found in request.files")
+            return jsonify({
+                'success': False,
+                'error': 'No file provided'
+            }), 400
+        
+        file = request.files['file']
+        logger.info(f"Received file: filename={file.filename}, content_type={file.content_type}")
+        
+        if file.filename == '':
+            logger.error("Empty filename")
+            return jsonify({
+                'success': False,
+                'error': 'No file selected'
+            }), 400
+        
+        # Get optional parameters
+        role = request.form.get('role', 'user')
+        description = request.form.get('description', '')
+        
+        # Validate file type
+        if not allowed_file(file.filename):
+            return jsonify({
+                'success': False,
+                'error': f'File type not allowed. Allowed types: {", ".join(ALLOWED_EXTENSIONS)}'
+            }), 400
+        
+        logger.info(f"File type validation passed: {file.filename}")
+        
+        # Save file using file manager
+        file_manager = get_file_manager()
+        logger.info(f"File manager obtained: {type(file_manager)}")
+        
+        file_info = file_manager.save_file(file, file.filename, 'video')
+        logger.info(f"File saved successfully: {file_info}")
+        
+        # Record in database if authentication is enabled
+        uploaded_file_record = None
+        if HAS_AUTH_SYSTEM and current_user.is_authenticated:
+            logger.info("Recording upload in database")
+            uploaded_file_record = UploadedFile(
+                original_filename=file.filename,
+                stored_filename=file_info['filename'],
+                file_type='video',
+                file_path=file_info['file_path'],
+                file_size=file_info.get('file_size'),
+                mime_type=file.content_type,
+                company_id=current_user.company_id,
+                uploaded_by=current_user.id
+            )
+            db.session.add(uploaded_file_record)
+            db.session.commit()
+            logger.info(f"Upload recorded with ID: {uploaded_file_record.id}")
+        
+        # Prepare response
+        response_data = {
+            'success': True,
+            'message': 'File uploaded successfully',
+            'file': {
+                'id': uploaded_file_record.id if uploaded_file_record else None,
+                'original_filename': file.filename,
+                'stored_filename': file_info['filename'],
+                'file_path': file_info['file_path'],
+                'file_size': file_info.get('file_size'),
+                'mime_type': file.content_type,
+                'uploaded_at': uploaded_file_record.uploaded_at.isoformat() if uploaded_file_record else None
+            }
+        }
+        
+        logger.info("Upload completed successfully")
+        return jsonify(response_data), 200
+        
+    except Exception as e:
+        logger.error(f"Upload error: {e}", exc_info=True)
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': f'Upload failed: {str(e)}'
+        }), 500
+
+@app.route('/api/system/info', methods=['GET'])
+def api_system_info():
+    """
+    System information API endpoint
+    Returns system configuration and status
+    """
+    try:
+        # Basic system information
+        system_info = {
+            'version': '1.0.0',
+            'environment': os.getenv('FLASK_ENV', 'production'),
+            'debug': os.getenv('DEBUG', 'False') == 'True',
+            'features': {
+                'authentication': HAS_AUTH_SYSTEM,
+                'gcs_storage': os.path.exists(os.getenv('GOOGLE_APPLICATION_CREDENTIALS', '')),
+                'gemini_api': True,  # Always available in this system
+                'video_processing': True
+            },
+            'storage': {
+                'type': 'gcs',
+                'bucket': os.getenv('GCS_BUCKET_NAME', ''),
+                'project_id': os.getenv('PROJECT_ID', '')
+            },
+            'limits': {
+                'max_file_size_gb': 10,
+                'max_video_duration_minutes': 60,
+                'supported_formats': list(ALLOWED_EXTENSIONS)
+            }
+        }
+        
+        # Add authentication status if available
+        if HAS_AUTH_SYSTEM:
+            system_info['auth_status'] = {
+                'authenticated': current_user.is_authenticated if current_user else False,
+                'user': current_user.username if (current_user and current_user.is_authenticated) else None,
+                'company': current_user.company.name if (current_user and current_user.is_authenticated and current_user.company) else None
+            }
+        
+        return jsonify(system_info), 200
+        
+    except Exception as e:
+        logger.error(f"System info error: {e}", exc_info=True)
+        return jsonify({
+            'error': f'Failed to retrieve system information: {str(e)}'
+        }), 500
+
 @app.route('/api/manuals/status', methods=['POST'])
 def api_get_multiple_manual_status():
     """複数マニュアルの生成ステータスを一括取得"""
@@ -2704,7 +3067,7 @@ def api_manual_with_images_async():
 
         # データベースにUploadedFileレコードを作成
         # NOTE: db を先に import しないと後続でローカル扱いになるケースを避ける
-        from models import UploadedFile, Manual, ManualSourceFile, db
+        from src.models.models import UploadedFile, Manual, ManualSourceFile, db
         company_id = 1
         user_id = None
         try:
@@ -2802,7 +3165,7 @@ def process_manual_with_images_async(manual_id, video_path, title, custom_prompt
     """
     with app.app_context():  # Flaskアプリケーションコンテキストを設定
         try:
-            from models import Manual, db
+            from src.models.models import Manual, db
             
             # マニュアルレコードを取得
             manual = Manual.query.get(manual_id)
@@ -2860,7 +3223,7 @@ def process_manual_with_images_async(manual_id, video_path, title, custom_prompt
             
             # エラー時の処理
             try:
-                from models import Manual, db
+                from src.models.models import Manual, db
                 manual = Manual.query.get(manual_id)
                 if manual:
                     manual.generation_status = 'failed'
@@ -3183,7 +3546,7 @@ def api_save_edited_image():
             # マニュアルの生成設定からcustom_promptを取得
             custom_prompt = None
             if manual_id:
-                from models import Manual
+                from src.models.models import Manual
                 manual = Manual.query.get(manual_id)
                 if manual and manual.generation_config:
                     config = json.loads(manual.generation_config) if isinstance(manual.generation_config, str) else manual.generation_config
@@ -3199,7 +3562,7 @@ def api_save_edited_image():
         # データベースに保存（重要：永続化）
         if manual_id:
             try:
-                from models import Manual
+                from src.models.models import Manual
                 manual = Manual.query.get(manual_id)
                 if manual:
                     # stage2_contentとstage3_contentを更新
@@ -3315,7 +3678,7 @@ def api_update_frame_rotation():
         manual_id = data.get('manual_id')
         if manual_id:
             try:
-                from models import Manual
+                from src.models.models import Manual
                 manual = Manual.query.get(manual_id)
                 if manual:
                     # stage2_contentとstage3_contentを更新

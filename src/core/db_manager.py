@@ -11,8 +11,8 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent))
 
 from flask import Flask
-from models import db, Company, User, UploadedFile, Manual
-from auth import CompanyManager
+from src.models.models import db, Company, User, UploadedFile, Manual
+from src.middleware.auth import CompanyManager
 
 def create_app():
     """Flaskアプリケーション作成"""

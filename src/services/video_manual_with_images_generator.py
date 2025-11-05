@@ -14,7 +14,7 @@ Part = types.Part  # google-genai Part を直接使用
 
 # Import GCP config helper
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from utils.gcp_config import get_gcp_project_id
+from src.utils.gcp_config import get_gcp_project_id
 
 logger = logging.getLogger(__name__)
 
