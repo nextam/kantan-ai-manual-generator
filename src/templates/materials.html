@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>参照資料管理</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/static/icons/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png">
+    <meta name="theme-color" content="#2196F3">
+    
+    <!-- Google Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #ffffff;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            padding: 20px 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        .filter-bar {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-bar select,
+        .filter-bar input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .materials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .material-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.1);
+            padding: 20px;
+            transition: all 0.2s ease;
+            border: 1px solid #e3f2fd;
+        }
+
+        .material-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 123, 255, 0.15);
+        }
+
+        .material-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .file-icon {
+            width: 50px;
+            height: 50px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .file-icon .material-icons {
+            font-size: 30px;
+            color: #007bff;
+        }
+
+        .material-info {
+            flex: 1;
+        }
+
+        .material-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .material-meta {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .material-description {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-completed {
+            background-color: #e3f2fd;
+            color: #007bff;
+        }
+
+        .status-processing {
+            background-color: #fff3e0;
+            color: #f57c00;
+        }
+
+        .status-error {
+            background-color: #ffebee;
+            color: #d32f2f;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background-color: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #1976d2, #42a5f5);
+            transition: width 0.3s ease;
+        }
+
+        .material-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .upload-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .file-drop-zone {
+            border: 2px dashed #007bff;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-drop-zone:hover {
+            background: #f8f9ff;
+            border-color: #0056b3;
+        }
+
+        .file-drop-zone.dragover {
+            background: #e3f2fd;
+            border-color: #0056b3;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .material-icons {
+            vertical-align: middle;
+        }
+
+        @media (max-width: 768px) {
+            .materials-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .actions-bar {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1><span class="material-icons">folder</span>参照資料管理</h1>
+            <a href="/dashboard" class="back-btn">
+                <span class="material-icons" style="font-size: 16px;">arrow_back</span>
+                ダッシュボード
+            </a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="actions-bar">
+            <div>
+                <button class="btn btn-success" onclick="showUploadModal()">
+                    <span class="material-icons">upload_file</span>
+                    資料アップロード
+                </button>
+                <button class="btn btn-secondary" onclick="refreshList()">
+                    <span class="material-icons">refresh</span>
+                    更新
+                </button>
+            </div>
+            <div>
+                <span style="font-size: 16px; font-weight: bold;">合計 <span id="total-count">0</span> 件</span>
+            </div>
+        </div>
+
+        <div class="filter-bar">
+            <select id="type-filter" onchange="filterMaterials()">
+                <option value="">すべてのタイプ</option>
+                <option value="pdf">PDF</option>
+                <option value="docx">Word</option>
+                <option value="xlsx">Excel</option>
+                <option value="csv">CSV</option>
+            </select>
+            <select id="status-filter" onchange="filterMaterials()">
+                <option value="">すべてのステータス</option>
+                <option value="completed">完了</option>
+                <option value="processing">処理中</option>
+                <option value="error">エラー</option>
+            </select>
+            <input type="text" id="search-input" placeholder="資料を検索..." onkeyup="filterMaterials()"
+                style="flex: 1; min-width: 200px;">
+        </div>
+
+        <div id="materials-grid" class="materials-grid"></div>
+
+        <div id="empty-state" class="empty-state" style="display: none;">
+            <span class="material-icons" style="font-size: 64px; color: #ccc;">folder_off</span>
+            <h3>参照資料がありません</h3>
+            <p>アップロードボタンから資料をアップロードしてください</p>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="upload-modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeUploadModal()">&times;</span>
+            <h2 style="margin-bottom: 20px;">参照資料アップロード</h2>
+            
+            <form id="uploadForm" onsubmit="uploadMaterial(event)">
+                <div class="form-group">
+                    <label>ファイル</label>
+                    <div class="file-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                        <span class="material-icons" style="font-size: 48px; color: #007bff;">cloud_upload</span>
+                        <p>クリックしてファイルを選択、またはドラッグ&ドロップ</p>
+                        <p style="font-size: 12px; color: #666;">対応形式: PDF, Word, Excel, CSV</p>
+                    </div>
+                    <input type="file" id="fileInput" accept=".pdf,.docx,.xlsx,.csv" style="display: none;" onchange="handleFileSelect(event)">
+                    <div id="selectedFile" style="margin-top: 10px; font-weight: bold; color: #007bff;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>タイトル</label>
+                    <input type="text" id="materialTitle" required>
+                </div>
+
+                <div class="form-group">
+                    <label>説明（任意）</label>
+                    <textarea id="materialDescription"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeUploadModal()">キャンセル</button>
+                    <button type="submit" class="btn btn-success">
+                        <span class="material-icons">upload</span>
+                        アップロード
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let materials = [];
+        let selectedFile = null;
+
+        // Load materials
+        async function loadMaterials() {
+            try {
+                const response = await fetch('/api/materials');
+                const data = await response.json();
+
+                if (data.success) {
+                    materials = data.materials;
+                    renderMaterials();
+                    updateTotalCount();
+                }
+            } catch (error) {
+                console.error('Error loading materials:', error);
+            }
+        }
+
+        function renderMaterials() {
+            const grid = document.getElementById('materials-grid');
+            const emptyState = document.getElementById('empty-state');
+
+            if (materials.length === 0) {
+                grid.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            grid.style.display = 'grid';
+            emptyState.style.display = 'none';
+
+            grid.innerHTML = materials.map(material => `
+                <div class="material-card">
+                    <div class="material-header">
+                        <div class="file-icon">
+                            <span class="material-icons">${getFileIcon(material.file_type)}</span>
+                        </div>
+                        <div class="material-info">
+                            <div class="material-title">${escapeHtml(material.title)}</div>
+                            <div class="material-meta">
+                                ${material.file_type.toUpperCase()} · ${formatFileSize(material.file_size)} · ${formatDate(material.uploaded_at)}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${material.description ? `<div class="material-description">${escapeHtml(material.description)}</div>` : ''}
+                    
+                    <div style="margin-bottom: 10px;">
+                        <span class="status-badge status-${material.processing_status}">
+                            ${getStatusText(material.processing_status)}
+                        </span>
+                        ${material.chunk_count ? `<span style="font-size: 12px; color: #666; margin-left: 10px;">${material.chunk_count} チャンク</span>` : ''}
+                    </div>
+                    
+                    ${material.processing_status === 'processing' ? `
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${material.processing_progress || 0}%"></div>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="material-actions">
+                        <button class="btn btn-primary btn-small" onclick="viewMaterial('${material.id}')">
+                            <span class="material-icons">visibility</span>
+                            詳細
+                        </button>
+                        <button class="btn btn-danger btn-small" onclick="deleteMaterial('${material.id}')">
+                            <span class="material-icons">delete</span>
+                            削除
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterMaterials() {
+            // TODO: Implement filtering
+            loadMaterials();
+        }
+
+        function refreshList() {
+            loadMaterials();
+        }
+
+        function updateTotalCount() {
+            document.getElementById('total-count').textContent = materials.length;
+        }
+
+        function showUploadModal() {
+            document.getElementById('uploadModal').style.display = 'block';
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').style.display = 'none';
+            document.getElementById('uploadForm').reset();
+            selectedFile = null;
+            document.getElementById('selectedFile').textContent = '';
+        }
+
+        function handleFileSelect(event) {
+            selectedFile = event.target.files[0];
+            if (selectedFile) {
+                document.getElementById('selectedFile').textContent = `選択: ${selectedFile.name}`;
+                if (!document.getElementById('materialTitle').value) {
+                    document.getElementById('materialTitle').value = selectedFile.name.replace(/\.[^/.]+$/, '');
+                }
+            }
+        }
+
+        async function uploadMaterial(event) {
+            event.preventDefault();
+
+            if (!selectedFile) {
+                alert('ファイルを選択してください');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('title', document.getElementById('materialTitle').value);
+            formData.append('description', document.getElementById('materialDescription').value);
+
+            try {
+                const response = await fetch('/api/materials', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('アップロードが完了しました。処理を開始します。');
+                    closeUploadModal();
+                    await loadMaterials();
+                } else {
+                    alert('アップロードエラー: ' + data.error);
+                }
+            } catch (error) {
+                alert('エラーが発生しました: ' + error.message);
+            }
+        }
+
+        async function deleteMaterial(materialId) {
+            if (!confirm('この資料を削除してもよろしいですか？')) return;
+
+            try {
+                const response = await fetch(`/api/materials/${materialId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('削除しました');
+                    await loadMaterials();
+                } else {
+                    alert('削除エラー: ' + data.error);
+                }
+            } catch (error) {
+                alert('エラーが発生しました: ' + error.message);
+            }
+        }
+
+        function viewMaterial(materialId) {
+            window.location.href = `/materials/${materialId}`;
+        }
+
+        function getFileIcon(fileType) {
+            const icons = {
+                'pdf': 'picture_as_pdf',
+                'docx': 'description',
+                'xlsx': 'table_chart',
+                'csv': 'table_view'
+            };
+            return icons[fileType] || 'insert_drive_file';
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'completed': '完了',
+                'processing': '処理中',
+                'error': 'エラー',
+                'pending': '待機中'
+            };
+            return statusMap[status] || status;
+        }
+
+        function formatFileSize(bytes) {
+            if (!bytes) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ja-JP');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Drag & Drop
+        const dropZone = document.getElementById('dropZone');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.remove('dragover');
+            }, false);
+        });
+
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length > 0) {
+                selectedFile = files[0];
+                document.getElementById('selectedFile').textContent = `選択: ${selectedFile.name}`;
+                if (!document.getElementById('materialTitle').value) {
+                    document.getElementById('materialTitle').value = selectedFile.name.replace(/\.[^/.]+$/, '');
+                }
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', loadMaterials);
+
+        // Auto refresh for processing materials
+        setInterval(() => {
+            const hasProcessing = materials.some(m => m.processing_status === 'processing');
+            if (hasProcessing) {
+                loadMaterials();
+            }
+        }, 5000);
+    </script>
+</body>
+
+</html>

@@ -857,6 +857,12 @@ sudo docker-compose logs --tail=100 manual
 - [Phase 3 Implementation Report](docs/PHASE3_IMPLEMENTATION_REPORT.md) - Company Admin APIs (13 endpoints, 100% test success)
 - [Phase 4 Implementation Summary](docs/PHASE4_IMPLEMENTATION_SUMMARY.md) - RAG System & Material Management
 - [Phase 6-8 Implementation Report](docs/PHASE6_8_IMPLEMENTATION_REPORT.md) - PDF Export, Translation, Async Jobs (18 endpoints)
+- [Phase 9 Implementation Report](docs/PHASE9_IMPLEMENTATION_REPORT.md) - UI/UX Polish & Testing (2 UI components, 6 test endpoints, E2E testing)
+
+**開発・運用ガイド**:
+- [Development Work Plan](docs/DEVELOPMENT_WORKPLAN.md) - Phase 1-9の詳細実装ガイド
+- [Performance Optimization Guide](docs/PERFORMANCE_OPTIMIZATION_GUIDE.md) - データベース・API・フロントエンド最適化
+- [Enterprise Features Specification](docs/SPECIFICATION_ENTERPRISE_FEATURES.md) - エンタープライズ機能の仕様書
 
 詳細は上記ドキュメントを参照してください。
 

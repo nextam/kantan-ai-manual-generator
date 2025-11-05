@@ -1805,6 +1805,19 @@ if HAS_AUTH_SYSTEM:
         logger.info("Job management routes (Phase 8) registered successfully")
     except Exception as e:
         logger.warning(f"Failed to register job routes: {e}")
+    
+    # UI/UX Testing APIエンドポイント登録 (Phase 9)
+    try:
+        import sys
+        from pathlib import Path
+        # Add scripts directory to path
+        scripts_dir = Path(__file__).parent.parent.parent / 'scripts'
+        sys.path.insert(0, str(scripts_dir))
+        from test_ui_phase9 import test_ui_bp
+        app.register_blueprint(test_ui_bp)
+        logger.info("UI/UX testing routes (Phase 9) registered successfully")
+    except Exception as e:
+        logger.warning(f"Failed to register UI testing routes: {e}")
 
     # スーパー管理者用デコレーター
     def require_super_admin(f):
