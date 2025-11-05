@@ -1757,6 +1757,14 @@ if HAS_AUTH_SYSTEM:
         logger.info("Admin routes (production API) registered successfully")
     except Exception as e:
         logger.warning(f"Failed to register admin routes: {e}")
+    
+    # 企業管理者用本番APIエンドポイント登録 (Phase 3)
+    try:
+        from src.api.company_routes import company_bp
+        app.register_blueprint(company_bp)
+        logger.info("Company routes (production API) registered successfully")
+    except Exception as e:
+        logger.warning(f"Failed to register company routes: {e}")
 
     # スーパー管理者用デコレーター
     def require_super_admin(f):

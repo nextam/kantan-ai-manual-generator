@@ -378,6 +378,33 @@ def require_role_enhanced(allowed_roles):
         return decorated_function
     return decorator
 
+
+def require_company_admin(f):
+    """
+    Decorator for endpoints requiring company admin access
+    
+    Usage:
+        @require_company_admin
+        def company_admin_endpoint():
+            pass
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Check if user is authenticated
+        if not current_user.is_authenticated:
+            return jsonify({'error': 'Authentication required'}), 401
+        
+        # Check if user is company admin
+        if current_user.role != 'admin':
+            return jsonify({'error': 'Company admin access required'}), 403
+        
+        # Store company_id in g for easy access
+        g.company_id = current_user.company_id
+        g.current_user = current_user
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
 def init_auth_routes(app):
     """認証ルートの初期化"""
     
