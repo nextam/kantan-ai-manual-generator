@@ -18,16 +18,27 @@ class S3Manager:
     
     All S3 paths follow the pattern:
     s3://kantan-ai-manual-generator/{company_id}/{resource_type}/{resource_id}/
+    
+    In development mode (USE_S3=false), files are stored locally in:
+    ./uploads/{company_id}/{resource_type}/{resource_id}/
     """
     
     def __init__(self):
+        self.use_s3 = os.getenv('USE_S3', 'false').lower() == 'true'
         self.bucket_name = os.getenv('AWS_S3_BUCKET_NAME', 'kantan-ai-manual-generator')
-        self.s3_client = boto3.client(
-            's3',
-            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-            region_name=os.getenv('AWS_REGION', 'ap-northeast-1')
-        )
+        self.local_storage_path = os.path.join(os.getcwd(), 'uploads')
+        
+        if self.use_s3:
+            self.s3_client = boto3.client(
+                's3',
+                aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+                aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+                region_name=os.getenv('AWS_REGION', 'ap-northeast-1')
+            )
+        else:
+            self.s3_client = None
+            # Ensure local storage directory exists
+            os.makedirs(self.local_storage_path, exist_ok=True)
     
     def get_material_path(self, company_id: int, material_id: int, filename: str) -> str:
         """Generate S3 key for reference material"""
@@ -52,30 +63,41 @@ class S3Manager:
     def upload_file(self, file_obj: BinaryIO, s3_key: str, 
                     content_type: str = 'application/octet-stream') -> str:
         """
-        Upload file object to S3
+        Upload file object to S3 or local storage
         
         Args:
             file_obj: File-like object to upload
-            s3_key: S3 object key (path within bucket)
+            s3_key: S3 object key (path within bucket) or local relative path
             content_type: MIME type of the file
         
         Returns:
-            S3 URI (s3://bucket/key)
+            S3 URI (s3://bucket/key) or local file path
         """
-        try:
-            self.s3_client.upload_fileobj(
-                file_obj,
-                self.bucket_name,
-                s3_key,
-                ExtraArgs={
-                    'ContentType': content_type,
-                    'ServerSideEncryption': 'AES256'
-                }
-            )
-            return f"s3://{self.bucket_name}/{s3_key}"
-        
-        except ClientError as e:
-            raise Exception(f"S3 upload failed: {str(e)}")
+        if self.use_s3:
+            try:
+                self.s3_client.upload_fileobj(
+                    file_obj,
+                    self.bucket_name,
+                    s3_key,
+                    ExtraArgs={
+                        'ContentType': content_type,
+                        'ServerSideEncryption': 'AES256'
+                    }
+                )
+                return f"s3://{self.bucket_name}/{s3_key}"
+            
+            except ClientError as e:
+                raise Exception(f"S3 upload failed: {str(e)}")
+        else:
+            # Local storage fallback
+            local_path = os.path.join(self.local_storage_path, s3_key)
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            
+            with open(local_path, 'wb') as f:
+                file_obj.seek(0)  # Reset file pointer
+                f.write(file_obj.read())
+            
+            return f"file://{local_path}"
     
     def upload_from_path(self, local_path: str, s3_key: str,
                          content_type: str = 'application/octet-stream') -> str:

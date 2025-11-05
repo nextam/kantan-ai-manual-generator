@@ -20,6 +20,42 @@
       }
     },
     {
+      "label": "すべてのPythonプロセスを強制終了",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-Command",
+        "Write-Host '=== すべてのPythonプロセスを強制終了 ==='; Get-Process | Where-Object {$_.ProcessName -eq 'python'} | ForEach-Object { Write-Host \"終了: PID $($_.Id) (起動時刻: $($_.StartTime))\"; Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue }; Start-Sleep -Seconds 1; $remaining = Get-Process | Where-Object {$_.ProcessName -eq 'python'}; if ($remaining) { Write-Host '警告: 一部のプロセスが残っています' } else { Write-Host '✅ すべてのPythonプロセスを終了しました' }"
+      ],
+      "group": "none",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      }
+    },
+    {
+      "label": "ElasticSearch & Redis 再起動",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-Command",
+        "Write-Host '=== ElasticSearch & Redis 再起動 ==='; Write-Host ''; Write-Host 'Docker コンテナを再起動中...'; docker-compose restart elasticsearch redis; Start-Sleep -Seconds 3; Write-Host ''; Write-Host 'サービス状態確認中...'; docker-compose ps elasticsearch redis; Write-Host ''; Write-Host '✅ ElasticSearch & Redis 再起動完了'"
+      ],
+      "group": "none",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      }
+    },
+    {
       "label": "マニュアル生成サーバー起動 (ポート5000) - Waitress",
       "type": "shell",
       "command": "cmd",
@@ -37,12 +73,58 @@
         "showReuseMessage": true,
         "clear": false
       },
+      "problemMatcher": [],
+      "dependsOn": [
+        "すべてのPythonプロセスを強制終了",
+        "ElasticSearch & Redis 再起動"
+      ],
+      "dependsOrder": "sequence"
+    },
+    {
+      "label": "🚀 クリーンサーバー起動（ワンステップ）",
+      "type": "shell",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "start_server_clean.bat"
+      ],
+      "isBackground": true,
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
       "problemMatcher": []
     },
     {
       "label": "サーバー状態確認",
       "type": "shell",
       "command": "powershell -Command \"Write-Host '=== サーバー状態確認 ==='; Write-Host ''; try { $response = Invoke-WebRequest -Uri 'http://localhost:5000' -TimeoutSec 3 -ErrorAction Stop; Write-Host '✅ Manual Generator (Port 5000): 動作中' } catch { Write-Host '❌ Manual Generator (Port 5000): 停止中' }\"",
+      "group": "none",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      }
+    },
+    {
+      "label": "サービス状態確認（詳細）",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-Command",
+        "Write-Host '=== サービス状態確認（詳細）==='; Write-Host ''; Write-Host '[1] Pythonプロセス:'; $pythonProcesses = Get-Process | Where-Object {$_.ProcessName -eq 'python'}; if ($pythonProcesses) { $pythonProcesses | ForEach-Object { Write-Host \"  PID $($_.Id) - 起動: $($_.StartTime)\" } } else { Write-Host '  なし' }; Write-Host ''; Write-Host '[2] Docker コンテナ:'; docker-compose ps; Write-Host ''; Write-Host '[3] Flask サーバー:'; try { $response = Invoke-WebRequest -Uri 'http://localhost:5000/auth/status' -TimeoutSec 3 -ErrorAction Stop; Write-Host \"  ✅ Port 5000: 動作中 (Status: $($response.StatusCode))\" } catch { Write-Host '  ❌ Port 5000: 停止中' }; Write-Host ''"
+      ],
       "group": "none",
       "presentation": {
         "echo": true,

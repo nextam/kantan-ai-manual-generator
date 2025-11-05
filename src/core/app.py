@@ -1765,6 +1765,14 @@ if HAS_AUTH_SYSTEM:
         logger.info("Company routes (production API) registered successfully")
     except Exception as e:
         logger.warning(f"Failed to register company routes: {e}")
+    
+    # 参照資料管理APIエンドポイント登録 (Phase 4)
+    try:
+        from src.api.material_routes import material_bp
+        app.register_blueprint(material_bp)
+        logger.info("Material routes (RAG system API) registered successfully")
+    except Exception as e:
+        logger.warning(f"Failed to register material routes: {e}")
 
     # スーパー管理者用デコレーター
     def require_super_admin(f):
