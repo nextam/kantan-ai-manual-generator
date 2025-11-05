@@ -1741,6 +1741,22 @@ if HAS_AUTH_SYSTEM:
     
     # 認証ルート初期化
     init_auth_routes(app)
+    
+    # テストエンドポイント登録 (Phase 1)
+    try:
+        from src.api.test_routes import test_bp
+        app.register_blueprint(test_bp)
+        logger.info("Test routes registered successfully")
+    except Exception as e:
+        logger.warning(f"Failed to register test routes: {e}")
+    
+    # スーパー管理者用本番APIエンドポイント登録 (Phase 2)
+    try:
+        from src.api.admin_routes import admin_bp
+        app.register_blueprint(admin_bp)
+        logger.info("Admin routes (production API) registered successfully")
+    except Exception as e:
+        logger.warning(f"Failed to register admin routes: {e}")
 
     # スーパー管理者用デコレーター
     def require_super_admin(f):

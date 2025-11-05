@@ -262,6 +262,122 @@ def require_role(role: str):
         return decorated_function
     return decorator
 
+
+def require_super_admin(f):
+    """
+    Decorator for endpoints requiring super admin access
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        from src.models.models import SuperAdmin
+        
+        if not session.get('is_super_admin'):
+            return jsonify({'error': 'Super admin access required'}), 403
+        
+        super_admin_id = session.get('super_admin_id')
+        if not super_admin_id:
+            return jsonify({'error': 'Super admin session invalid'}), 403
+        
+        super_admin = SuperAdmin.query.get(super_admin_id)
+        if not super_admin or not super_admin.is_active:
+            session.pop('is_super_admin', None)
+            session.pop('super_admin_id', None)
+            return jsonify({'error': 'Super admin account inactive'}), 403
+        
+        g.super_admin = super_admin
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def log_activity(action_type, action_detail=None, resource_type=None, resource_id=None):
+    """
+    Decorator to log user activities
+    
+    Usage:
+        @log_activity('upload', 'Uploaded reference material', 'material')
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            from src.models.models import ActivityLog
+            import json
+            
+            start_time = datetime.utcnow()
+            error_msg = None
+            result_status = 'success'
+            
+            try:
+                result = f(*args, **kwargs)
+                
+                if isinstance(result, tuple) and len(result) > 1:
+                    status_code = result[1]
+                    if status_code >= 400:
+                        result_status = 'failure'
+                        if isinstance(result[0], dict):
+                            error_msg = result[0].get('error', 'Unknown error')
+                
+                return result
+            
+            except Exception as e:
+                result_status = 'failure'
+                error_msg = str(e)
+                raise
+            
+            finally:
+                try:
+                    user_id = current_user.id if current_user.is_authenticated else None
+                    company_id = current_user.company_id if current_user.is_authenticated else None
+                    
+                    request_metadata = {
+                        'ip_address': request.remote_addr,
+                        'user_agent': request.headers.get('User-Agent'),
+                        'method': request.method,
+                        'path': request.path,
+                        'duration_ms': int((datetime.utcnow() - start_time).total_seconds() * 1000)
+                    }
+                    
+                    activity = ActivityLog(
+                        user_id=user_id,
+                        company_id=company_id,
+                        action_type=action_type,
+                        action_detail=action_detail,
+                        resource_type=resource_type,
+                        resource_id=kwargs.get(resource_id) if resource_id and isinstance(resource_id, str) else None,
+                        request_metadata=json.dumps(request_metadata, ensure_ascii=False),
+                        result_status=result_status,
+                        error_message=error_msg
+                    )
+                    
+                    db.session.add(activity)
+                    db.session.commit()
+                
+                except Exception as log_error:
+                    print(f"Failed to log activity: {log_error}")
+        
+        return decorated_function
+    return decorator
+
+
+def require_role_enhanced(allowed_roles):
+    """
+    Enhanced role-based access control
+    
+    Usage:
+        @require_role_enhanced(['admin', 'user'])
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated:
+                return jsonify({'error': 'Authentication required'}), 401
+            
+            if current_user.role not in allowed_roles:
+                return jsonify({'error': 'Insufficient permissions'}), 403
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
 def init_auth_routes(app):
     """認証ルートの初期化"""
     
