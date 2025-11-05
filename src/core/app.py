@@ -252,6 +252,26 @@ CORS(app)
 
 # 設定
 ALLOWED_EXTENSIONS = {'mp4', 'avi', 'mov', 'mkv', 'webm'}
+
+# Template context processor
+@app.context_processor
+def inject_user_info():
+    """
+    Inject user authentication info into all templates
+    """
+    from flask import session
+    
+    user_info = {
+        'is_super_admin': session.get('is_super_admin', False),
+        'super_admin_username': session.get('super_admin_username'),
+        'company_id': session.get('company_id'),
+        'company_name': session.get('company_name'),
+        'username': session.get('username'),
+        'user_role': session.get('user_role'),
+        'user_id': session.get('user_id')
+    }
+    
+    return dict(user_info=user_info)
 # 最大リクエストサイズを10GBに増やす（画像付きマニュアル対応）
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024 * 1024  # 10GB制限
 logger.info(f"Flask MAX_CONTENT_LENGTH設定: {app.config['MAX_CONTENT_LENGTH'] / 1024 / 1024 / 1024:.1f} GB")
@@ -1805,6 +1825,16 @@ if HAS_AUTH_SYSTEM:
         logger.info("Job management routes (Phase 8) registered successfully")
     except Exception as e:
         logger.warning(f"Failed to register job routes: {e}")
+    
+    # UI Routes for Admin and Company Dashboards
+    try:
+        from src.routes.ui_routes import super_admin_ui_bp, company_ui_bp, ui_bp
+        app.register_blueprint(super_admin_ui_bp)
+        app.register_blueprint(company_ui_bp)
+        app.register_blueprint(ui_bp)
+        logger.info("UI routes registered successfully")
+    except Exception as e:
+        logger.warning(f"Failed to register UI routes: {e}")
     
     # UI/UX Testing APIエンドポイント登録 (Phase 9)
     try:

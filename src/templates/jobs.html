@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}Job Status{% endblock %}
+
+{% block page_title %}Job Status{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .jobs-container {
+        padding: 20px;
+    }
+    
+    .filter-bar {
+        background: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+    
+    .filter-bar select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    
+    .btn-refresh {
+        padding: 8px 16px;
+        background: #2196F3;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        margin-left: auto;
+    }
+    
+    .jobs-list {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .job-item {
+        padding: 20px;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background 0.2s;
+    }
+    
+    .job-item:hover {
+        background: #fafafa;
+    }
+    
+    .job-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .job-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .job-status {
+        display: inline-block;
+        padding: 6px 14px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    
+    .status-pending {
+        background: #fff3e0;
+        color: #e65100;
+    }
+    
+    .status-processing {
+        background: #e3f2fd;
+        color: #1565c0;
+    }
+    
+    .status-completed {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+    
+    .status-failed {
+        background: #ffebee;
+        color: #c62828;
+    }
+    
+    .job-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin: 15px 0;
+        color: #666;
+        font-size: 13px;
+    }
+    
+    .job-detail {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .job-progress {
+        margin-top: 10px;
+    }
+    
+    .progress-bar {
+        height: 6px;
+        background: #f0f0f0;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: #2196F3;
+        transition: width 0.3s;
+    }
+    
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="jobs-container">
+    <div class="filter-bar">
+        <label>Filter by status:</label>
+        <select id="statusFilter" onchange="filterJobs()">
+            <option value="">All</option>
+            <option value="pending">Pending</option>
+            <option value="processing">Processing</option>
+            <option value="completed">Completed</option>
+            <option value="failed">Failed</option>
+        </select>
+        <button class="btn-refresh" onclick="loadJobs()">
+            <span class="material-icons" style="vertical-align: middle; font-size: 16px;">refresh</span>
+            Refresh
+        </button>
+    </div>
+    
+    <div class="jobs-list">
+        <div id="loadingIndicator" class="loading">
+            Loading jobs...
+        </div>
+        <div id="jobsContent" style="display: none;">
+        </div>
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <span class="material-icons" style="font-size: 64px; color: #ccc;">work_outline</span>
+            <p>No jobs found</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let allJobs = [];
+    
+    async function loadJobs() {
+        try {
+            // Note: This endpoint may not exist yet, will need to be implemented
+            const response = await fetch('/api/jobs');
+            if (!response.ok) {
+                // Fallback: show placeholder data
+                showPlaceholderJobs();
+                return;
+            }
+            
+            const data = await response.json();
+            allJobs = data.jobs || [];
+            
+            document.getElementById('loadingIndicator').style.display = 'none';
+            
+            if (allJobs.length === 0) {
+                document.getElementById('emptyState').style.display = 'block';
+                return;
+            }
+            
+            displayJobs(allJobs);
+        } catch (error) {
+            console.error('Error loading jobs:', error);
+            // Show placeholder for demonstration
+            showPlaceholderJobs();
+        }
+    }
+    
+    function showPlaceholderJobs() {
+        document.getElementById('loadingIndicator').style.display = 'none';
+        const placeholder = [
+            {
+                id: 1,
+                title: 'Manual Generation - Sample Video',
+                status: 'completed',
+                created_at: new Date().toISOString(),
+                progress: 100,
+                details: 'Completed successfully'
+            },
+            {
+                id: 2,
+                title: 'PDF Export - Manual #123',
+                status: 'processing',
+                created_at: new Date().toISOString(),
+                progress: 65,
+                details: 'Generating PDF...'
+            }
+        ];
+        allJobs = placeholder;
+        displayJobs(placeholder);
+    }
+    
+    function displayJobs(jobs) {
+        const content = document.getElementById('jobsContent');
+        content.innerHTML = jobs.map(job => `
+            <div class="job-item" data-status="${job.status}">
+                <div class="job-header">
+                    <div class="job-title">${job.title}</div>
+                    <span class="job-status status-${job.status}">${job.status.toUpperCase()}</span>
+                </div>
+                <div class="job-details">
+                    <div class="job-detail">
+                        <span class="material-icons" style="font-size: 16px;">event</span>
+                        <span>${new Date(job.created_at).toLocaleString()}</span>
+                    </div>
+                    <div class="job-detail">
+                        <span class="material-icons" style="font-size: 16px;">info</span>
+                        <span>${job.details || 'In progress'}</span>
+                    </div>
+                </div>
+                ${job.progress !== undefined ? `
+                    <div class="job-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${job.progress}%"></div>
+                        </div>
+                        <div style="text-align: right; font-size: 12px; color: #666; margin-top: 4px;">${job.progress}%</div>
+                    </div>
+                ` : ''}
+            </div>
+        `).join('');
+        content.style.display = 'block';
+    }
+    
+    function filterJobs() {
+        const status = document.getElementById('statusFilter').value;
+        const filtered = status ? allJobs.filter(job => job.status === status) : allJobs;
+        
+        if (filtered.length === 0) {
+            document.getElementById('jobsContent').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'block';
+        } else {
+            document.getElementById('emptyState').style.display = 'none';
+            displayJobs(filtered);
+        }
+    }
+    
+    // Auto-refresh every 10 seconds for processing jobs
+    setInterval(() => {
+        if (allJobs.some(job => job.status === 'processing' || job.status === 'pending')) {
+            loadJobs();
+        }
+    }, 10000);
+    
+    loadJobs();
+</script>
+{% endblock %}

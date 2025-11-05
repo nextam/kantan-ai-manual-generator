@@ -1,81 +1,10 @@
-<!DOCTYPE html>
-<html lang="ja">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>マニュアル新規作成（画像なし）</title>
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="/static/icons/favicon.ico">
-    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="48x48" href="/static/icons/favicon-48x48.png">
-    <link rel="icon" type="image/png" sizes="64x64" href="/static/icons/favicon-64x64.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png">
-    <meta name="theme-color" content="#2196F3">
-    
-    <!-- Google Material Icons -->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+{% block title %}マニュアル新規作成（画像なし）{% endblock %}
+{% block page_title %}マニュアル（画像なし）生成{% endblock %}
+
+{% block extra_styles %}
     <style>
-        h1 {
-            font-size: 24px;
-        }
-
-        h2 {
-            font-size: 20px;
-        }
-
-        h3 {
-            font-size: 18px;
-        }
-
-        h4 {
-            font-size: 16px;
-        }
-
-        h5 {
-            font-size: 14px;
-        }
-
-        h6 {
-            font-size: 14px;
-        }
-
-        p {
-            font-size: 14px;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #ffffff;
-            min-height: 100vh;
-            color: #333;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: white;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-            padding: 30px 0;
-            background-color: #007bff;
-            color: white;
-            border-radius: 8px;
-        }
-
-        .header h1 {
-            font-size: 24px;
-            margin: 0;
-            font-weight: 600;
-        }
-
         .breadcrumb {
             margin-bottom: 30px;
             padding: 15px;
@@ -392,20 +321,14 @@
         }
 
         .prompt-examples li {
-            margin-bottom: 5px;
+            margin: 5px 0;
             color: #333;
         }
     </style>
-</head>
+{% endblock %}
 
-<body>
-    <div class="container">
-        <div class="header">
-            <h1><span class="material-icons"
-                    style="font-size: 24px; vertical-align: middle; margin-right: 15px;">create</span>マニュアル（画像なし）生成</h1>
-            <p>作業動画をアップロードしてAIマニュアルを生成します</p>
-        </div>
-
+{% block content %}
+    <div style="max-width: 1200px; margin: 0 auto;">
         <!-- パンくずリスト -->
         <div class="breadcrumb">
             <a href="/manual/list"><span class="material-icons" style="font-size: 16px;">menu_book</span>マニュアル一覧</a> >
@@ -858,6 +781,4 @@
             }, type === 'error' ? 7000 : 4000);
         }
     </script>
-</body>
-
-</html>
+{% endblock %}

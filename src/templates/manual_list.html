@@ -1,22 +1,9 @@
-<!DOCTYPE html>
-<html lang="ja">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>マニュアル一覧</title>
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="/static/icons/favicon.ico">
-    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="48x48" href="/static/icons/favicon-48x48.png">
-    <link rel="icon" type="image/png" sizes="64x64" href="/static/icons/favicon-64x64.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png">
-    <meta name="theme-color" content="#2196F3">
-    
-    <!-- Google Material Icons -->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+{% block title %}マニュアル一覧{% endblock %}
+{% block page_title %}マニュアル一覧{% endblock %}
+
+{% block extra_styles %}
     <style>
         h1 {
             font-size: 24px;
@@ -599,30 +586,10 @@
             }
         }
     </style>
-</head>
+{% endblock %}
 
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="logout-container">
-                <div class="user-info" id="user-info">
-                    <!-- ユーザー情報がJavaScriptで設定されます -->
-                </div>
-                <!-- JavaScriptとFormの両方のログアウト方法を提供 -->
-                <button class="btn-logout" onclick="logout()">
-                    <span class="material-icons" style="font-size: 16px;">logout</span>
-                    ログアウト
-                </button>
-                <!-- 隠しフォーム（代替手段） -->
-                <form id="logout-form" action="/auth/logout" method="POST" style="display: none;">
-                </form>
-            </div>
-            <h1><span class="material-icons"
-                    style="font-size: 24px; vertical-align: middle; margin-right: 15px;">menu_book</span>マニュアル一覧</h1>
-            <p>作成したマニュアルを管理・閲覧できます</p>
-        </div>
-
-        <div class="actions-bar">
+{% block content %}
+    <div class="actions-bar">
             <div>
                 <a href="/manual/video/three-stage" class="btn btn-success"><span class="material-icons">auto_awesome</span>マニュアル（画像あり）生成</a>
                 <a href="/manual/create" class="btn btn-primary"><span class="material-icons">add</span>マニュアル（画像なし）生成</a>
@@ -696,7 +663,6 @@
 
         // ページ読み込み時にマニュアル一覧を取得
         document.addEventListener('DOMContentLoaded', function () {
-            loadUserInfo();
             loadManuals();
 
             // 定期的にステータスを更新（作成中のマニュアルがある場合）
@@ -1035,41 +1001,24 @@
             stopStatusPolling();
         });
 
-        // ユーザー情報を取得して表示
+        // ユーザー情報を取得して表示 (サイドメニューに移行したため簡略化)
         async function loadUserInfo() {
+            // サイドメニューで認証情報を表示するため、この関数は不要
+            // 認証チェックのみ実施
             try {
                 const response = await fetch('/auth/status');
-
                 if (response.ok) {
                     const result = await response.json();
-                    console.log('認証ステータス:', result);
-
-                    if (result.authenticated) {
-                        const userInfo = document.getElementById('user-info');
-                        userInfo.textContent = `ログイン中: ${result.username || result.email || 'ユーザー'}`;
-                    } else if (result.auth_system_available === false) {
-                        // 認証システムが無効な場合は、ユーザー情報を表示しない
-                        console.log('認証システムが無効です - 認証なしモードで動作中');
-                        const userInfo = document.getElementById('user-info');
-                        userInfo.textContent = '認証なしモード';
-                    } else {
-                        // 認証されていない場合はログインページにリダイレクト
-                        console.log('認証されていません - ログインページにリダイレクト');
+                    if (!result.authenticated && result.auth_system_available !== false) {
                         window.location.replace('/login');
                     }
-                } else {
-                    console.error('認証ステータス取得失敗:', response.status);
-                    // 認証システムが無効な場合は、認証なしで続行
-                    const userInfo = document.getElementById('user-info');
-                    userInfo.textContent = '認証なしモード';
                 }
             } catch (error) {
-                console.error('ユーザー情報取得エラー:', error);
-                // 認証システムが無効な場合は、認証なしで続行
-                const userInfo = document.getElementById('user-info');
-                userInfo.textContent = '認証なしモード';
+                console.log('認証チェックエラー:', error);
             }
-        }        // ログアウト処理
+        }
+
+        // ログアウト処理 (サイドメニューに移行したため簡略化)
         async function logout() {
             if (!confirm('ログアウトしますか？')) return;
 
@@ -1238,7 +1187,4 @@
                 await loadManuals(currentPage + 1);
             }
         }
-    </script>
-</body>
-
-</html>
+{% endblock %}

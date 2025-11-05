@@ -1,0 +1,120 @@
+<div class="sidebar">
+    <div class="sidebar-header">
+        <h2>Manual Generator</h2>
+        <div class="user-info">
+            {% if session.get('is_super_admin') %}
+                <div><strong>Super Admin</strong></div>
+                <div>{{ session.get('super_admin_username', 'Admin') }}</div>
+            {% elif session.get('company_id') %}
+                <div><strong>{{ session.get('username', 'User') }}</strong></div>
+                <div>{{ session.get('company_name', 'Company') }}</div>
+                {% if session.get('user_role') %}
+                    <div style="font-size: 11px; margin-top: 3px;">
+                        {% if session.get('user_role') == 'admin' %}
+                            Company Administrator
+                        {% else %}
+                            General User
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="sidebar-menu">
+        <!-- Super Admin Menu -->
+        {% if session.get('is_super_admin') %}
+            <div class="menu-section">
+                <div class="menu-section-title">Super Admin</div>
+                <a href="/super-admin/dashboard" class="menu-item">
+                    <span class="material-icons">dashboard</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/super-admin/companies" class="menu-item">
+                    <span class="material-icons">business</span>
+                    <span>Company Management</span>
+                </a>
+                <a href="/super-admin/users" class="menu-item">
+                    <span class="material-icons">people</span>
+                    <span>User Management</span>
+                </a>
+                <a href="/super-admin/activity-logs" class="menu-item">
+                    <span class="material-icons">history</span>
+                    <span>Activity Logs</span>
+                </a>
+            </div>
+        {% endif %}
+
+        <!-- Company Admin Menu -->
+        {% if session.get('company_id') and session.get('user_role') == 'admin' %}
+            <div class="menu-section">
+                <div class="menu-section-title">Company Admin</div>
+                <a href="/company/dashboard" class="menu-item">
+                    <span class="material-icons">analytics</span>
+                    <span>Company Dashboard</span>
+                </a>
+                <a href="/company/users" class="menu-item">
+                    <span class="material-icons">group</span>
+                    <span>User Management</span>
+                </a>
+                <a href="/company/templates" class="menu-item">
+                    <span class="material-icons">description</span>
+                    <span>Template Management</span>
+                </a>
+            </div>
+        {% endif %}
+
+        <!-- General User Menu (All authenticated users) -->
+        {% if session.get('company_id') or session.get('is_super_admin') %}
+            <div class="menu-section">
+                <div class="menu-section-title">Manual Generation</div>
+                <a href="/" class="menu-item">
+                    <span class="material-icons">home</span>
+                    <span>Home</span>
+                </a>
+                <a href="/manual/list" class="menu-item">
+                    <span class="material-icons">list</span>
+                    <span>Manual List</span>
+                </a>
+                <a href="/manual/create" class="menu-item">
+                    <span class="material-icons">add_circle</span>
+                    <span>Create Manual</span>
+                </a>
+                <a href="/manual/video/three-stage" class="menu-item">
+                    <span class="material-icons">add_photo_alternate</span>
+                    <span>Create with Images</span>
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-section-title">Resources</div>
+                <a href="/materials" class="menu-item">
+                    <span class="material-icons">folder_open</span>
+                    <span>Reference Materials</span>
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-section-title">Processing</div>
+                <a href="/jobs" class="menu-item">
+                    <span class="material-icons">work</span>
+                    <span>Job Status</span>
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="sidebar-footer">
+        {% if session.get('is_super_admin') or session.get('company_id') %}
+            <a href="/auth/logout" class="menu-item" style="background: rgba(244, 67, 54, 0.2); border-radius: 5px;">
+                <span class="material-icons">logout</span>
+                <span>Logout</span>
+            </a>
+        {% else %}
+            <a href="/auth/login" class="menu-item" style="background: rgba(76, 175, 80, 0.2); border-radius: 5px;">
+                <span class="material-icons">login</span>
+                <span>Login</span>
+            </a>
+        {% endif %}
+    </div>
+</div>
