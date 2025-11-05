@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # ElasticSearch for RAG semantic search
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: manual-generator-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - manual-generator-network
+
+  # Redis for Celery message broker
+  redis:
+    image: redis:7-alpine
+    container_name: manual-generator-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - manual-generator-network
+
+volumes:
+  elasticsearch_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  manual-generator-network:
+    driver: bridge

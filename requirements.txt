@@ -29,7 +29,26 @@ typing-extensions==4.8.0
 
 # NOTE: Removed google-cloud-aiplatform (Vertex AI) to avoid resolver explosion.
 #       Gemini は google-genai (新公式 SDK) を利用。旧 google-generativeai は非推奨につき削除。
-# NOTE: Removed boto3/botocore (S3 not in active use; GCS only).
+
+# Phase 4: RAG System & Enterprise Features
+boto3==1.34.0  # AWS S3 for reference materials and PDFs
+elasticsearch==8.11.0  # Semantic search
+redis==5.0.1  # Message broker for Celery
+celery==5.3.4  # Async task processing
+flower==2.0.1  # Celery monitoring
+
+# Document Processing
+PyPDF2==3.0.1  # PDF text extraction
+pdfplumber==0.10.3  # Enhanced PDF parsing
+python-docx==1.1.0  # Word document processing
+openpyxl==3.1.2  # Excel file processing
+
+# PDF Generation (Phase 6)
+weasyprint==60.1  # HTML to PDF conversion
+
+# Testing
+faker==20.1.0  # Test data generation
+
 gunicorn==22.0.0
 waitress==3.0.0
 pytest==7.4.3
