@@ -1781,6 +1781,30 @@ if HAS_AUTH_SYSTEM:
         logger.info("Enhanced manual generation routes (Phase 5) registered successfully")
     except Exception as e:
         logger.warning(f"Failed to register enhanced manual routes: {e}")
+    
+    # PDF Export APIエンドポイント登録 (Phase 6)
+    try:
+        from src.api.pdf_routes import pdf_bp
+        app.register_blueprint(pdf_bp)
+        logger.info("PDF export routes (Phase 6) registered successfully")
+    except Exception as e:
+        logger.warning(f"Failed to register PDF routes: {e}")
+    
+    # Translation APIエンドポイント登録 (Phase 7)
+    try:
+        from src.api.translation_routes import translation_bp
+        app.register_blueprint(translation_bp)
+        logger.info("Translation routes (Phase 7) registered successfully")
+    except Exception as e:
+        logger.warning(f"Failed to register translation routes: {e}")
+    
+    # Job Management APIエンドポイント登録 (Phase 8)
+    try:
+        from src.api.job_routes import job_bp
+        app.register_blueprint(job_bp)
+        logger.info("Job management routes (Phase 8) registered successfully")
+    except Exception as e:
+        logger.warning(f"Failed to register job routes: {e}")
 
     # スーパー管理者用デコレーター
     def require_super_admin(f):

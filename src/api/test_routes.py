@@ -13,6 +13,7 @@ from datetime import datetime
 from sqlalchemy import inspect
 import logging
 import json
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -535,3 +536,328 @@ def elasticsearch_status():
             'elasticsearch_available': False,
             'error': str(e)
         }), 500
+
+
+# ===== Phase 6-8 Test Endpoints =====
+
+@test_bp.route('/pdf/generate-sample', methods=['POST'])
+def test_generate_sample_pdf():
+    """
+    Test PDF generation with sample manual
+    
+    POST /api/test/pdf/generate-sample
+    Body: {
+        "manual_id": 1,
+        "language_code": "ja"
+    }
+    """
+    try:
+        data = request.get_json() or {}
+        manual_id = data.get('manual_id')
+        language_code = data.get('language_code', 'ja')
+        
+        if not manual_id:
+            # Get first manual from database
+            from src.models.models import Manual
+            manual = Manual.query.first()
+            if not manual:
+                return {'error': 'No manuals found in database. Please create a manual first.'}, 404
+            manual_id = manual.id
+        
+        # Trigger PDF generation
+        from src.api.pdf_routes import generate_pdf
+        from flask import session as flask_session
+        
+        # Simulate authentication
+        manual = Manual.query.get(manual_id)
+        if manual:
+            with flask_session as sess:
+                sess['company_id'] = manual.company_id
+                sess['user_id'] = manual.created_by
+                
+                # Generate PDF
+                result = generate_pdf(manual_id)
+                
+                return result
+        else:
+            return {'error': f'Manual {manual_id} not found'}, 404
+            
+    except Exception as e:
+        logger.error(f"Test PDF generation failed: {str(e)}")
+        return {'error': str(e)}, 500
+
+
+@test_bp.route('/translation/test-single', methods=['POST'])
+def test_translation_single():
+    """
+    Test single language translation
+    
+    POST /api/test/translation/test-single
+    Body: {
+        "manual_id": 1,
+        "language_code": "en"
+    }
+    """
+    try:
+        data = request.get_json() or {}
+        manual_id = data.get('manual_id')
+        language_code = data.get('language_code', 'en')
+        
+        if not manual_id:
+            from src.models.models import Manual
+            manual = Manual.query.first()
+            if not manual:
+                return {'error': 'No manuals found in database'}, 404
+            manual_id = manual.id
+        
+        # Test translation
+        from src.services.translation_service import translation_service
+        from src.models.models import Manual
+        
+        manual = Manual.query.get(manual_id)
+        if not manual:
+            return {'error': f'Manual {manual_id} not found'}, 404
+        
+        result = translation_service.translate_manual(
+            title=manual.title,
+            content=manual.content[:500],  # Test with first 500 chars
+            source_lang='ja',
+            target_lang=language_code,
+            preserve_formatting=True
+        )
+        
+        return {
+            'message': 'Translation test successful',
+            'manual_id': manual_id,
+            'language_code': language_code,
+            'original_title': manual.title,
+            'translated_title': result['translated_title'],
+            'content_length': len(result['translated_content'])
+        }, 200
+        
+    except Exception as e:
+        logger.error(f"Translation test failed: {str(e)}")
+        return {'error': str(e)}, 500
+
+
+@test_bp.route('/translation/test-batch', methods=['POST'])
+def test_translation_batch():
+    """
+    Test batch translation to multiple languages
+    
+    POST /api/test/translation/test-batch
+    Body: {
+        "manual_id": 1,
+        "language_codes": ["en", "zh", "ko"]
+    }
+    """
+    try:
+        data = request.get_json() or {}
+        manual_id = data.get('manual_id')
+        language_codes = data.get('language_codes', ['en', 'zh'])
+        
+        if not manual_id:
+            from src.models.models import Manual
+            manual = Manual.query.first()
+            if not manual:
+                return {'error': 'No manuals found in database'}, 404
+            manual_id = manual.id
+        
+        # Test batch translation
+        from src.services.translation_service import translation_service
+        from src.models.models import Manual
+        
+        manual = Manual.query.get(manual_id)
+        if not manual:
+            return {'error': f'Manual {manual_id} not found'}, 404
+        
+        results = []
+        for lang_code in language_codes:
+            try:
+                result = translation_service.translate_manual(
+                    title=manual.title,
+                    content=manual.content[:200],  # Test with first 200 chars
+                    source_lang='ja',
+                    target_lang=lang_code,
+                    preserve_formatting=True
+                )
+                
+                results.append({
+                    'language_code': lang_code,
+                    'status': 'success',
+                    'translated_title': result['translated_title']
+                })
+            except Exception as e:
+                results.append({
+                    'language_code': lang_code,
+                    'status': 'failed',
+                    'error': str(e)
+                })
+        
+        return {
+            'message': 'Batch translation test completed',
+            'manual_id': manual_id,
+            'results': results
+        }, 200
+        
+    except Exception as e:
+        logger.error(f"Batch translation test failed: {str(e)}")
+        return {'error': str(e)}, 500
+
+
+@test_bp.route('/jobs/test-worker', methods=['GET'])
+def test_worker_connection():
+    """
+    Test Celery worker connection
+    
+    GET /api/test/jobs/test-worker
+    """
+    try:
+        from src.workers.celery_app import celery
+        
+        # Check if workers are available
+        inspect = celery.control.inspect()
+        
+        # Get active workers
+        active = inspect.active()
+        stats = inspect.stats()
+        
+        if not active and not stats:
+            return {
+                'status': 'no_workers',
+                'message': 'No Celery workers are running. Start worker with: celery -A src.workers.celery_app worker --loglevel=info'
+            }, 503
+        
+        return {
+            'status': 'connected',
+            'message': 'Celery workers are running',
+            'active_workers': list(stats.keys()) if stats else [],
+            'worker_count': len(stats) if stats else 0
+        }, 200
+        
+    except Exception as e:
+        logger.error(f"Worker connection test failed: {str(e)}")
+        return {
+            'status': 'error',
+            'error': str(e),
+            'message': 'Failed to connect to Celery. Make sure Redis is running and Celery worker is started.'
+        }, 500
+
+
+@test_bp.route('/jobs/create-test-job', methods=['POST'])
+def create_test_job():
+    """
+    Create a test async job
+    
+    POST /api/test/jobs/create-test-job
+    Body: {
+        "job_type": "test",
+        "duration": 10
+    }
+    """
+    try:
+        data = request.get_json() or {}
+        duration = data.get('duration', 5)
+        
+        # Create a simple test task
+        from src.workers.celery_app import celery
+        
+        @celery.task(bind=True)
+        def test_task(self, duration):
+            import time
+            for i in range(duration):
+                self.update_state(
+                    state='PROGRESS',
+                    meta={'current': i+1, 'total': duration, 'status': f'Step {i+1} of {duration}'}
+                )
+                time.sleep(1)
+            return {'status': 'completed', 'duration': duration}
+        
+        # Start task
+        result = test_task.delay(duration)
+        
+        return {
+            'message': 'Test job created',
+            'task_id': result.id,
+            'duration': duration,
+            'check_status': f'/api/jobs/{result.id}'
+        }, 201
+        
+    except Exception as e:
+        logger.error(f"Test job creation failed: {str(e)}")
+        return {'error': str(e)}, 500
+
+
+@test_bp.route('/health-check', methods=['GET'])
+def comprehensive_health_check():
+    """
+    Comprehensive system health check
+    
+    GET /api/test/health-check
+    """
+    try:
+        health = {
+            'database': False,
+            'redis': False,
+            'celery': False,
+            'gemini': False,
+            'timestamp': datetime.utcnow().isoformat()
+        }
+        
+        # Check database
+        try:
+            db.session.execute('SELECT 1')
+            health['database'] = True
+        except:
+            pass
+        
+        # Check Redis
+        try:
+            import redis
+            redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+            r = redis.from_url(redis_url)
+            r.ping()
+            health['redis'] = True
+        except:
+            pass
+        
+        # Check Celery
+        try:
+            from src.workers.celery_app import celery
+            inspect = celery.control.inspect()
+            stats = inspect.stats()
+            if stats:
+                health['celery'] = True
+                health['celery_workers'] = len(stats)
+        except:
+            pass
+        
+        # Check Gemini API
+        try:
+            from src.services.translation_service import translation_service
+            if translation_service.client:
+                health['gemini'] = True
+        except:
+            pass
+        
+        # Overall status
+        all_healthy = all([
+            health['database'],
+            health['redis'],
+            health['celery'],
+            health['gemini']
+        ])
+        
+        health['status'] = 'healthy' if all_healthy else 'degraded'
+        
+        status_code = 200 if all_healthy else 503
+        
+        return health, status_code
+        
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        return {
+            'status': 'error',
+            'error': str(e)
+        }, 500
+
