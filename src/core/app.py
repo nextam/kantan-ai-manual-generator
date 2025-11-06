@@ -2339,7 +2339,9 @@ def manual_create():
 @app.route('/manual/view/<manual_id>')
 def manual_detail(manual_id):
     """マニュアル詳細画面"""
-    return render_template('manual_detail.html')
+    # Manual data is fetched via JavaScript API call
+    # But we still need to pass manual_id to the template for initial page load
+    return render_template('manual_detail.html', manual_id=manual_id)
 
 @app.route('/manual/<int:manual_id>/edit', methods=['GET'])
 def manual_edit(manual_id):
@@ -2355,7 +2357,7 @@ def manual_edit(manual_id):
         if manual.company_id != current_user.company_id:
             return "アクセス権限がありません", 403
             
-    return render_template('edit_manual.html', manual=manual.to_dict())
+    return render_template('manual_edit.html', manual=manual.to_dict())
 
 @app.route('/manual/<int:manual_id>/edit', methods=['POST'])
 def manual_update(manual_id):

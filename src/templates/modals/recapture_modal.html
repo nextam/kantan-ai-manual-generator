@@ -1,0 +1,120 @@
+<!-- Recapture Modal -->
+<div id="recaptureModal" class="recapture-modal" style="display: none;">
+    <div class="recapture-content">
+        <div class="recapture-header">
+            <h3>動画から再キャプチャ</h3>
+            <button class="recapture-close" onclick="closeRecaptureModal()">&times;</button>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 20px; height: 70vh;">
+            <!-- Video Player -->
+            <div style="display: flex; flex-direction: column;">
+                <h4 style="margin: 0 0 10px 0;">元動画</h4>
+                <div style="position: relative; background: #000; border-radius: 8px; overflow: hidden;">
+                    <video id="recaptureVideo" style="width: 100%; height: 60vh; object-fit: contain;" 
+                           controls preload="metadata" playsinline muted>
+                        <source id="recaptureVideoSource" src="" type="video/mp4">
+                        お使いのブラウザは動画タグをサポートしていません。
+                    </video>
+                    
+                    <!-- Loading Spinner -->
+                    <div id="videoLoadingSpinner" style="
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        display: none;
+                        justify-content: center;
+                        align-items: center;
+                        background: rgba(0, 0, 0, 0.7);
+                        z-index: 1000;
+                    ">
+                        <div style="
+                            width: 50px;
+                            height: 50px;
+                            border: 4px solid rgba(255, 255, 255, 0.3);
+                            border-top: 4px solid #fff;
+                            border-radius: 50%;
+                            animation: spin 1s linear infinite;
+                        "></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 15px; justify-content: center; align-items: center;">
+                <button onclick="closeRecaptureModal()" class="btn btn-secondary">
+                    <span class="material-icons">close</span>
+                    キャンセル
+                </button>
+                <button id="captureFrameBtn" onclick="captureCurrentFrame()" class="btn btn-primary">
+                    <span class="material-icons">camera_alt</span>
+                    このフレームを適用
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.recapture-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 10001;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+.recapture-content {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 80vw;
+    max-height: 80vh;
+    overflow: auto;
+    position: relative;
+}
+
+.recapture-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.recapture-header h3 {
+    margin: 0px;
+    padding: 0px;
+}
+
+.recapture-close {
+    background: none;
+    border: none;
+    font-size: 30px;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.recapture-close:hover {
+    color: #333;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>

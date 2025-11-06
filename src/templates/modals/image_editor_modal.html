@@ -1,0 +1,158 @@
+<!-- Image Editor Modal -->
+<div id="imageEditorModal" class="image-editor-modal">
+    <div class="image-editor-content">
+        <div class="image-editor-header">
+            <h3>画像編集</h3>
+            <button class="image-editor-close" onclick="closeImageEditor()">&times;</button>
+        </div>
+        
+        <div class="image-editor-toolbar">
+            <button id="recaptureBtn" onclick="openRecaptureModal()" style="background: #ff6b35; color: white;">📹 再キャプチャ</button>
+            <button id="rotateLeftBtn" onclick="rotateImage(-90)">⟲ 左回転</button>
+            <button id="rotateRightBtn" onclick="rotateImage(90)">⟳ 右回転</button>
+            <button id="flipHorizontalBtn" onclick="flipImage('horizontal')">↔ 水平反転</button>
+            <button id="flipVerticalBtn" onclick="flipImage('vertical')">↕ 垂直反転</button>
+            
+            <div class="color-picker-group">
+                <button id="circleBtn" onclick="setDrawingMode('circle')" class="drawing-tool">○ 円</button>
+                <button id="arrowBtn" onclick="setDrawingMode('arrow')" class="drawing-tool">→ 矢印</button>
+                <button id="textBtn" onclick="setDrawingMode('text')" class="drawing-tool">T テキスト</button>
+                <label>色:</label>
+                <input type="color" id="drawingColor" value="#ff0000">
+            </div>
+            
+            <div class="text-input-group">
+                <input type="text" id="textInput" placeholder="テキストを入力" style="display: none;">
+                <input type="range" id="lineWidth" min="1" max="10" value="3">
+                <label>太さ</label>
+            </div>
+            
+            <button onclick="clearAnnotations()">🗑 注釈クリア</button>
+            <button onclick="saveEditedImage()" style="background: #28a745; color: white;">💾 保存</button>
+        </div>
+        
+        <div class="image-editor-canvas-container">
+            <canvas id="imageEditorCanvas" class="image-editor-canvas"></canvas>
+        </div>
+    </div>
+</div>
+
+<style>
+.image-editor-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 10000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+.image-editor-content {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: auto;
+    position: relative;
+}
+
+.image-editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.image-editor-header h3 {
+    margin: 0px;
+    padding: 0px;
+}
+
+.image-editor-close {
+    background: none;
+    border: none;
+    font-size: 30px;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-editor-close:hover {
+    color: #333;
+}
+
+.image-editor-toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.image-editor-toolbar button {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.image-editor-toolbar button:hover {
+    background: #f5f5f5;
+}
+
+.image-editor-toolbar button.active {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.image-editor-canvas-container {
+    position: relative;
+    display: inline-block;
+    border: 1px solid #ddd;
+    max-width: 100%;
+    max-height: 60vh;
+    overflow: auto;
+}
+
+.image-editor-canvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    cursor: crosshair;
+}
+
+.color-picker-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.text-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.text-input-group input {
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+</style>
