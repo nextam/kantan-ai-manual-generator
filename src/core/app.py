@@ -53,11 +53,11 @@ except ImportError as e:
 
 # 新しい認証・データベースシステム
 try:
-    from src.models.models import db, Company, User, UploadedFile, Manual, ManualSourceFile, SuperAdmin
+    from src.models.models import db, Company, User, UploadedFile, Manual, ManualSourceFile, SuperAdmin, ActivityLog
     from sqlalchemy import func
     from src.middleware.auth import AuthManager, CompanyManager, require_role, init_auth_routes
     from src.infrastructure.file_manager import create_file_manager  
-    from flask_login import current_user, login_required
+    from flask_login import current_user, login_required, login_user, logout_user
     HAS_AUTH_SYSTEM = True
     logger.info("認証システムのインポートが成功しました")
 except Exception as e:
@@ -1858,24 +1858,32 @@ if HAS_AUTH_SYSTEM:
         from functools import wraps
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            if 'super_admin_id' not in session:
-                return redirect(url_for('super_admin_login'))
-            # スーパー管理者情報をgに設定
-            g.current_super_admin = SuperAdmin.query.get(session['super_admin_id'])
-            if not g.current_super_admin:
-                session.pop('super_admin_id', None)
-                return redirect(url_for('super_admin_login'))
+            # Check if user is authenticated and has super_admin role
+            if not current_user.is_authenticated:
+                return redirect(url_for('login'))
+            
+            if not current_user.is_super_admin():
+                return redirect(url_for('index'))
+            
+            # Set super admin info in g
+            g.current_super_admin = current_user
             return f(*args, **kwargs)
         return decorated_function
 
     # スーパー管理者マネージャー
     class SuperAdminManager:
-        """スーパー管理者管理システム"""
+        """スーパー管理者管理システム（User.role='super_admin'を使用）"""
         
         @staticmethod
         def authenticate_super_admin(username: str, password: str):
-            """スーパー管理者認証"""
-            admin = SuperAdmin.query.filter_by(username=username).first()
+            """スーパー管理者認証（User.role='super_admin'をチェック）"""
+            # Try to find user by username or email
+            admin = User.query.filter(
+                (User.username == username) | (User.email == username),
+                User.role == 'super_admin',
+                User.is_active == True
+            ).first()
+            
             if admin and admin.check_password(password):
                 return admin
             return None
@@ -1884,6 +1892,8 @@ if HAS_AUTH_SYSTEM:
         def get_system_overview():
             """システム概要取得"""
             try:
+                from datetime import datetime, timedelta
+                
                 companies = Company.query.all()
                 users = User.query.all()
                 manuals = Manual.query.all()
@@ -1894,21 +1904,33 @@ if HAS_AUTH_SYSTEM:
                 ).scalar() or 0
                 storage_used_gb = round(total_storage_bytes / (1024 ** 3), 2)
                 
+                # Today's statistics
+                today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+                companies_created_today = Company.query.filter(Company.created_at >= today_start).count()
+                files_uploaded_today = UploadedFile.query.filter(UploadedFile.uploaded_at >= today_start).count()
+                manuals_created_today = Manual.query.filter(Manual.created_at >= today_start).count()
+                
                 return {
                     'success': True,
-                    'companies_count': len(companies),
-                    'users_count': len(users),
-                    'manuals_count': len(manuals),
-                    'active_companies': sum(1 for c in companies if c.is_active),
-                    'storage_used_gb': storage_used_gb,
+                    'stats': {
+                        'companies_total': len(companies),
+                        'companies_active': sum(1 for c in companies if c.is_active),
+                        'users_total': len(users),
+                        'manuals_total': len(manuals),
+                        'companies_created_today': companies_created_today,
+                        'files_uploaded_today': files_uploaded_today,
+                        'manuals_created_today': manuals_created_today,
+                        'storage_used_gb': storage_used_gb
+                    },
                     'companies': [
                         {
                             'id': c.id,
                             'name': c.name,
-                            'code': c.company_code,
+                            'company_code': c.company_code,
                             'is_active': c.is_active,
                             'created_at': c.created_at.isoformat() if c.created_at else None,
                             'users_count': User.query.filter_by(company_id=c.id).count(),
+                            'files_count': UploadedFile.query.filter_by(company_id=c.id).count(),
                             'manuals_count': Manual.query.filter_by(company_id=c.id).count()
                         } for c in companies
                     ]
@@ -2059,10 +2081,10 @@ if HAS_AUTH_SYSTEM:
                 }
 
 
-    # スーパー管理者ルート
+    # スーパー管理者ルート（User.role='super_admin'を使用）
     @app.route('/super-admin/login', methods=['GET', 'POST'])
     def super_admin_login():
-        """スーパー管理者ログイン"""
+        """スーパー管理者ログイン（通常の/loginにリダイレクト推奨）"""
         if request.method == 'POST':
             username = request.form.get('username', '')
             password = request.form.get('password', '')
@@ -2070,7 +2092,20 @@ if HAS_AUTH_SYSTEM:
             if username and password:
                 super_admin = SuperAdminManager.authenticate_super_admin(username, password)
                 if super_admin:
+                    # Use normal login process
+                    login_user(super_admin, remember=True)
+                    
+                    # Set session info
+                    session['is_super_admin'] = True
                     session['super_admin_id'] = super_admin.id
+                    session['super_admin_username'] = super_admin.username
+                    session['username'] = super_admin.username
+                    session['company_id'] = super_admin.company_id
+                    session['user_role'] = super_admin.role
+                    
+                    if super_admin.company:
+                        session['company_name'] = super_admin.company.name
+                    
                     return redirect(url_for('super_admin_dashboard'))
             
             return render_template('super_admin_login.html', 
@@ -2081,14 +2116,36 @@ if HAS_AUTH_SYSTEM:
     @app.route('/super-admin/logout')
     def super_admin_logout():
         """スーパー管理者ログアウト"""
-        session.pop('super_admin_id', None)
-        return redirect(url_for('super_admin_login'))
+        session.clear()
+        logout_user()
+        return redirect(url_for('login'))
 
     @app.route('/super-admin/dashboard')
     @require_super_admin
     def super_admin_dashboard():
         """スーパー管理者ダッシュボード"""
         return render_template('super_admin_dashboard.html', 
+                             current_super_admin=g.current_super_admin)
+
+    @app.route('/super-admin/companies')
+    @require_super_admin
+    def super_admin_companies():
+        """企業管理画面"""
+        return render_template('super_admin_companies.html',
+                             current_super_admin=g.current_super_admin)
+
+    @app.route('/super-admin/users')
+    @require_super_admin
+    def super_admin_users():
+        """ユーザー管理画面"""
+        return render_template('super_admin_users.html',
+                             current_super_admin=g.current_super_admin)
+
+    @app.route('/super-admin/activity-logs')
+    @require_super_admin
+    def super_admin_logs():
+        """Activity Logs画面"""
+        return render_template('super_admin_logs.html',
                              current_super_admin=g.current_super_admin)
 
     # スーパー管理者API
@@ -2148,6 +2205,112 @@ if HAS_AUTH_SYSTEM:
         limit = request.args.get('limit', 100, type=int)
         result = SuperAdminManager.get_system_logs(limit)
         return jsonify(result)
+
+    @app.route('/api/super-admin/users', methods=['GET'])
+    @require_super_admin
+    def api_super_admin_users():
+        """全ユーザー取得API"""
+        try:
+            users = User.query.all()
+            return jsonify({
+                'success': True,
+                'users': [{
+                    'id': u.id,
+                    'username': u.username,
+                    'email': u.email,
+                    'role': u.role,
+                    'company_id': u.company_id,
+                    'company_name': u.company.name if u.company else None,
+                    'is_active': u.is_active if hasattr(u, 'is_active') else True,
+                    'created_at': u.created_at.isoformat() if u.created_at else None
+                } for u in users]
+            })
+        except Exception as e:
+            logger.error(f"Users fetch error: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/super-admin/users/<int:user_id>', methods=['DELETE'])
+    @require_super_admin
+    def api_delete_user(user_id):
+        """ユーザー削除API"""
+        try:
+            user = User.query.get(user_id)
+            if not user:
+                return jsonify({'success': False, 'error': 'ユーザーが見つかりません'}), 404
+            
+            db.session.delete(user)
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': f'ユーザー「{user.username}」を削除しました'
+            })
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"User deletion error: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/super-admin/activity-logs', methods=['GET'])
+    @require_super_admin
+    def api_activity_logs():
+        """Activity Logs取得API"""
+        try:
+            company_id = request.args.get('company_id', type=int)
+            user_id = request.args.get('user_id', type=int)
+            action_type = request.args.get('action_type')
+            limit = request.args.get('limit', 100, type=int)
+            
+            query = ActivityLog.query
+            
+            if company_id:
+                query = query.filter_by(company_id=company_id)
+            if user_id:
+                query = query.filter_by(user_id=user_id)
+            if action_type:
+                query = query.filter_by(action_type=action_type)
+            
+            logs = query.order_by(ActivityLog.created_at.desc()).limit(limit).all()
+            
+            return jsonify({
+                'success': True,
+                'logs': [{
+                    'id': log.id,
+                    'company_id': log.company_id,
+                    'user_id': log.user_id,
+                    'action_type': log.action_type,
+                    'description': log.description,
+                    'created_at': log.created_at.isoformat() if log.created_at else None
+                } for log in logs]
+            })
+        except Exception as e:
+            logger.error(f"Activity logs fetch error: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/super-admin/activity-logs/export', methods=['GET'])
+    @require_super_admin
+    def api_export_activity_logs():
+        """Activity Logsエクスポート"""
+        try:
+            logs = ActivityLog.query.order_by(ActivityLog.created_at.desc()).limit(1000).all()
+            
+            result = {
+                'success': True,
+                'logs': [{
+                    'id': log.id,
+                    'company_id': log.company_id,
+                    'user_id': log.user_id,
+                    'action_type': log.action_type,
+                    'description': log.description,
+                    'created_at': log.created_at.isoformat() if log.created_at else None
+                } for log in logs]
+            }
+            
+            response = jsonify(result)
+            response.headers['Content-Disposition'] = f'attachment; filename=activity_logs_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+            return response
+        except Exception as e:
+            logger.error(f"Activity logs export error: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
 
     @app.route('/api/super-admin/export', methods=['GET'])
     @require_super_admin

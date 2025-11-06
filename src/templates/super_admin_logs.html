@@ -243,7 +243,7 @@
                 per_page: 50
             });
             
-            const response = await fetch(`/api/admin/activity-logs?${params}`);
+            const response = await fetch(`/api/super-admin/activity-logs?${params}`);
             if (!response.ok) throw new Error('Failed to load logs');
             
             const data = await response.json();
@@ -261,19 +261,19 @@
             
             const tbody = document.getElementById('logsTableBody');
             tbody.innerHTML = logs.map(log => {
-                const actionClass = `action-${log.action.toLowerCase()}`;
+                const actionClass = `action-${(log.action_type || log.action || '').toLowerCase()}`;
                 return `
                     <tr>
-                        <td>${new Date(log.timestamp).toLocaleString()}</td>
-                        <td>${log.username}</td>
+                        <td>${new Date(log.created_at || log.timestamp).toLocaleString()}</td>
+                        <td>${log.user_id || '-'}</td>
                         <td>
                             <span class="action-badge ${actionClass}">
-                                ${log.action}
+                                ${log.action_type || log.action || '-'}
                             </span>
                         </td>
-                        <td>${log.resource_type}</td>
-                        <td>${log.details || '-'}</td>
-                        <td>${log.ip_address || '-'}</td>
+                        <td>${log.company_id || '-'}</td>
+                        <td>${log.description || log.details || '-'}</td>
+                        <td>-</td>
                     </tr>
                 `;
             }).join('');
@@ -299,7 +299,7 @@
     
     async function exportLogs() {
         try {
-            const response = await fetch('/api/admin/activity-logs/export');
+            const response = await fetch('/api/super-admin/activity-logs/export');
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');

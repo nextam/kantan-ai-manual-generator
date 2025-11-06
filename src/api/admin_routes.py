@@ -6,7 +6,7 @@ Dependencies: Flask, models, auth
 """
 
 from flask import Blueprint, request, jsonify, session, g
-from src.models.models import db, SuperAdmin, Company, User, ActivityLog
+from src.models.models import db, Company, User, ActivityLog
 from src.middleware.auth import require_super_admin, log_activity
 from datetime import datetime
 from sqlalchemy import or_, func

@@ -106,10 +106,12 @@
 
     <div class="sidebar-footer">
         {% if session.get('is_super_admin') or session.get('company_id') %}
-            <a href="/auth/logout" class="menu-item" style="background: rgba(244, 67, 54, 0.2); border-radius: 5px;">
-                <span class="material-icons">logout</span>
-                <span>Logout</span>
-            </a>
+            <form id="logout-form" action="/auth/logout" method="POST" style="margin: 0;">
+                <button type="submit" class="menu-item" style="background: rgba(244, 67, 54, 0.2); border-radius: 5px; width: 100%; border: none; cursor: pointer;">
+                    <span class="material-icons">logout</span>
+                    <span>Logout</span>
+                </button>
+            </form>
         {% else %}
             <a href="/auth/login" class="menu-item" style="background: rgba(76, 175, 80, 0.2); border-radius: 5px;">
                 <span class="material-icons">login</span>

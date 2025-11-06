@@ -276,25 +276,27 @@ def require_role(role: str):
 def require_super_admin(f):
     """
     Decorator for endpoints requiring super admin access
+    Checks User.role == 'super_admin'
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        from src.models.models import SuperAdmin
-        
+        # Check if user is logged in as super admin
         if not session.get('is_super_admin'):
             return jsonify({'error': 'Super admin access required'}), 403
         
-        super_admin_id = session.get('super_admin_id')
-        if not super_admin_id:
-            return jsonify({'error': 'Super admin session invalid'}), 403
+        # Verify current user has super_admin role
+        if not current_user.is_authenticated:
+            return jsonify({'error': 'Authentication required'}), 401
         
-        super_admin = SuperAdmin.query.get(super_admin_id)
-        if not super_admin or not super_admin.is_active:
+        if not current_user.is_super_admin():
             session.pop('is_super_admin', None)
             session.pop('super_admin_id', None)
-            return jsonify({'error': 'Super admin account inactive'}), 403
+            return jsonify({'error': 'Super admin role required'}), 403
         
-        g.super_admin = super_admin
+        if not current_user.is_active:
+            return jsonify({'error': 'Account is inactive'}), 403
+        
+        g.super_admin = current_user
         return f(*args, **kwargs)
     return decorated_function
 
@@ -413,7 +415,7 @@ def require_role_enhanced(allowed_roles):
 
 def require_company_admin(f):
     """
-    Decorator for endpoints requiring company admin access
+    Decorator for endpoints requiring company admin or super admin access
     
     Usage:
         @require_company_admin
@@ -426,9 +428,9 @@ def require_company_admin(f):
         if not current_user.is_authenticated:
             return jsonify({'error': 'Authentication required'}), 401
         
-        # Check if user is company admin
-        if current_user.role != 'admin':
-            return jsonify({'error': 'Company admin access required'}), 403
+        # Check if user is company admin or super admin
+        if current_user.role not in ['admin', 'super_admin']:
+            return jsonify({'error': 'Company admin or super admin access required'}), 403
         
         # Store company_id in g for easy access
         g.company_id = current_user.company_id
@@ -442,7 +444,7 @@ def init_auth_routes(app):
     
     @app.route('/login', methods=['GET', 'POST'])
     def login():
-        """企業ログインページ"""
+        """ログインページ（3つの権限レベル対応: user, admin, super_admin）"""
         if request.method == 'POST':
             email = request.form.get('email', '')
             password = request.form.get('password', '')
@@ -479,7 +481,25 @@ def init_auth_routes(app):
                 # auth_manager is optional, continue without it
                 pass
             
+            # セッションに必要な情報を設定
             session['company_id'] = user.company_id
+            session['user_role'] = user.role  # user, admin, or super_admin
+            session['username'] = user.username
+            
+            # スーパー管理者の場合は追加情報を設定
+            if user.is_super_admin():
+                session['is_super_admin'] = True
+                session['super_admin_id'] = user.id
+                session['super_admin_username'] = user.username
+            else:
+                # スーパー管理者でない場合は、これらのフラグをクリア
+                session.pop('is_super_admin', None)
+                session.pop('super_admin_id', None)
+                session.pop('super_admin_username', None)
+            
+            # 企業情報も取得してセッションに保存
+            if user.company:
+                session['company_name'] = user.company.name
             
             # 最終ログイン日時更新
             try:
@@ -496,7 +516,7 @@ def init_auth_routes(app):
     
     @app.route('/auth/login', methods=['GET', 'POST'])
     def auth_login():
-        """API用ログインエンドポイント"""
+        """API用ログインエンドポイント（3つの権限レベル対応）"""
         if request.method == 'POST':
             data = request.get_json() if request.is_json else request.form
             email = data.get('email') or data.get('user_id')  # user_id は後方互換性のため
@@ -527,7 +547,25 @@ def init_auth_routes(app):
                 user_session = auth_manager.create_user_session(user)
                 session['session_token'] = user_session.session_token
             
+            # セッションに必要な情報を設定
             session['company_id'] = user.company_id
+            session['user_role'] = user.role  # user, admin, or super_admin
+            session['username'] = user.username
+            
+            # スーパー管理者の場合は追加情報を設定
+            if user.is_super_admin():
+                session['is_super_admin'] = True
+                session['super_admin_id'] = user.id
+                session['super_admin_username'] = user.username
+            else:
+                # スーパー管理者でない場合は、これらのフラグをクリア
+                session.pop('is_super_admin', None)
+                session.pop('super_admin_id', None)
+                session.pop('super_admin_username', None)
+            
+            # 企業情報も取得してセッションに保存
+            if user.company:
+                session['company_name'] = user.company.name
             
             # 最終ログイン日時更新
             user.last_login = datetime.utcnow()
@@ -560,8 +598,8 @@ def init_auth_routes(app):
             # セッション完全クリア
             session.clear()
             
-            # レスポンスを作成
-            response = jsonify({'success': True})
+            # ログインページにリダイレクト
+            response = redirect(url_for('login_page'))
             
             # セッションクッキーを明示的に削除
             response.set_cookie('session', '', expires=0)
@@ -578,7 +616,7 @@ def init_auth_routes(app):
             print(f"ログアウトエラー: {e}")
             # エラーでもセッションはクリア
             session.clear()
-            response = jsonify({'success': True})
+            response = redirect(url_for('login_page'))
             response.set_cookie('session', '', expires=0)
             return response
     

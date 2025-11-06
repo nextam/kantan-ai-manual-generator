@@ -29,8 +29,10 @@ def utc_to_jst_isoformat(utc_dt):
     # JST形式のISO文字列を生成
     return jst_dt.strftime('%Y-%m-%dT%H:%M:%S+09:00')
 
+# DEPRECATED: SuperAdmin is now managed through User.role='super_admin'
+# This class is kept for backward compatibility only
 class SuperAdmin(db.Model):
-    """スーパー管理者"""
+    """スーパー管理者（非推奨: User.role='super_admin'を使用してください）"""
     __tablename__ = 'super_admins'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -63,6 +65,10 @@ class SuperAdmin(db.Model):
     
     def get_id(self):
         return str(self.id)
+    
+    def is_super_admin(self):
+        """Compatibility method"""
+        return True
 
 class Company(db.Model):
     """企業テナント"""
@@ -118,7 +124,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120), nullable=False, unique=True)  # メールアドレスを必須化、グローバルユニーク制約
     company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
-    role = db.Column(db.String(20), default='user')  # admin, user
+    role = db.Column(db.String(20), default='user')  # user, admin, super_admin
     last_login = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
@@ -138,6 +144,18 @@ class User(UserMixin, db.Model):
         if not self.password_hash:
             return False
         return check_password_hash(self.password_hash, password)
+    
+    def is_super_admin(self):
+        """スーパー管理者かどうか"""
+        return self.role == 'super_admin'
+    
+    def is_company_admin(self):
+        """企業管理者かどうか"""
+        return self.role == 'admin'
+    
+    def is_general_user(self):
+        """一般ユーザーかどうか"""
+        return self.role == 'user'
 
 class UploadedFile(db.Model):
     """アップロードファイル管理"""

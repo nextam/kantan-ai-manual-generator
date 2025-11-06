@@ -175,7 +175,7 @@
 <script>
     async function loadCompanies() {
         try {
-            const response = await fetch('/api/admin/companies');
+            const response = await fetch('/api/super-admin/overview');
             if (!response.ok) throw new Error('Failed to load companies');
             
             const data = await response.json();
@@ -191,18 +191,18 @@
             const tbody = document.getElementById('companiesTableBody');
             tbody.innerHTML = companies.map(company => `
                 <tr>
-                    <td>${company.company_id}</td>
-                    <td>${company.company_name}</td>
+                    <td>${company.id}</td>
+                    <td>${company.name}</td>
                     <td>
                         <span class="status-badge ${company.is_active ? 'status-active' : 'status-inactive'}">
                             ${company.is_active ? 'Active' : 'Inactive'}
                         </span>
                     </td>
-                    <td>${company.user_count || 0}</td>
+                    <td>${company.users_count || 0}</td>
                     <td>${new Date(company.created_at).toLocaleDateString()}</td>
                     <td>
                         <div class="action-buttons">
-                            <button class="btn-action btn-edit" onclick="editCompany('${company.company_id}')">Edit</button>
+                            <button class="btn-action btn-edit" onclick="editCompany('${company.company_code}')">Edit</button>
                             <button class="btn-action btn-delete" onclick="deleteCompany(${company.id})">Delete</button>
                         </div>
                     </td>
@@ -228,7 +228,7 @@
         if (!confirm('Are you sure you want to delete this company?')) return;
         
         try {
-            const response = await fetch(`/api/admin/companies/${companyId}`, {
+            const response = await fetch(`/api/super-admin/companies/${companyId}`, {
                 method: 'DELETE'
             });
             

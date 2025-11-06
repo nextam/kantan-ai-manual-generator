@@ -6,7 +6,7 @@ Dependencies: Flask, models, auth
 """
 
 from flask import Blueprint, request, jsonify, session
-from src.models.models import db, SuperAdmin, Company, User, ActivityLog
+from src.models.models import db, Company, User, ActivityLog
 from src.middleware.auth import require_super_admin
 from werkzeug.security import generate_password_hash
 from datetime import datetime
@@ -22,33 +22,46 @@ test_bp = Blueprint('test', __name__, url_prefix='/api/test')
 
 @test_bp.route('/create-super-admin', methods=['POST'])
 def create_super_admin():
-    """Create initial super admin account"""
+    """Create initial super admin account (User with role='super_admin')"""
     data = request.json if request.is_json else {}
     
-    username = data.get('username', 'superadmin')
-    email = data.get('email', 'admin@kantan-ai.net')
-    password = data.get('password', 'admin123')
+    username = data.get('username', 'support')
+    email = data.get('email', 'support@career-survival.com')
+    password = data.get('password', '0000')
     
-    existing = SuperAdmin.query.filter_by(email=email).first()
+    existing = User.query.filter_by(email=email).first()
     if existing:
-        return jsonify({'error': 'Super admin already exists', 'super_admin_id': existing.id}), 400
+        return jsonify({'error': 'User already exists', 'user_id': existing.id}), 400
     
-    super_admin = SuperAdmin(
+    # Find or create career-survival company
+    company = Company.query.filter_by(company_code='career-survival').first()
+    if not company:
+        company = Company(
+            name='Career Survival Inc.',
+            company_code='career-survival'
+        )
+        company.set_password('0000')
+        db.session.add(company)
+        db.session.flush()
+    
+    super_admin_user = User(
         username=username,
         email=email,
-        permission_level='full'
+        company_id=company.id,
+        role='super_admin'
     )
-    super_admin.set_password(password)
+    super_admin_user.set_password(password)
     
-    db.session.add(super_admin)
+    db.session.add(super_admin_user)
     db.session.commit()
     
     return jsonify({
         'message': 'Super admin created successfully',
         'super_admin': {
-            'id': super_admin.id,
-            'username': super_admin.username,
-            'email': super_admin.email
+            'id': super_admin_user.id,
+            'username': super_admin_user.username,
+            'email': super_admin_user.email,
+            'role': super_admin_user.role
         }
     }), 201
 
@@ -58,15 +71,18 @@ def login_super_admin():
     """Login as super admin for testing"""
     data = request.json if request.is_json else {}
     
-    email = data.get('email', 'admin@kantan-ai.net')
-    password = data.get('password', 'admin123')
+    email = data.get('email', 'support@career-survival.com')
+    password = data.get('password', '0000')
     
-    super_admin = SuperAdmin.query.filter_by(email=email).first()
+    super_admin = User.query.filter_by(email=email, role='super_admin').first()
     if not super_admin or not super_admin.check_password(password):
         return jsonify({'error': 'Invalid credentials'}), 401
     
     session['is_super_admin'] = True
     session['super_admin_id'] = super_admin.id
+    session['super_admin_username'] = super_admin.username
+    session['user_role'] = super_admin.role
+    session['company_id'] = super_admin.company_id
     
     super_admin.last_login = datetime.utcnow()
     db.session.commit()
@@ -76,7 +92,8 @@ def login_super_admin():
         'super_admin': {
             'id': super_admin.id,
             'username': super_admin.username,
-            'email': super_admin.email
+            'email': super_admin.email,
+            'role': super_admin.role
         }
     }), 200
 
@@ -91,28 +108,26 @@ def check_permissions():
         'user_info': None
     }
     
-    if session.get('is_super_admin'):
-        auth_info['is_super_admin'] = True
-        super_admin_id = session.get('super_admin_id')
-        if super_admin_id:
-            super_admin = SuperAdmin.query.get(super_admin_id)
-            if super_admin:
-                auth_info['user_info'] = {
-                    'id': super_admin.id,
-                    'username': super_admin.username,
-                    'email': super_admin.email,
-                    'type': 'super_admin'
-                }
+    from flask_login import current_user
     
-    elif session.get('company_id'):
+    if current_user.is_authenticated:
         auth_info['is_authenticated'] = True
-        auth_info['company_id'] = session.get('company_id')
+        auth_info['company_id'] = current_user.company_id
         
-        from flask_login import current_user
-        if current_user.is_authenticated:
+        if current_user.is_super_admin():
+            auth_info['is_super_admin'] = True
             auth_info['user_info'] = {
                 'id': current_user.id,
                 'username': current_user.username,
+                'email': current_user.email,
+                'role': current_user.role,
+                'type': 'super_admin'
+            }
+        else:
+            auth_info['user_info'] = {
+                'id': current_user.id,
+                'username': current_user.username,
+                'email': current_user.email,
                 'role': current_user.role,
                 'type': 'company_user'
             }
@@ -134,7 +149,6 @@ def database_status():
         }
         
         model_map = {
-            'super_admins': SuperAdmin,
             'companies': Company,
             'users': User,
             'activity_logs': ActivityLog
@@ -144,6 +158,11 @@ def database_status():
             if table_name in tables:
                 count = model.query.count()
                 tables_info['counts'][table_name] = count
+        
+        # Count super admins separately (from users table)
+        if 'users' in tables:
+            super_admin_count = User.query.filter_by(role='super_admin').count()
+            tables_info['counts']['super_admins'] = super_admin_count
         
         return jsonify(tables_info), 200
     

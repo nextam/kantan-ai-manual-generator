@@ -181,7 +181,7 @@
 <script>
     async function loadUsers() {
         try {
-            const response = await fetch('/api/admin/users');
+            const response = await fetch('/api/super-admin/users');
             if (!response.ok) throw new Error('Failed to load users');
             
             const data = await response.json();
@@ -199,7 +199,7 @@
                 let roleClass = 'role-user';
                 let roleText = user.role || 'user';
                 
-                if (user.is_super_admin) {
+                if (user.role === 'super_admin') {
                     roleClass = 'role-super-admin';
                     roleText = 'Super Admin';
                 } else if (user.role === 'admin') {
@@ -248,7 +248,7 @@
         if (!confirm('Are you sure you want to delete this user?')) return;
         
         try {
-            const response = await fetch(`/api/admin/users/${userId}`, {
+            const response = await fetch(`/api/super-admin/users/${userId}`, {
                 method: 'DELETE'
             });
             
