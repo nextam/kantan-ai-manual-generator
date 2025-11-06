@@ -3449,7 +3449,7 @@ def process_manual_with_images_async(manual_id, video_path, title, custom_prompt
                 return
 
             # マニュアル（画像あり）生成処理を実行
-            from modules.video_manual_with_images_generator import ManualWithImagesGenerator
+            from src.services.video_manual_with_images_generator import ManualWithImagesGenerator
             generator = ManualWithImagesGenerator()
 
             frame_mode = None
@@ -3814,7 +3814,7 @@ def api_save_edited_image():
             return jsonify({'status': 'error', 'error': 'フレームが見つかりません'})
         
         # HTML再生成（元のcustom_promptを使用）
-        from modules.video_manual_with_images_generator import ManualWithImagesGenerator
+        from src.services.video_manual_with_images_generator import ManualWithImagesGenerator
         try:
             generator = ManualWithImagesGenerator()
             
