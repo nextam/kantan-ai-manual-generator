@@ -387,22 +387,22 @@
 
     function showError(message) {
         const messageArea = document.getElementById('message-area');
-        messageArea.innerHTML = \
+        messageArea.innerHTML = `
             <div class="message error">
                 <span class="material-icons">error</span>
-                \
+                ${message}
             </div>
-        \;
+        `;
     }
 
     function showSuccess(message) {
         const messageArea = document.getElementById('message-area');
-        messageArea.innerHTML = \
+        messageArea.innerHTML = `
             <div class="message success">
                 <span class="material-icons">check_circle</span>
-                \
+                ${message}
             </div>
-        \;
+        `;
     }
 </script>
 {% endblock %}

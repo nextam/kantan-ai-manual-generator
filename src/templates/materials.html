@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}参照資料管理{% endblock %}
-{% block page_title %}参照資料管理{% endblock %}
+{% block title %}学習資料管理{% endblock %}
+{% block page_title %}学習資料管理{% endblock %}
 
 {% block header_actions %}
     <a href="/dashboard" class="back-btn">
@@ -389,7 +389,9 @@
             </form>
         </div>
     </div>
+{% endblock %}
 
+{% block extra_scripts %}
     <script>
         let materials = [];
         let selectedFile = null;
@@ -643,4 +645,5 @@
                 loadMaterials();
             }
         }, 5000);
+    </script>
 {% endblock %}

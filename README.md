@@ -826,7 +826,7 @@ sudo docker-compose logs --tail=100 manual
 - テンプレートベースのマニュアル生成
 
 #### 3. 一般ユーザー機能
-- RAG対応参照資料管理（PDF/Word/Excel/CSV）
+- RAG対応学習資料管理（PDF/Word/Excel/CSV）
 - ElasticSearchによるセマンティック検索
 - A4サイズPDF出力機能
 - 多言語翻訳機能（Gemini API使用）

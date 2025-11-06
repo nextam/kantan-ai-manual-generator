@@ -5,8 +5,6 @@
 
 {% block extra_styles %}
     <style>
-        }
-
         .user-info {
             display: flex;
             align-items: center;
@@ -365,7 +363,9 @@
             </div>
         </div>
     </div>
+{% endblock %}
 
+{% block extra_scripts %}
     <script>
         // Load dashboard data
         async function loadDashboardData() {
@@ -422,4 +422,5 @@
             // Refresh every 5 minutes
             setInterval(loadDashboardData, 5 * 60 * 1000);
         });
+    </script>
 {% endblock %}

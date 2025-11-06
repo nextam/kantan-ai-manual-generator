@@ -1786,7 +1786,7 @@ if HAS_AUTH_SYSTEM:
     except Exception as e:
         logger.warning(f"Failed to register company routes: {e}")
     
-    # 参照資料管理APIエンドポイント登録 (Phase 4)
+    # 学習資料管理APIエンドポイント登録 (Phase 4)
     try:
         from src.api.material_routes import material_bp
         app.register_blueprint(material_bp)
