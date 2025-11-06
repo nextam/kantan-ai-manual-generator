@@ -2716,6 +2716,120 @@ def api_delete_manual(manual_id):
         }), 500
 
 
+@app.route('/api/manual/<int:manual_id>/retry', methods=['POST'])
+def api_retry_manual(manual_id):
+    """マニュアル再生成API - 既存のマニュアル設定を使用して再生成"""
+    try:
+        manual = Manual.query.get_or_404(manual_id)
+        
+        # アクセス権限チェック
+        if HAS_AUTH_SYSTEM and current_user.is_authenticated:
+            if manual.company_id != current_user.company_id:
+                return jsonify({
+                    'success': False,
+                    'error': 'アクセス権限がありません'
+                }), 403
+        
+        # ソースファイルを取得
+        source_files = ManualSourceFile.query.filter_by(manual_id=manual.id).all()
+        if not source_files:
+            return jsonify({
+                'success': False,
+                'error': 'ソース動画ファイルが見つかりません'
+            }), 404
+        
+        # expert と novice ファイルを取得
+        expert_file = None
+        novice_file = None
+        for source in source_files:
+            uploaded_file = UploadedFile.query.get(source.file_id)
+            if not uploaded_file:
+                continue
+                
+            if source.role == 'expert':
+                expert_file = uploaded_file
+            elif source.role == 'novice':
+                novice_file = uploaded_file
+            elif source.role == 'primary':  # 旧形式も対応
+                expert_file = uploaded_file
+        
+        if not expert_file:
+            return jsonify({
+                'success': False,
+                'error': 'メイン動画ファイルが見つかりません'
+            }), 404
+        
+        # ファイルのGCS URIを取得
+        def get_video_uri(uploaded_file):
+            metadata = uploaded_file.get_metadata()
+            if 'gcs_uri' in metadata:
+                return metadata['gcs_uri']
+            elif uploaded_file.file_path.startswith('gs://'):
+                return uploaded_file.file_path
+            else:
+                import os
+                file_size_mb = (uploaded_file.file_size or 0) / (1024 * 1024)
+                if file_size_mb > 2048:
+                    return None
+                else:
+                    return os.path.abspath(os.path.join('uploads', uploaded_file.file_path))
+        
+        expert_uri = get_video_uri(expert_file)
+        novice_uri = get_video_uri(novice_file) if novice_file else None
+        
+        if not expert_uri:
+            return jsonify({
+                'success': False,
+                'error': 'メイン動画ファイルのURIを取得できませんでした'
+            }), 400
+        
+        # 既存の設定を取得
+        config = manual.get_generation_config() or {}
+        config.setdefault('max_output_tokens', 8192)
+        config.setdefault('temperature', 0.7)
+        config.setdefault('top_p', 0.9)
+        config.setdefault('version', 'gemini-2.5-pro')
+        config['generation_type'] = 'multi_stage'
+        
+        # マニュアルのステータスをリセット
+        manual.generation_status = 'pending'
+        manual.generation_progress = 0
+        manual.error_message = None
+        manual.content = '再生成中...'
+        manual.stage1_content = None
+        manual.stage2_content = None
+        manual.stage3_content = None
+        
+        db.session.commit()
+        
+        # バックグラウンドで生成処理を開始
+        thread = threading.Thread(
+            target=run_multi_stage_generation_background,
+            args=(manual.id, expert_uri, novice_uri, config)
+        )
+        thread.daemon = True
+        thread.start()
+        
+        logger.info(f"マニュアル再生成開始: manual_id={manual.id}")
+        
+        return jsonify({
+            'success': True,
+            'manual_id': manual.id,
+            'message': 'マニュアル再生成を開始しました。処理完了まで数分かかります。',
+            'status': 'processing'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"マニュアル再生成エラー: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': f'再生成に失敗しました: {str(e)}'
+        }), 500
+
+
 @app.route('/api/manual/<int:manual_id>/status', methods=['GET'])
 def api_get_manual_status(manual_id):
     """マニュアル生成ステータス取得API"""

@@ -74,22 +74,18 @@
         <!-- General User Menu (All authenticated users) -->
         {% if session.get('company_id') or session.get('is_super_admin') %}
             <div class="menu-section">
-                <div class="menu-section-title">マニュアル生成</div>
-                <a href="/" class="menu-item">
-                    <span class="material-icons">home</span>
-                    <span>ホーム</span>
-                </a>
+                <div class="menu-section-title">マニュアル</div>
                 <a href="/manual/list" class="menu-item">
                     <span class="material-icons">list</span>
                     <span>マニュアル一覧</span>
                 </a>
                 <a href="/manual/create" class="menu-item">
                     <span class="material-icons">add_circle</span>
-                    <span>マニュアル作成</span>
+                    <span>マニュアル作成(画像なし)</span>
                 </a>
                 <a href="/manual/video/three-stage" class="menu-item">
                     <span class="material-icons">add_photo_alternate</span>
-                    <span>画像付きマニュアル作成</span>
+                    <span>マニュアル作成(画像あり)</span>
                 </a>
             </div>
 
@@ -97,7 +93,7 @@
                 <div class="menu-section-title">リソース</div>
                 <a href="/materials" class="menu-item">
                     <span class="material-icons">folder_open</span>
-                    <span>参考資料</span>
+                    <span>学習資料</span>
                 </a>
             </div>
 
