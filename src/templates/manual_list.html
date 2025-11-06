@@ -556,7 +556,9 @@
             <p style="text-align: center;">マニュアル一覧を読み込み中...</p>
         </div>
     </div>
+{% endblock %}
 
+{% block extra_scripts %}
     <script>
         let manuals = [];
         let filteredManuals = [];
@@ -1087,4 +1089,5 @@
                 await loadManuals(currentPage + 1);
             }
         }
+    </script>
 {% endblock %}

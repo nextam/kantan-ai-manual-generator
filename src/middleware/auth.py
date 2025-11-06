@@ -579,9 +579,10 @@ def init_auth_routes(app):
                 'role': user.role
             }
         
-        return {'message': 'ログインページ'}
+        # GETリクエストの場合はログインページにリダイレクト
+        return redirect(url_for('login_page'))
     
-    @app.route('/auth/logout', methods=['POST'])
+    @app.route('/auth/logout', methods=['POST', 'GET'])
     def logout():
         """ログアウト"""
         try:
@@ -624,25 +625,39 @@ def init_auth_routes(app):
     def auth_status():
         """認証ステータス確認"""
         try:
-            # セッションの有効性も確認
-            if (current_user.is_authenticated and 
-                hasattr(current_user, 'company') and 
-                current_user.company is not None):
+            # 認証されているかチェック
+            if not current_user.is_authenticated:
+                return jsonify({'authenticated': False})
+            
+            # セッショントークンが有効か確認
+            session_token = session.get('session_token')
+            if session_token:
+                valid_session = UserSession.query.filter_by(
+                    session_token=session_token,
+                    user_id=current_user.id
+                ).first()
                 
+                if not valid_session or valid_session.expires_at < datetime.utcnow():
+                    # セッションが無効な場合
+                    session.clear()
+                    return jsonify({'authenticated': False})
+            
+            # スーパー管理者の場合
+            if current_user.is_super_admin():
+                return jsonify({
+                    'authenticated': True,
+                    'is_super_admin': True,
+                    'user': {
+                        'id': current_user.id,
+                        'username': current_user.username,
+                        'email': getattr(current_user, 'email', ''),
+                        'role': current_user.role
+                    }
+                })
+            
+            # 一般ユーザー・企業管理者の場合
+            if hasattr(current_user, 'company') and current_user.company is not None:
                 company = current_user.company
-                
-                # セッショントークンが有効か確認
-                session_token = session.get('session_token')
-                if session_token:
-                    valid_session = UserSession.query.filter_by(
-                        session_token=session_token,
-                        user_id=current_user.id
-                    ).first()
-                    
-                    if not valid_session or valid_session.expires_at < datetime.utcnow():
-                        # セッションが無効な場合
-                        session.clear()
-                        return jsonify({'authenticated': False})
                 
                 return jsonify({
                     'authenticated': True,
@@ -659,11 +674,9 @@ def init_auth_routes(app):
                     }
                 })
             
-            # 認証されていない場合
-            session.clear()
+            # 認証されているが企業がない場合（エラー状態）
             return jsonify({'authenticated': False})
             
         except Exception as e:
             print(f"認証ステータス確認エラー: {e}")
-            session.clear()
             return jsonify({'authenticated': False})

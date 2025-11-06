@@ -1,22 +1,29 @@
 <div class="sidebar">
     <div class="sidebar-header">
-        <h2>Manual Generator</h2>
+        <h2>マニュアル生成システム</h2>
         <div class="user-info">
-            {% if session.get('is_super_admin') %}
-                <div><strong>Super Admin</strong></div>
-                <div>{{ session.get('super_admin_username', 'Admin') }}</div>
-            {% elif session.get('company_id') %}
-                <div><strong>{{ session.get('username', 'User') }}</strong></div>
-                <div>{{ session.get('company_name', 'Company') }}</div>
-                {% if session.get('user_role') %}
-                    <div style="font-size: 11px; margin-top: 3px;">
-                        {% if session.get('user_role') == 'admin' %}
-                            Company Administrator
-                        {% else %}
-                            General User
-                        {% endif %}
-                    </div>
+            {% if current_user.is_authenticated %}
+                {% if session.get('is_super_admin') %}
+                    <div><strong>スーパー管理者</strong></div>
+                    <div>{{ session.get('super_admin_username', current_user.username) }}</div>
+                {% elif session.get('company_id') %}
+                    <div><strong>{{ session.get('username', current_user.username) }}</strong></div>
+                    <div>{{ session.get('company_name', '企業') }}</div>
+                    {% if session.get('user_role') %}
+                        <div style="font-size: 11px; margin-top: 3px;">
+                            {% if session.get('user_role') == 'admin' %}
+                                企業管理者
+                            {% else %}
+                                一般ユーザー
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div><strong>{{ current_user.username }}</strong></div>
+                    <div style="color: #ff9800; font-size: 11px;">権限が設定されていません</div>
                 {% endif %}
+            {% else %}
+                <div style="color: #999;">ゲスト</div>
             {% endif %}
         </div>
     </div>
@@ -25,22 +32,22 @@
         <!-- Super Admin Menu -->
         {% if session.get('is_super_admin') %}
             <div class="menu-section">
-                <div class="menu-section-title">Super Admin</div>
+                <div class="menu-section-title">スーパー管理者</div>
                 <a href="/super-admin/dashboard" class="menu-item">
                     <span class="material-icons">dashboard</span>
-                    <span>Dashboard</span>
+                    <span>ダッシュボード</span>
                 </a>
                 <a href="/super-admin/companies" class="menu-item">
                     <span class="material-icons">business</span>
-                    <span>Company Management</span>
+                    <span>企業管理</span>
                 </a>
                 <a href="/super-admin/users" class="menu-item">
                     <span class="material-icons">people</span>
-                    <span>User Management</span>
+                    <span>ユーザー管理</span>
                 </a>
                 <a href="/super-admin/activity-logs" class="menu-item">
                     <span class="material-icons">history</span>
-                    <span>Activity Logs</span>
+                    <span>活動ログ</span>
                 </a>
             </div>
         {% endif %}
@@ -48,18 +55,18 @@
         <!-- Company Admin Menu -->
         {% if session.get('company_id') and session.get('user_role') == 'admin' %}
             <div class="menu-section">
-                <div class="menu-section-title">Company Admin</div>
+                <div class="menu-section-title">企業管理者</div>
                 <a href="/company/dashboard" class="menu-item">
                     <span class="material-icons">analytics</span>
-                    <span>Company Dashboard</span>
+                    <span>企業ダッシュボード</span>
                 </a>
                 <a href="/company/users" class="menu-item">
                     <span class="material-icons">group</span>
-                    <span>User Management</span>
+                    <span>ユーザー管理</span>
                 </a>
                 <a href="/company/templates" class="menu-item">
                     <span class="material-icons">description</span>
-                    <span>Template Management</span>
+                    <span>テンプレート管理</span>
                 </a>
             </div>
         {% endif %}
@@ -67,55 +74,55 @@
         <!-- General User Menu (All authenticated users) -->
         {% if session.get('company_id') or session.get('is_super_admin') %}
             <div class="menu-section">
-                <div class="menu-section-title">Manual Generation</div>
+                <div class="menu-section-title">マニュアル生成</div>
                 <a href="/" class="menu-item">
                     <span class="material-icons">home</span>
-                    <span>Home</span>
+                    <span>ホーム</span>
                 </a>
                 <a href="/manual/list" class="menu-item">
                     <span class="material-icons">list</span>
-                    <span>Manual List</span>
+                    <span>マニュアル一覧</span>
                 </a>
                 <a href="/manual/create" class="menu-item">
                     <span class="material-icons">add_circle</span>
-                    <span>Create Manual</span>
+                    <span>マニュアル作成</span>
                 </a>
                 <a href="/manual/video/three-stage" class="menu-item">
                     <span class="material-icons">add_photo_alternate</span>
-                    <span>Create with Images</span>
+                    <span>画像付きマニュアル作成</span>
                 </a>
             </div>
 
             <div class="menu-section">
-                <div class="menu-section-title">Resources</div>
+                <div class="menu-section-title">リソース</div>
                 <a href="/materials" class="menu-item">
                     <span class="material-icons">folder_open</span>
-                    <span>Reference Materials</span>
+                    <span>参考資料</span>
                 </a>
             </div>
 
             <div class="menu-section">
-                <div class="menu-section-title">Processing</div>
+                <div class="menu-section-title">処理状況</div>
                 <a href="/jobs" class="menu-item">
                     <span class="material-icons">work</span>
-                    <span>Job Status</span>
+                    <span>ジョブ状況</span>
                 </a>
             </div>
         {% endif %}
     </div>
 
     <div class="sidebar-footer">
-        {% if session.get('is_super_admin') or session.get('company_id') %}
+        {% if current_user.is_authenticated %}
             <form id="logout-form" action="/auth/logout" method="POST" style="margin: 0;">
                 <button type="submit" class="menu-item" style="background: rgba(244, 67, 54, 0.2); border-radius: 5px; width: 100%; border: none; cursor: pointer;">
                     <span class="material-icons">logout</span>
-                    <span>Logout</span>
+                    <span>ログアウト</span>
                 </button>
             </form>
         {% else %}
-            <a href="/auth/login" class="menu-item" style="background: rgba(76, 175, 80, 0.2); border-radius: 5px;">
+            <a href="/login" class="menu-item" style="background: rgba(76, 175, 80, 0.2); border-radius: 5px;">
                 <span class="material-icons">login</span>
-                <span>Login</span>
+                <span>ログイン</span>
             </a>
         {% endif %}
     </div>

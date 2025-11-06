@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マニュアル編集</title>    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/static/icons/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/static/icons/favicon-48x48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="/static/icons/favicon-64x64.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png">
+    <meta name="theme-color" content="#2196F3">
+    
+    <!-- Google Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- TinyMCE CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js" referrerpolicy="origin"></script>
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Turndown for HTML to Markdown conversion -->
+    <script src="https://cdn.jsdelivr.net/npm/turndown@7.1.1/dist/turndown.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #ffffff;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background-color: #007bff;
+            color: white;
+            padding: 30px 0;
+            border-radius: 8px;
+            margin-bottom: 40px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+
+        .logout-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+        }
+
+        .btn-logout {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-logout:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            text-decoration: none;
+            color: white;
+        }
+
+        .breadcrumb {
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            color: #666;
+            border: 1px solid #e9ecef;
+        }
+
+        .breadcrumb a {
+            color: #1976d2;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            color: #0d47a1;
+        }
+
+        .tox .tox-toolbar--scrolling {
+            flex-wrap: wrap !important;
+        }
+
+        .edit-form {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 500;
+            color: #333;
+            font-size: 16px;
+        }
+
+        #editor {
+            min-height: 500px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-right: 10px;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #0d47a1;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(25,118,210,0.2);
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #545b62;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(108,117,125,0.2);
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(40,167,69,0.2);
+        }
+
+        .material-icons {
+            font-family: 'Material Icons';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 18px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+
+        .btn .material-icons {
+            font-size: 16px;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .actions-left {
+            display: flex;
+            gap: 10px;
+        }
+
+        .actions-right {
+            display: flex;
+            gap: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1976d2;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #f5c6cb;
+            margin-bottom: 20px;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #c3e6cb;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                margin: 0;
+            }
+
+            .actions {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .actions-left,
+            .actions-right {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- マニュアルデータを安全に格納 -->
+    <script type="application/json" id="manual-data">{{ manual | tojson }}</script>
+    
+    <div class="container">
+        <div class="header">
+            <div class="logout-container">
+                <div class="user-info" id="user-info">
+                    <!-- ユーザー情報がJavaScriptで設定されます -->
+                </div>
+                <button class="btn-logout" onclick="logout()">
+                    <span class="material-icons" style="font-size: 16px;">logout</span>
+                    ログアウト
+                </button>
+                <!-- 隠しフォーム（代替手段） -->
+                <form id="logout-form" action="/auth/logout" method="POST" style="display: none;">
+                </form>
+            </div>
+            <h1 id="manual-title">マニュアル編集</h1>
+            <p>マニュアル内容を編集・更新できます</p>
+        </div>
+
+        <!-- パンくずリスト -->
+        <div class="breadcrumb">
+            <a href="/manual/list"><span class="material-icons" style="font-size: 16px;">menu_book</span>マニュアル一覧</a> >
+            <a href="#" id="detail-link"><span class="material-icons" style="font-size: 16px;">visibility</span>マニュアル詳細</a> >
+            <span class="material-icons" style="font-size: 16px;">edit</span>編集
+        </div>
+
+        <!-- メッセージ表示エリア -->
+        <div id="message-area"></div>
+
+        <!-- 編集フォーム -->
+        <div class="edit-form">
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>マニュアルを読み込み中...</p>
+            </div>
+
+            <form id="edit-form" style="display: none;">
+                <div class="form-group">
+                    <label for="editor" class="form-label">マニュアル内容</label>
+                    <textarea id="editor"></textarea>
+                </div>
+
+                <div class="actions">
+                    <div class="actions-left">
+                        <a href="#" id="back-link" class="btn btn-secondary">
+                            <span class="material-icons">arrow_back</span>
+                            戻る
+                        </a>
+                    </div>
+                    <div class="actions-right">
+                        <button type="button" id="preview-btn" class="btn btn-primary">
+                            <span class="material-icons">preview</span>
+                            プレビュー
+                        </button>
+                        <button type="submit" id="save-btn" class="btn btn-success">
+                            <span class="material-icons">save</span>
+                            保存
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- プレビューモーダル -->
+    <div id="preview-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center;">
+        <div style="background: white; border-radius: 8px; padding: 20px; max-width: 90vw; max-height: 90vh; overflow: auto; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px;">
+                <h3 style="margin: 0;">プレビュー</h3>
+                <button onclick="closePreview()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">×</button>
+            </div>
+            <div id="preview-content"></div>
+        </div>
+    </div>
+
+    <script>
+        let manualData = null;
+        let editor = null;
+        let manualId = null;
+        let isMarkdownFormat = false; // マークダウン形式かどうかのフラグ
+
+        // TinyMCE初期化
+        function initializeEditor(content) {
+            tinymce.init({
+                selector: '#editor',
+                height: 500,
+                plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
+                toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+                promotion: false,
+                content_style: `
+                    body { font-family:Helvetica,Arial,sans-serif; font-size:14px }
+                    img { max-width: 100%; height: auto; }
+                    table { border-collapse: collapse; width: 100%; }
+                    table, th, td { border: 1px solid #ddd; }
+                    th, td { padding: 8px; text-align: left; }
+                    th { background-color: #f2f2f2; }
+                `,
+                setup: function (ed) {
+                    editor = ed;
+                    ed.on('init', function () {
+                        // 初期コンテンツを設定
+                        if (content) {
+                            ed.setContent(content);
+                        }
+                    });
+                }
+            });
+        }
+
+        // マニュアルデータ読み込み
+        async function loadManual(id) {
+            try {
+                const response = await fetch(`/api/manual/${id}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    manualData = result.manual;
+                    displayManual(manualData);
+                } else {
+                    showError('マニュアルの読み込みに失敗しました: ' + result.error);
+                }
+            } catch (error) {
+                showError('エラーが発生しました: ' + error.message);
+            }
+        }
+
+        function displayManual(manual) {
+            // ローディング非表示
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('edit-form').style.display = 'block';
+
+            // タイトル設定
+            document.getElementById('manual-title').innerHTML = `${manual.title} - 編集`;
+            document.title = manual.title + ' - 編集';
+
+            // パンくずリンク設定
+            document.getElementById('detail-link').href = `/manual/view/${manual.id}`;
+            document.getElementById('back-link').href = `/manual/view/${manual.id}`;
+
+            // 編集対象のコンテンツを決定
+            let contentToEdit = '';
+            if (manual.manual_type === 'manual_with_images' && manual.stage3_content) {
+                contentToEdit = manual.stage3_content;
+            } else if (manual.manual_type === 'multi_stage' && manual.stage3_content) {
+                contentToEdit = manual.stage3_content;
+            } else {
+                contentToEdit = manual.content || '';
+            }
+
+            // マークダウン形式の場合はHTMLに変換
+            if (manual.manual_type === 'multi_stage' || (manual.manual_type !== 'manual_with_images' && contentToEdit && !contentToEdit.includes('<'))) {
+                // マークダウンの場合
+                isMarkdownFormat = true;
+                console.log('マークダウン形式を検出 - HTMLに変換します');
+                try {
+                    // Marked.jsでマークダウンをHTMLに変換
+                    contentToEdit = marked.parse(contentToEdit);
+                    console.log('マークダウンからHTMLへの変換が完了しました');
+                } catch (error) {
+                    console.error('マークダウンの変換でエラーが発生:', error);
+                    // 変換に失敗した場合は元のテキストをそのまま使用
+                }
+            } else {
+                isMarkdownFormat = false;
+            }
+
+            // エディター初期化
+            initializeEditor(contentToEdit);
+        }
+
+        // フォーム送信
+        document.getElementById('edit-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!editor) {
+                showError('エディターが初期化されていません');
+                return;
+            }
+
+            let content = editor.getContent();
+            
+            // マークダウン形式の場合はHTMLからマークダウンに変換
+            if (isMarkdownFormat) {
+                console.log('マークダウン形式のため、HTMLをマークダウンに変換します');
+                try {
+                    const turndownService = new TurndownService();
+                    content = turndownService.turndown(content);
+                    console.log('HTMLからマークダウンへの変換が完了しました');
+                } catch (error) {
+                    console.error('マークダウンの変換でエラーが発生:', error);
+                    // 変換に失敗した場合はHTMLのまま送信
+                }
+            }
+            
+            if (!content.trim()) {
+                showError('コンテンツが空です');
+                return;
+            }
+
+            try {
+                // JSONで送信するように変更
+                const requestData = {
+                    content: content
+                };
+
+                // デバッグ：リクエストサイズを計算
+                const contentSize = new Blob([content]).size;
+                console.log(`送信するコンテンツサイズ: ${contentSize} bytes (${(contentSize / 1024 / 1024).toFixed(2)} MB)`);
+                console.log(`コンテンツの文字数: ${content.length}`);
+                
+                // JSON全体のサイズを概算
+                const jsonSize = JSON.stringify(requestData).length;
+                console.log(`推定JSONサイズ: ${jsonSize} bytes (${(jsonSize / 1024 / 1024).toFixed(2)} MB)`);
+                
+                if (contentSize > 100 * 1024 * 1024) { // 100MB以上の場合警告
+                    console.warn(`⚠️ 大きなリクエスト: ${(contentSize / 1024 / 1024).toFixed(2)} MB`);
+                }
+
+                const response = await fetch(`/manual/${manualId}/edit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                console.log(`レスポンスステータス: ${response.status} ${response.statusText}`);
+
+                if (response.ok) {
+                    // 成功時は詳細画面にリダイレクト
+                    window.location.href = `/manual/view/${manualId}`;
+                } else {
+                    const result = await response.json();
+                    console.error('エラーレスポンス:', result);
+                    showError('保存に失敗しました: ' + (result.error || '不明なエラー'));
+                }
+            } catch (error) {
+                console.error('送信エラー:', error);
+                showError('保存中にエラーが発生しました: ' + error.message);
+            }
+        });
+
+        // プレビュー機能
+        document.getElementById('preview-btn').addEventListener('click', function() {
+            if (!editor) {
+                showError('エディターが初期化されていません');
+                return;
+            }
+
+            const content = editor.getContent();
+            document.getElementById('preview-content').innerHTML = content;
+            document.getElementById('preview-modal').style.display = 'flex';
+        });
+
+        function closePreview() {
+            document.getElementById('preview-modal').style.display = 'none';
+        }
+
+        // ユーティリティ関数
+        function showError(message) {
+            const messageArea = document.getElementById('message-area');
+            messageArea.innerHTML = `
+                <div class="error">
+                    <span class="material-icons" style="font-size: 16px; vertical-align: middle; margin-right: 5px;">error</span>
+                    ${message}
+                </div>
+            `;
+        }
+
+        function showSuccess(message) {
+            const messageArea = document.getElementById('message-area');
+            messageArea.innerHTML = `
+                <div class="success">
+                    <span class="material-icons" style="font-size: 16px; vertical-align: middle; margin-right: 5px;">check_circle</span>
+                    ${message}
+                </div>
+            `;
+        }
+
+        // ログアウト機能
+        async function logout() {
+            try {
+                const response = await fetch('/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    window.location.href = '/login';
+                } else {
+                    document.getElementById('logout-form').submit();
+                }
+            } catch (error) {
+                console.log('Logout fetch failed, trying form submit:', error);
+                document.getElementById('logout-form').submit();
+            }
+        }
+
+        // ユーザー情報の設定
+        async function setUserInfo() {
+            try {
+                const response = await fetch('/api/user-info');
+                if (response.ok) {
+                    const userInfo = await response.json();
+                    if (userInfo.user) {
+                        document.getElementById('user-info').textContent = 
+                            userInfo.user.name + ' (' + userInfo.user.company + ')';
+                    }
+                }
+            } catch (error) {
+                console.log('Failed to load user info:', error);
+            }
+        }
+
+        // DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', function () {
+            setUserInfo();
+            
+            // サーバーから渡されたマニュアルデータを安全に取得
+            try {
+                const manualElement = document.getElementById('manual-data');
+                if (manualElement && manualElement.textContent) {
+                    manualData = JSON.parse(manualElement.textContent);
+                    manualId = manualData.id;
+                    displayManual(manualData);
+                } else {
+                    showError('マニュアルデータが見つかりません。');
+                }
+            } catch (e) {
+                showError('マニュアルデータの読み込みに失敗しました。');
+                console.error('JSON Parse Error:', e);
+            }
+        });
+
+        // モーダル外クリックで閉じる
+        document.getElementById('preview-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePreview();
+            }
+        });
+    </script>
+</body>
+
+</html>
