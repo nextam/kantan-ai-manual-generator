@@ -5,7 +5,7 @@ Main functionality: Background processing for manual generation
 Dependencies: Celery, GeminiService, RAGProcessor, ElasticSearch
 """
 
-from src.workers.celery_app import celery_app
+from src.workers.celery_app import celery
 from src.models.models import db, Manual, ProcessingJob, ManualTemplate
 from src.services.gemini_service import GeminiService
 from datetime import datetime
@@ -15,7 +15,7 @@ import json
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(bind=True, name='manual_tasks.process_manual_generation')
+@celery.task(bind=True, name='manual_tasks.process_manual_generation')
 def process_manual_generation_task(self, job_id):
     """
     Process manual generation with RAG enhancement
@@ -64,27 +64,16 @@ def process_manual_generation_task(self, job_id):
         db.session.commit()
         
         try:
-            from src.services.gemini_service import GeminiService
-            gemini_service = GeminiService()
-            
-            # Build comprehensive prompt with RAG context
-            base_prompt = build_manual_generation_prompt(
-                video_uri=video_uri,
-                template_content=template_content,
-                rag_context=rag_context if use_rag else None
-            )
+            from src.services.video_manual_generator import VideoManualGenerator
+            generator = VideoManualGenerator()
             
             logger.info(f"Generating manual content for manual {manual_id}")
             logger.info(f"Video URI: {video_uri}")
             logger.info(f"RAG enabled: {use_rag}")
             
-            # Call Gemini API to generate comprehensive manual
-            # The generate_comprehensive_manual method expects video_uris (list) and other parameters
-            manual_content_result = gemini_service.generate_comprehensive_manual(
-                video_uris=[video_uri],
-                custom_prompt=base_prompt,
-                include_images=template_content.get('include_images', False)
-            )
+            # Generate manual using video manual generator
+            # video_uri is a local file path like: uploads\company_1\videos\xxx.MOV
+            manual_content_result = generator.generate_manual_data(video_uri)
             
             # Extract content from result
             if isinstance(manual_content_result, dict):
@@ -94,6 +83,7 @@ def process_manual_generation_task(self, job_id):
                     manual_content = (
                         manual_content_result.get('html_content') or
                         manual_content_result.get('manual_content') or
+                        manual_content_result.get('text_content') or
                         str(manual_content_result)
                     )
             else:

@@ -6,7 +6,10 @@ Dependencies: celery, redis
 """
 
 import os
+import logging
+from datetime import datetime
 from celery import Celery
+from celery.signals import after_setup_logger, after_setup_task_logger
 from kombu import Queue
 
 
@@ -31,7 +34,8 @@ def make_celery(app_name='manual_generator'):
         broker=broker_url,
         backend=result_backend,
         include=[
-            'src.workers.rag_tasks'  # Import task modules
+            'src.workers.rag_tasks',
+            'src.workers.manual_tasks'  # Add manual tasks module
         ]
     )
     
@@ -92,6 +96,61 @@ def make_celery(app_name='manual_generator'):
 
 # Create global Celery instance
 celery = make_celery()
+
+
+# Automatically push Flask app context for all tasks
+@celery.task(bind=True, name='celery.ping')
+def ping_task(self):
+    """Health check task"""
+    return 'pong'
+
+
+# Setup Flask app context for all Celery tasks
+from celery.signals import task_prerun, task_postrun
+
+@task_prerun.connect
+def setup_app_context(sender=None, **kwargs):
+    """Push Flask app context before task execution"""
+    from src.core.app import app
+    app.app_context().push()
+
+
+@task_postrun.connect
+def teardown_app_context(sender=None, **kwargs):
+    """Pop Flask app context after task execution"""
+    from flask import g
+    from src.models.models import db
+    # Cleanup database session
+    db.session.remove()
+
+
+# Configure Celery logging to use same timestamped log file as Flask
+@after_setup_logger.connect
+def setup_celery_logger(logger, *args, **kwargs):
+    """Configure Celery worker logger to use same log file as Flask"""
+    log_dir = os.getenv('LOG_DIR', 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+    log_timestamp = os.getenv('LOG_TIMESTAMP', datetime.now().strftime('%Y%m%d_%H%M%S'))
+    log_file_path = os.path.join(log_dir, f'app_{log_timestamp}.log')
+    
+    # Add file handler to Celery logger
+    handler = logging.FileHandler(log_file_path)
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    logger.addHandler(handler)
+
+
+@after_setup_task_logger.connect
+def setup_celery_task_logger(logger, *args, **kwargs):
+    """Configure Celery task logger to use same log file as Flask"""
+    log_dir = os.getenv('LOG_DIR', 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+    log_timestamp = os.getenv('LOG_TIMESTAMP', datetime.now().strftime('%Y%m%d_%H%M%S'))
+    log_file_path = os.path.join(log_dir, f'app_{log_timestamp}.log')
+    
+    # Add file handler to task logger
+    handler = logging.FileHandler(log_file_path)
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    logger.addHandler(handler)
 
 
 # Optional: Flask integration

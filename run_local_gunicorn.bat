@@ -30,6 +30,9 @@ if exist requirements.txt (
     pip install -r requirements.txt >NUL
 )
 
+echo [INFO] Starting Celery Worker in background (same log as Flask)...
+start /B celery -A src.workers.celery_app:celery worker --loglevel=info --pool=solo
+
 echo [INFO] Launch waitress (port 5000)
 waitress-serve --host=0.0.0.0 --port=5000 --threads=4 --connection-limit=1000 --cleanup-interval=30 --channel-timeout=120 --max-request-body-size=10737418240 app:app
 

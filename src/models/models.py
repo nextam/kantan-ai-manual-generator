@@ -224,6 +224,16 @@ class Manual(db.Model):
     processing_job_id = db.Column(db.Integer, db.ForeignKey('processing_jobs.id'), nullable=True)
     rag_sources = db.Column(db.Text, nullable=True)  # JSON: RAG sources used
     completed_at = db.Column(db.DateTime, nullable=True)
+    
+    # Phase 6: Unified Manual Generation - Multi-format support
+    output_format = db.Column(db.String(50), default='text_with_images')  # text_only, text_with_images, text_with_video_clips, subtitle_video, hybrid
+    content_text = db.Column(db.Text, nullable=True)  # Plain text content
+    content_html = db.Column(db.Text, nullable=True)  # HTML formatted content
+    content_video_uri = db.Column(db.String(500), nullable=True)  # Subtitle video URI
+    extracted_images = db.Column(db.Text, nullable=True)  # JSON: Image extraction info
+    video_clips = db.Column(db.Text, nullable=True)  # JSON: Video clip info
+    subtitles_data = db.Column(db.Text, nullable=True)  # JSON: Subtitle data
+    generation_options = db.Column(db.Text, nullable=True)  # JSON: User-specified options
 
     def get_generation_config(self):
         """生成設定をJSONから取得"""
@@ -240,6 +250,70 @@ class Manual(db.Model):
             self.generation_config = json.dumps(config_dict, ensure_ascii=False)
         else:
             self.generation_config = None
+
+    def get_generation_options(self):
+        """Get generation options from JSON"""
+        if self.generation_options:
+            try:
+                return json.loads(self.generation_options)
+            except (json.JSONDecodeError, TypeError):
+                return {}
+        return {}
+    
+    def set_generation_options(self, options_dict):
+        """Save generation options as JSON"""
+        if options_dict:
+            self.generation_options = json.dumps(options_dict, ensure_ascii=False)
+        else:
+            self.generation_options = None
+    
+    def get_extracted_images(self):
+        """Get extracted images info from JSON"""
+        if self.extracted_images:
+            try:
+                return json.loads(self.extracted_images)
+            except (json.JSONDecodeError, TypeError):
+                return []
+        return []
+    
+    def set_extracted_images(self, images_list):
+        """Save extracted images info as JSON"""
+        if images_list:
+            self.extracted_images = json.dumps(images_list, ensure_ascii=False)
+        else:
+            self.extracted_images = None
+    
+    def get_video_clips(self):
+        """Get video clips info from JSON"""
+        if self.video_clips:
+            try:
+                return json.loads(self.video_clips)
+            except (json.JSONDecodeError, TypeError):
+                return []
+        return []
+    
+    def set_video_clips(self, clips_list):
+        """Save video clips info as JSON"""
+        if clips_list:
+            self.video_clips = json.dumps(clips_list, ensure_ascii=False)
+        else:
+            self.video_clips = None
+    
+    def get_subtitles_data(self):
+        """Get subtitles data from JSON"""
+        if self.subtitles_data:
+            try:
+                return json.loads(self.subtitles_data)
+            except (json.JSONDecodeError, TypeError):
+                return []
+        return []
+    
+    def set_subtitles_data(self, subtitles_list):
+        """Save subtitles data as JSON"""
+        if subtitles_list:
+            self.subtitles_data = json.dumps(subtitles_list, ensure_ascii=False)
+        else:
+            self.subtitles_data = None
 
     def to_dict(self):
         def sanitize_string(text):
@@ -261,6 +335,7 @@ class Manual(db.Model):
             'created_at': utc_to_jst_isoformat(self.created_at),
             'updated_at': utc_to_jst_isoformat(self.updated_at),
             'manual_type': self.manual_type,
+            'output_format': self.output_format,
             'generation_status': self.generation_status,
             'generation_progress': self.generation_progress,
             'error_message': sanitize_string(self.error_message),
@@ -268,7 +343,14 @@ class Manual(db.Model):
             'stage2_content': sanitize_string(self.stage2_content),
             'stage3_content': sanitize_string(self.stage3_content),
             'description': sanitize_string(self.description),
-            'generation_config': self.get_generation_config()
+            'generation_config': self.get_generation_config(),
+            # Phase 6: Multi-format support fields
+            'content_text': sanitize_string(self.content_text),
+            'content_html': sanitize_string(self.content_html),
+            'content_video_uri': self.content_video_uri,
+            'extracted_images': self.get_extracted_images(),
+            'video_clips': self.get_video_clips(),
+            'subtitles_data': self.get_subtitles_data()
         }
 
     def to_dict_summary(self):

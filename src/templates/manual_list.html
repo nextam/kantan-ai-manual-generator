@@ -491,8 +491,15 @@
     <div style="max-width: 1200px;">
         <div class="actions-bar">
             <div>
-                <a href="/manual/video/three-stage" class="btn btn-success"><span class="material-icons">auto_awesome</span>マニュアル（画像あり）生成</a>
-                <a href="/manual/create" class="btn btn-primary"><span class="material-icons">add</span>マニュアル（画像なし）生成</a>
+                <a href="/manuals/create" class="btn btn-primary" style="background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%); font-weight: 600;">
+                    <span class="material-icons">auto_awesome</span>マニュアル作成（統一版）
+                </a>
+                <a href="/manual/video/three-stage" class="btn btn-success" style="opacity: 0.7;">
+                    <span class="material-icons">add_photo_alternate</span>画像あり版（旧）
+                </a>
+                <a href="/manual/create" class="btn btn-info" style="opacity: 0.7;">
+                    <span class="material-icons">note_add</span>画像なし版（旧）
+                </a>
                 <button class="btn btn-secondary" onclick="refreshList()"><span
                         class="material-icons">refresh</span>リスト更新</button>
             </div>
@@ -529,7 +536,7 @@
             <span class="material-icons" style="font-size: 64px; color: #ccc; margin-bottom: 20px;">description</span>
             <h3>まだマニュアルがありません</h3>
             <p>新規作成ボタンからマニュアルを作成してください</p>
-            <a href="/manual/create" class="btn btn-primary"><span class="material-icons">add</span>最初のマニュアルを作成</a>
+            <a href="/manuals/create" class="btn btn-primary"><span class="material-icons">auto_awesome</span>最初のマニュアルを作成</a>
         </div>
 
         <!-- ページネーション -->

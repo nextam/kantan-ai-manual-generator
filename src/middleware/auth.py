@@ -398,6 +398,8 @@ def require_role_enhanced(allowed_roles):
     
     Usage:
         @require_role_enhanced(['admin', 'user'])
+    
+    Note: 'super_admin' role has access to all endpoints automatically
     """
     def decorator(f):
         @wraps(f)
@@ -405,6 +407,11 @@ def require_role_enhanced(allowed_roles):
             if not current_user.is_authenticated:
                 return jsonify({'error': 'Authentication required'}), 401
             
+            # super_admin has access to everything
+            if current_user.role == 'super_admin':
+                return f(*args, **kwargs)
+            
+            # Check if user's role is in the allowed roles
             if current_user.role not in allowed_roles:
                 return jsonify({'error': 'Insufficient permissions'}), 403
             

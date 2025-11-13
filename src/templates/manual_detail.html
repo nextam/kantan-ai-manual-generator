@@ -306,6 +306,82 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
 
+    /* Format Switcher Styles */
+    .format-switcher {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .format-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .format-btn {
+        flex: 1;
+        min-width: 180px;
+        padding: 12px 16px;
+        border: 2px solid #e9ecef;
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .format-btn:hover:not(.active):not(:disabled) {
+        border-color: #007bff;
+        background: #f8f9ff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,123,255,0.1);
+    }
+
+    .format-btn.active {
+        border-color: #007bff;
+        background: #e7f1ff;
+        cursor: default;
+    }
+
+    .format-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .format-btn i {
+        font-size: 20px;
+        color: #007bff;
+        margin-bottom: 4px;
+    }
+
+    .format-btn strong {
+        font-size: 14px;
+        color: #333;
+    }
+
+    .format-description {
+        font-size: 12px;
+        color: #666;
+        margin-top: 4px;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 2px 6px;
+        font-size: 11px;
+        border-radius: 4px;
+        font-weight: 600;
+    }
+
+    .badge-success {
+        background: #28a745;
+        color: white;
+    }
+
     @media (max-width: 768px) {
         .meta-info {
             flex-direction: column;
@@ -330,6 +406,14 @@
             font-size: 14px;
             justify-content: flex-start;
         }
+
+        .format-buttons {
+            flex-direction: column;
+        }
+
+        .format-btn {
+            min-width: 100%;
+        }
     }
 </style>
 {% endblock %}
@@ -351,23 +435,32 @@
                 <div class="meta-value" id="created-date">-</div>
             </div>
             <div class="meta-item">
+                <div class="meta-label">出力形式</div>
+                <div class="meta-value" id="output-format">-</div>
+            </div>
+            <div class="meta-item">
                 <div class="meta-label">マニュアルタイプ</div>
                 <div class="meta-value" id="manual-type">-</div>
             </div>
-            <div class="meta-item">
-                <div class="meta-label">推定作業時間</div>
-                <div class="meta-value" id="estimated-time">-</div>
-            </div>
-            <div class="meta-item">
-                <div class="meta-label">対象者</div>
-                <div class="meta-value" id="target-audience">-</div>
+        </div>
+        
+        <!-- Format Switcher -->
+        <div id="format-switcher" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; display: none;">
+            <div style="margin-bottom: 10px; font-weight: 600; color: #333;">📋 表示形式を切り替え</div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;" id="format-buttons">
+                <!-- Dynamically generated format buttons -->
             </div>
         </div>
+        
         <div class="actions">
             <a href="/manual/list" class="btn btn-secondary">
                 <span class="material-icons">arrow_back</span>
                 一覧に戻る
             </a>
+            <button type="button" id="convert-format-btn" class="btn btn-primary" onclick="showConvertModal()" style="display: none;">
+                <span class="material-icons">transform</span>
+                別の形式で再生成
+            </button>
             <a href="#" id="edit-manual-btn" class="btn btn-primary" style="display: none;">
                 <span class="material-icons">edit</span>
                 編集
@@ -475,7 +568,15 @@
 
         async function loadManual(manualId) {
             try {
-                const response = await fetch(`/api/manual/${manualId}`);
+                // Cache busting: HTTPヘッダーで強制的に最新データを取得
+                const response = await fetch(`/api/manual/${manualId}`, {
+                    cache: 'no-cache',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
                 const result = await response.json();
                 console.log('APIレスポンス:', result);
 
@@ -501,15 +602,19 @@
             // ローディング非表示
             document.getElementById('loading').style.display = 'none';
 
-            // タイトル設定
-            document.getElementById('manual-title').textContent = manual.title;
+            // タイトル設定 - 要素の存在確認
+            const manualTitleElement = document.getElementById('manual-title');
+            if (manualTitleElement) {
+                manualTitleElement.textContent = manual.title;
+            } else {
+                console.warn('manual-title element not found');
+            }
             document.title = manual.title + ' - 詳細';
 
             // メタ情報設定
             document.getElementById('created-date').textContent = formatDate(manual.created_at);
+            document.getElementById('output-format').textContent = getFormatText(manual.output_format);
             document.getElementById('manual-type').textContent = getTypeText(manual.manual_type);
-            document.getElementById('estimated-time').textContent = manual.estimated_time || '未設定';
-            document.getElementById('target-audience').textContent = getAudienceText(manual.target_audience);
 
             // 編集ボタンの設定と表示
             const editBtn = document.getElementById('edit-manual-btn');
@@ -550,17 +655,117 @@
         }
 
     function displaySingleManual(manual) {
+            console.log('=== displaySingleManual 開始 ===');
+            console.log('content:', manual.content);
+            
             // 単一マニュアル表示
-            document.getElementById('manual-text').style.display = 'block';
-            document.getElementById('multi-stage-tabs').style.display = 'none';
+            const normalManual = document.getElementById('normal-manual');
+            const multiStage = document.getElementById('multi-stage-tabs');
+            
+            if (!normalManual) {
+                console.error('normal-manual element not found');
+                return;
+            }
+            if (!multiStage) {
+                console.error('multi-stage-tabs element not found');
+                return;
+            }
+            
+            console.log('Showing normal-manual, hiding multi-stage-tabs');
+            normalManual.style.display = 'block';
+            multiStage.style.display = 'none';
 
+            // contentフィールドの処理
+            let contentToDisplay = manual.content;
+            
+            console.log('contentToDisplay type:', typeof contentToDisplay);
+            console.log('contentToDisplay starts with {:', contentToDisplay && contentToDisplay.startsWith('{'));
+            
+            // Python辞書形式の文字列をJSONに変換して解析
+            if (typeof contentToDisplay === 'string' && contentToDisplay.startsWith("{")) {
+                try {
+                    console.log('Python辞書形式の文字列を検出、パース試行');
+                    // シングルクォートをダブルクォートに変換（厳密な正規表現）
+                    let jsonStr = contentToDisplay
+                        .replace(/'/g, '"')
+                        .replace(/\bNone\b/g, 'null')
+                        .replace(/\bTrue\b/g, 'true')
+                        .replace(/\bFalse\b/g, 'false');
+                    
+                    const parsedContent = JSON.parse(jsonStr);
+                    console.log('パース成功:', parsedContent);
+                    
+                    // analysis_resultがある場合、それをフォーマットして表示
+                    if (parsedContent.analysis_result) {
+                        contentToDisplay = formatAnalysisResult(parsedContent.analysis_result);
+                    } else {
+                        contentToDisplay = JSON.stringify(parsedContent, null, 2);
+                    }
+                } catch (e) {
+                    console.error('パース失敗:', e);
+                    console.log('元のコンテンツをそのまま表示します');
+                }
+            }
+            
+            console.log('表示するコンテンツ:', contentToDisplay);
+            
             // マークダウンをHTMLに変換して表示
-            displayManualContent(manual.content, 'manual-text');
+            displayManualContent(contentToDisplay, 'manual-text');
+            
+            console.log('=== displaySingleManual 完了 ===');
+        }
+        
+        function formatAnalysisResult(analysis) {
+            console.log('=== formatAnalysisResult 開始 ===');
+            if (!analysis) {
+                console.error('analysis が null または undefined です');
+                return '';
+            }
+            let html = `# ${analysis.title || 'タイトルなし'}\n\n`;
+            html += `**作業概要:** ${analysis.summary || '概要なし'}\n\n`;
+            html += `**作業時間:** ${analysis.total_duration || 0}秒\n\n`;
+            html += `**難易度:** ${analysis.difficulty_level || '不明'}\n\n`;
+            html += `**必要人数:** ${analysis.estimated_workers || 1}名\n\n`;
+            
+            if (analysis.required_tools && analysis.required_tools.length > 0) {
+                html += `**必要工具:**\n`;
+                analysis.required_tools.forEach(tool => {
+                    html += `- ${tool}\n`;
+                });
+                html += '\n';
+            }
+            
+            html += `## 作業手順\n\n`;
+            
+            if (analysis.steps && analysis.steps.length > 0) {
+                analysis.steps.forEach(step => {
+                    html += `### ステップ ${step.step_number}: ${step.title}\n\n`;
+                    html += `${step.description}\n\n`;
+                    html += `**タイムスタンプ:** ${step.timestamp_start}秒 - ${step.timestamp_end}秒\n\n`;
+                    
+                    if (step.key_points && step.key_points.length > 0) {
+                        html += `**重要ポイント:**\n`;
+                        step.key_points.forEach(point => {
+                            html += `- ${point}\n`;
+                        });
+                        html += '\n';
+                    }
+                    
+                    if (step.safety_notes) {
+                        html += `⚠️ **安全注意事項:** ${step.safety_notes}\n\n`;
+                    }
+                    
+                    html += '---\n\n';
+                });
+            }
+            
+            console.log('フォーマット済みHTML:', html);
+            return html;
         }
 
     function displayMultiStageManual(manual) {
             // マニュアル（画像あり）表示
-            document.getElementById('manual-text').style.display = 'none';
+            document.getElementById('normal-manual').style.display = 'none';
             const multiStageContainer = document.getElementById('multi-stage-tabs');
             multiStageContainer.style.display = 'block';
 
@@ -636,7 +841,19 @@
 
     // allowMarkdown: true の場合のみ markdown を HTML 変換。false ならそのまま（主に画像ありバージョンで既製HTML想定）
     function displayManualContent(content, containerId, allowMarkdown = true) {
+            console.log('=== displayManualContent 開始 ===');
+            console.log('containerId:', containerId);
+            console.log('allowMarkdown:', allowMarkdown);
+            console.log('content length:', content ? content.length : 0);
+            
             const container = document.getElementById(containerId);
+            
+            if (!container) {
+                console.error('Container not found:', containerId);
+                return;
+            }
+            
+            console.log('Container found:', container);
             
             if (!content) {
                 container.innerHTML = '<p>コンテンツが見つかりません。</p>';
@@ -702,6 +919,8 @@
             }
 
             container.innerHTML = html;
+            console.log('Content rendered successfully in:', containerId);
+            console.log('=== displayManualContent 完了 ===');
         }
 
         function isHtmlContent(content) {
@@ -737,6 +956,12 @@
 
         let videosHtml = '';
         videos.forEach(video => {
+            // 動画URLの検証
+            if (!video.url) {
+                console.warn('動画URLが空です、スキップします:', video);
+                return;
+            }
+            
             const isExpert = video.type === 'expert';
             const labelClass = isExpert ? 'expert-label' : 'novice-label';
             // 要件: 画像ありマニュアル(manual_with_images)では非熟練者ラベルを非表示
@@ -772,6 +997,17 @@
         videoSection.style.display = 'block';
     }
 
+        function getFormatText(format) {
+            const formatMap = {
+                'text_only': 'テキストのみ',
+                'text_with_images': 'テキスト + 画像',
+                'text_with_video_clips': 'テキスト + 動画クリップ',
+                'subtitle_video': '字幕付き動画',
+                'hybrid': 'ハイブリッド'
+            };
+            return formatMap[format] || format || 'テキスト + 画像';
+        }
+
         function getTypeText(type) {
             const typeMap = {
                 'basic': '基本マニュアル',
@@ -779,15 +1015,6 @@
                 'manual_with_images': 'マニュアル（画像あり）'
             };
             return typeMap[type] || type;
-        }
-
-        function getAudienceText(audience) {
-            const audienceMap = {
-                'beginner': '初心者向け',
-                'intermediate': '中級者向け',
-                'expert': '熟練者向け'
-            };
-            return audienceMap[audience] || audience || '未設定';
         }
 
         function formatDate(dateString) {
@@ -852,8 +1079,13 @@
                 if (response.ok) {
                     const userInfo = await response.json();
                     if (userInfo.user) {
-                        document.getElementById('user-info').textContent = 
-                            userInfo.user.name + ' (' + userInfo.user.company + ')';
+                        const userInfoElement = document.getElementById('user-info');
+                        if (userInfoElement) {
+                            userInfoElement.textContent = 
+                                userInfo.user.name + ' (' + userInfo.user.company + ')';
+                        } else {
+                            console.warn('user-info element not found');
+                        }
                     }
                 }
             } catch (error) {
@@ -861,9 +1093,12 @@
             }
         }
 
-        // DOMContentLoadedイベントの修正
+        // DOMContentLoadedイベント - 全初期化処理を統合
         document.addEventListener('DOMContentLoaded', function () {
+            // ユーザー情報設定
             setUserInfo();
+            
+            // マニュアル読み込み
             const pathParts = window.location.pathname.split('/');
             const manualId = pathParts[pathParts.length - 1];
 
@@ -872,6 +1107,17 @@
             } else {
                 showError('マニュアルIDが指定されていません');
             }
+            
+            // キャンバスイベントリスナー設定
+            setTimeout(() => {
+                const canvas = document.getElementById('imageEditorCanvas');
+                if (canvas) {
+                    setupCanvasEventListeners(canvas);
+                }
+            }, 100);
+            
+            // フォーマット情報読み込み
+            loadAvailableFormats();
         });
 
         // ===== (2)(3)(4) 画像回転編集 UI =====
@@ -1311,18 +1557,18 @@
         let recaptureData = {
             sourceVideoUrl: null
         };
+        
+        // 拡張子正規化関数（_mp4 -> .mp4）
+        function fixMp4Extension(filePath) {
+            if (filePath && filePath.endsWith('_mp4')) {
+                return filePath.substring(0, filePath.length - 4) + '.mp4';
+            }
+            return filePath;
+        }
 
         function openRecaptureModal() {
             console.log('再キャプチャモーダルを開きます');
             console.log('imageEditor.manual:', imageEditor.manual);
-            
-            // 拡張子正規化関数（_mp4 -> .mp4）
-            function fixMp4Extension(filePath) {
-                if (filePath && filePath.endsWith('_mp4')) {
-                    return filePath.substring(0, filePath.length - 4) + '.mp4';
-                }
-                return filePath;
-            }
             
             // stage2_contentから動画パスを取得
             let videoPath = null;
@@ -1660,14 +1906,11 @@
             }
         }
 
-        // キャンバスイベントリスナー
-        document.addEventListener('DOMContentLoaded', function() {
-            // キャンバスが作成された後にイベントリスナーを追加
-            setTimeout(() => {
-                const canvas = document.getElementById('imageEditorCanvas');
-                if (!canvas) return;
-                
-                canvas.addEventListener('mousedown', function(e) {
+        // キャンバスイベントリスナー設定関数
+        function setupCanvasEventListeners(canvas) {
+            if (!canvas) return;
+            
+            canvas.addEventListener('mousedown', function(e) {
                     if (!imageEditor.drawingMode) return;
                     
                     const rect = canvas.getBoundingClientRect();
@@ -1741,7 +1984,515 @@
                     drawCurrentImage();
                     imageEditor.isDrawing = false;
                 });
-            }, 100);
-        });
+        }
+
+        // Format conversion functions
+        async function loadAvailableFormats() {
+            try {
+                const response = await fetch('/api/manuals/output-formats', {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const formats = data.formats || [];
+                const currentFormat = '{{ manual.output_format or "text_with_images" }}';
+                
+                const formatButtons = document.getElementById('format-buttons');
+                if (!formatButtons) return;
+                
+                formatButtons.innerHTML = formats.map(format => {
+                    const isCurrent = format.id === currentFormat;
+                    const buttonClass = isCurrent ? 'format-btn active' : 'format-btn';
+                    const badge = format.recommended ? '<span class="badge badge-success ml-2">推奨</span>' : '';
+                    
+                    return `
+                        <button class="${buttonClass}" 
+                                data-format="${format.id}" 
+                                ${isCurrent ? 'disabled' : ''}>
+                            <i class="${format.icon}"></i>
+                            <strong>${format.name_ja}</strong>
+                            ${badge}
+                            <div class="format-description">${format.description}</div>
+                        </button>
+                    `;
+                }).join('');
+                
+                // Add click handlers for format switching
+                document.querySelectorAll('.format-btn:not(.active)').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const targetFormat = this.dataset.format;
+                        switchFormat(targetFormat);
+                    });
+                });
+                
+            } catch (error) {
+                console.error('Failed to load formats:', error);
+                showNotification('フォーマット情報の取得に失敗しました', 'error');
+            }
+        }
+
+        async function switchFormat(targetFormat) {
+            const currentFormat = '{{ manual.output_format or "text_with_images" }}';
+            
+            if (targetFormat === currentFormat) {
+                showNotification('既にこのフォーマットです', 'info');
+                return;
+            }
+            
+            // Check if content exists for target format
+            const hasContent = checkFormatContent(targetFormat);
+            
+            if (hasContent) {
+                // Just switch display without regeneration
+                displayFormatContent(targetFormat);
+                updateFormatButtons(targetFormat);
+                showNotification(`${getFormatName(targetFormat)}に切り替えました`, 'success');
+            } else {
+                // Need to regenerate - show conversion modal
+                showConvertModal(targetFormat);
+            }
+        }
+
+        // グローバルマニュアルフォーマットデータ（重複定義を避ける）
+        const manualFormatData = {
+            content_html: {{ manual.content_html|tojson|safe }},
+            content_text: {{ manual.content_text|tojson|safe }},
+            content_video_uri: {{ manual.content_video_uri|tojson|safe }},
+            extracted_images: {{ manual.get_extracted_images()|tojson|safe }},
+            video_clips: {{ manual.get_video_clips()|tojson|safe }},
+            subtitles_data: {{ manual.get_subtitles_data()|tojson|safe }}
+        };
+        
+        function checkFormatContent(format) {
+            // Check if content exists for the target format
+            const manual = manualFormatData;
+            
+            switch (format) {
+                case 'text_only':
+                    return !!manual.content_text;
+                case 'text_with_images':
+                    return !!manual.content_html && !!manual.extracted_images;
+                case 'text_with_video_clips':
+                    return !!manual.content_html && !!manual.video_clips;
+                case 'subtitle_video':
+                    return !!manual.content_video_uri && !!manual.subtitles_data;
+                case 'hybrid':
+                    return !!manual.content_html && !!manual.video_clips && !!manual.extracted_images;
+                default:
+                    return false;
+            }
+        }
+
+        function displayFormatContent(format) {
+            // Update the display to show the selected format content
+            const manual = manualFormatData;
+            
+            const contentArea = document.querySelector('.manual-content, .content-area, #manual-content');
+            if (!contentArea) {
+                console.warn('Content area not found');
+                return;
+            }
+            
+            // Clear current content
+            contentArea.innerHTML = '';
+            
+            switch (format) {
+                case 'text_only':
+                    // Display text-only content
+                    if (manual.content_text) {
+                        contentArea.innerHTML = `<div class="text-content">${escapeHtml(manual.content_text).replace(/\n/g, '<br>')}</div>`;
+                    } else {
+                        contentArea.innerHTML = '<p class="text-muted">テキストコンテンツがありません</p>';
+                    }
+                    break;
+                
+                case 'text_with_images':
+                    // Display HTML with images
+                    if (manual.content_html) {
+                        contentArea.innerHTML = manual.content_html;
+                    } else if (manual.extracted_images && manual.extracted_images.length > 0) {
+                        // Fallback: show images in grid
+                        let html = '<div class="images-grid">';
+                        manual.extracted_images.forEach(img => {
+                            html += `
+                                <div class="image-item">
+                                    <img src="${img.image_uri}" alt="${img.step_title}" class="img-fluid">
+                                    <div class="caption">${img.step_title} (${img.timestamp_formatted})</div>
+                                </div>
+                            `;
+                        });
+                        html += '</div>';
+                        contentArea.innerHTML = html;
+                    } else {
+                        contentArea.innerHTML = '<p class="text-muted">画像コンテンツがありません</p>';
+                    }
+                    break;
+                
+                case 'text_with_video_clips':
+                    // Display HTML with video clips
+                    if (manual.content_html) {
+                        contentArea.innerHTML = manual.content_html;
+                    } else if (manual.video_clips && manual.video_clips.length > 0) {
+                        // Fallback: show video clips list
+                        let html = '<div class="clips-list">';
+                        manual.video_clips.forEach(clip => {
+                            html += `
+                                <div class="clip-item">
+                                    <h4>${clip.step_title}</h4>
+                                    <video controls>
+                                        <source src="${clip.video_uri}#t=${clip.start_time},${clip.end_time}" type="video/mp4">
+                                    </video>
+                                    <div class="caption">${clip.start_formatted} - ${clip.end_formatted}</div>
+                                </div>
+                            `;
+                        });
+                        html += '</div>';
+                        contentArea.innerHTML = html;
+                    } else {
+                        contentArea.innerHTML = '<p class="text-muted">動画クリップがありません</p>';
+                    }
+                    break;
+                
+                case 'subtitle_video':
+                    // Display video with subtitles
+                    if (manual.content_video_uri) {
+                        let html = '<div class="subtitle-video">';
+                        html += `
+                            <video controls class="video-player">
+                                <source src="${manual.content_video_uri}" type="video/mp4">
+                        `;
+                        
+                        // Add subtitle tracks if available
+                        if (manual.subtitles_data && manual.subtitles_data.length > 0) {
+                            // Note: Browser subtitle support requires VTT format
+                            html += '<track kind="subtitles" src="#" srclang="ja" label="日本語">';
+                        }
+                        
+                        html += '</video>';
+                        
+                        // Show subtitle data as text fallback
+                        if (manual.subtitles_data && manual.subtitles_data.length > 0) {
+                            html += '<div class="subtitles-list"><h4>字幕データ</h4><ul>';
+                            manual.subtitles_data.forEach(sub => {
+                                html += `<li>[${sub.start_formatted} - ${sub.end_formatted}] ${escapeHtml(sub.text)}</li>`;
+                            });
+                            html += '</ul></div>';
+                        }
+                        
+                        html += '</div>';
+                        contentArea.innerHTML = html;
+                    } else {
+                        contentArea.innerHTML = '<p class="text-muted">字幕付き動画がありません</p>';
+                    }
+                    break;
+                
+                case 'hybrid':
+                    // Display rich HTML with all content types
+                    if (manual.content_html) {
+                        contentArea.innerHTML = manual.content_html;
+                    } else {
+                        contentArea.innerHTML = '<p class="text-muted">ハイブリッドコンテンツがありません</p>';
+                    }
+                    break;
+                
+                default:
+                    contentArea.innerHTML = '<p class="text-muted">不明なフォーマット</p>';
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function updateFormatButtons(activeFormat) {
+            document.querySelectorAll('.format-btn').forEach(btn => {
+                if (btn.dataset.format === activeFormat) {
+                    btn.classList.add('active');
+                    btn.disabled = true;
+                } else {
+                    btn.classList.remove('active');
+                    btn.disabled = false;
+                }
+            });
+        }
+
+        function getFormatName(formatId) {
+            const names = {
+                'text_only': 'テキストのみ',
+                'text_with_images': 'テキスト + 画像',
+                'text_with_video_clips': 'テキスト + 動画クリップ',
+                'subtitle_video': '字幕付き動画',
+                'hybrid': 'ハイブリッド'
+            };
+            return names[formatId] || formatId;
+        }
+
+        function showConvertModal(targetFormat) {
+            const modal = document.getElementById('convertModal');
+            const formatName = getFormatName(targetFormat);
+            
+            document.getElementById('targetFormatName').textContent = formatName;
+            document.getElementById('targetFormatId').value = targetFormat;
+            
+            // Show modal (assuming Bootstrap modal)
+            if (window.bootstrap && window.bootstrap.Modal) {
+                const bsModal = new bootstrap.Modal(modal);
+                bsModal.show();
+            } else {
+                modal.style.display = 'block';
+            }
+        }
+
+        async function convertManualFormat() {
+            const targetFormat = document.getElementById('targetFormatId').value;
+            const regenerateAnalysis = document.getElementById('regenerateAnalysis').checked;
+            
+            try {
+                showNotification('フォーマット変換を開始しています...', 'info');
+                
+                const response = await fetch('/api/manuals/{{ manual.id }}/convert', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        target_format: targetFormat,
+                        regenerate_analysis: regenerateAnalysis
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Conversion failed');
+                }
+                
+                const result = await response.json();
+                
+                // Close modal
+                const modal = document.getElementById('convertModal');
+                if (window.bootstrap && window.bootstrap.Modal) {
+                    const bsModal = bootstrap.Modal.getInstance(modal);
+                    bsModal.hide();
+                } else {
+                    modal.style.display = 'none';
+                }
+                
+                showNotification(
+                    `フォーマット変換ジョブを開始しました (Job ID: ${result.job_id})。処理が完了したらページを更新してください。`,
+                    'success'
+                );
+                
+                // Optional: Poll for job completion
+                // pollJobStatus(result.job_id);
+                
+            } catch (error) {
+                console.error('Conversion error:', error);
+                showNotification(`変換エラー: ${error.message}`, 'error');
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            // Simple notification implementation
+            const alertClass = type === 'error' ? 'alert-danger' : 
+                              type === 'success' ? 'alert-success' : 
+                              'alert-info';
+            
+            const notification = document.createElement('div');
+            notification.className = `alert ${alertClass} alert-dismissible fade show`;
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.zIndex = '9999';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
 </script>
+
+<!-- Format Conversion Modal -->
+<div class="modal fade" id="convertModal" tabindex="-1" role="dialog" aria-labelledby="convertModalLabel" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="convertModalLabel">フォーマット変換</h5>
+                <button type="button" class="close" onclick="closeConvertModal()" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    <strong id="targetFormatName"></strong>形式に変換しますか?
+                </p>
+                <input type="hidden" id="targetFormatId">
+                
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" id="regenerateAnalysis">
+                    <label class="form-check-label" for="regenerateAnalysis">
+                        動画を再分析する（より正確な結果が得られますが、時間がかかります）
+                    </label>
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle"></i>
+                    変換処理はバックグラウンドで実行されます。完了まで数分かかる場合があります。
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeConvertModal()">キャンセル</button>
+                <button type="button" class="btn btn-primary" onclick="convertManualFormat()">
+                    <i class="fas fa-sync-alt"></i> 変換開始
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</script>
+
+<style>
+/* Format Conversion Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1050;
+    overflow: auto;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.fade {
+    display: none;
+}
+
+.modal.show {
+    display: flex !important;
+}
+
+.modal-dialog {
+    max-width: 500px;
+    margin: 1.75rem auto;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 500;
+}
+
+.modal-header .close {
+    padding: 0;
+    background: transparent;
+    border: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #000;
+    opacity: 0.5;
+    cursor: pointer;
+}
+
+.modal-header .close:hover {
+    opacity: 0.75;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-check-input {
+    margin: 0;
+}
+
+.alert {
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+}
+
+.mt-3 {
+    margin-top: 1rem;
+}
+</style>
+
+<script>
+function showConvertModal() {
+    const modal = document.getElementById('convertModal');
+    if (modal) {
+        modal.classList.remove('fade');
+        modal.classList.add('show');
+        modal.style.display = 'flex';
+    }
+}
+
+function closeConvertModal() {
+    const modal = document.getElementById('convertModal');
+    if (modal) {
+        modal.classList.remove('show');
+        modal.classList.add('fade');
+        modal.style.display = 'none';
+    }
+}
+</script>
+
 {% endblock %}

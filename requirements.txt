@@ -2,6 +2,7 @@ flask==3.0.0
 flask-cors==4.0.0
 google-cloud-storage==2.10.0
 google-genai>=0.3.0
+google-cloud-aiplatform>=1.38.0  # Required for vertexai (used by existing gemini_service.py)
 python-dotenv==1.0.0
 
 # Core runtime (DB / templates)
@@ -46,6 +47,9 @@ openpyxl==3.1.2  # Excel file processing
 
 # PDF Generation (Phase 6)
 weasyprint==60.1  # HTML to PDF conversion
+
+# Markdown Processing (Phase 6 - Unified Manual Generator)
+markdown==3.5.1  # Markdown to HTML conversion
 
 # Testing
 faker==20.1.0  # Test data generation

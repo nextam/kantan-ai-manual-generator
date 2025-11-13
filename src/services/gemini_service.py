@@ -1155,6 +1155,32 @@ identify_key_frames関数を呼び出して、以下を含む構造化データ�
         }
         
         return configs.get(task_type, configs["analysis"])
+    
+    async def generate_embedding(self, text: str) -> List[float]:
+        """
+        Generate embedding for a single text using Vertex AI text-embedding-004
+        
+        Args:
+            text: Text to embed
+            
+        Returns:
+            Embedding vector (768-dim)
+        """
+        try:
+            from vertexai.language_models import TextEmbeddingModel
+            
+            # Use text-embedding-004 model
+            model = TextEmbeddingModel.from_pretrained('text-embedding-004')
+            embeddings = model.get_embeddings([text])
+            
+            if embeddings and len(embeddings) > 0:
+                return embeddings[0].values
+            else:
+                raise Exception("No embedding returned from model")
+                
+        except Exception as e:
+            logger.error(f"Embedding generation failed: {str(e)}")
+            raise Exception(f"Embedding generation failed: {str(e)}")
 
 
 

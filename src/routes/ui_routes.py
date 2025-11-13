@@ -71,3 +71,10 @@ def jobs():
     if not session.get('company_id') and not session.get('is_super_admin'):
         return redirect(url_for('login_page'))
     return render_template('jobs.html')
+
+@ui_bp.route('/manuals/create')
+def create_manual():
+    """Unified manual creation page"""
+    if not session.get('company_id') and not session.get('is_super_admin'):
+        return redirect(url_for('login_page'))
+    return render_template('manual_create_unified.html')

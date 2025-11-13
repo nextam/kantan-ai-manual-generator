@@ -24,9 +24,14 @@ from PIL import Image
 
 # ロギング設定
 import os
+from datetime import datetime
 log_dir = os.getenv('LOG_DIR', 'logs')
 os.makedirs(log_dir, exist_ok=True)
-log_file_path = os.path.join(log_dir, 'app.log')
+# サーバー起動ごとに新しいログファイルを作成
+log_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+# 環境変数に保存してCeleryワーカーと共有
+os.environ['LOG_TIMESTAMP'] = log_timestamp
+log_file_path = os.path.join(log_dir, f'app_{log_timestamp}.log')
 
 logging.basicConfig(
     level=logging.INFO,
@@ -1108,70 +1113,16 @@ def video_preview(filename):
     except Exception as e:
         return jsonify({'error': f'プレビューURL生成エラー: {str(e)}'}), 500
 
-@app.route('/files')
-def list_files():
-    """ファイル一覧取得"""
-    if HAS_AUTH_SYSTEM:
-        if not current_user.is_authenticated:
-            return jsonify({'error': 'ログインが必要です'}), 401
-        
-        files = UploadedFile.query.filter_by(
-            company_id=current_user.company_id
-        ).order_by(UploadedFile.uploaded_at.desc()).all()
-        
-        file_list = []
-        for file in files:
-            file_info = {
-                'id': file.id,
-                'original_filename': file.original_filename,
-                'file_type': file.file_type,
-                'file_size': file.file_size,
-                'uploaded_at': file.uploaded_at.isoformat() if file.uploaded_at else None,
-                'uploaded_by': file.uploaded_by
-            }
-            file_list.append(file_info)
-        
-        return jsonify({'files': file_list})
-    
-    return jsonify({'error': '認証システムが必要です'}), 400
+# Legacy endpoints removed - use modern API endpoints instead:
+# - /files -> /api/materials
+# - /manuals -> /api/manuals
+# - /get_version_limits -> removed (not used)
+# - /generate_manual -> /api/manuals/generate
+# - /ai_comparison_analysis -> removed (not used)
+# - /generate_manual_multi_stage -> /api/video-manual/three-stage/async-generate
 
-@app.route('/manuals')
-def list_manuals():
-    """マニュアル一覧取得"""
-    if HAS_AUTH_SYSTEM:
-        if not current_user.is_authenticated:
-            return jsonify({'error': 'ログインが必要です'}), 401
-        
-        manuals = Manual.query.filter_by(
-            company_id=current_user.company_id
-        ).order_by(Manual.created_at.desc()).all()
-        
-        manual_list = []
-        for manual in manuals:
-            manual_info = {
-                'id': manual.id,
-                'title': manual.title,
-                'manual_type': manual.manual_type,
-                'created_at': datetime_to_jst_isoformat(manual.created_at),
-                'created_by': manual.created_by,
-                'generation_config': manual.get_generation_config()
-            }
-            manual_list.append(manual_info)
-        
-        return jsonify({'manuals': manual_list})
-    
-    return jsonify({'error': '認証システムが必要です'}), 400
 
-@app.route('/get_version_limits/<version>')
-def get_version_limits(version):
-    """指定されたGeminiバージョンの制限情報を返す"""
-    max_tokens = get_max_tokens_for_version(version)
-    return jsonify({
-        'version': version,
-        'max_output_tokens': max_tokens
-    })
-
-@app.route('/generate_manual', methods=['POST'])
+# Legacy endpoint route removed - not used by frontend
 def generate_manual():
     """基本マニュアル生成"""
     if HAS_AUTH_SYSTEM and not current_user.is_authenticated:
@@ -1308,8 +1259,8 @@ def generate_manual():
             'details': error_details
         }), 500
 
-# 既存のGemini統合エンドポイントも認証対応で更新
-@app.route('/ai_comparison_analysis', methods=['POST'])
+
+# Legacy endpoint route removed - not used by frontend
 def ai_comparison_analysis():
     """Gemini AIによる熟練者・非熟練者比較分析"""
     logger.info("=== AI比較分析処理開始 ===")
@@ -1377,7 +1328,8 @@ def ai_comparison_analysis():
         logger.error(f"AI比較分析でエラー発生: {str(e)}", exc_info=True)
         return jsonify({'error': f'AI分析エラー: {str(e)}'}), 500
 
-@app.route('/generate_manual_multi_stage', methods=['POST'])
+
+# Legacy endpoint route removed - function kept as internal helper for /api/manual/create
 def generate_manual_multi_stage():
     """マニュアル生成（画像あり）: 非同期処理版"""
     if HAS_AUTH_SYSTEM and not current_user.is_authenticated:
@@ -1752,12 +1704,7 @@ if HAS_AUTH_SYSTEM:
             
             return jsonify({'success': True})
     
-    @app.route('/company/stats')
-    @login_required
-    def company_stats():
-        """企業統計情報"""
-        stats = CompanyManager.get_company_stats(current_user.company_id)
-        return jsonify(stats)
+    # Legacy /company/stats removed - use /api/company/dashboard instead
     
     # 認証ルート初期化
     init_auth_routes(app)
@@ -2339,9 +2286,15 @@ def manual_create():
 @app.route('/manual/view/<manual_id>')
 def manual_detail(manual_id):
     """マニュアル詳細画面"""
-    # Manual data is fetched via JavaScript API call
-    # But we still need to pass manual_id to the template for initial page load
-    return render_template('manual_detail.html', manual_id=manual_id)
+    # Fetch manual data for template rendering
+    manual = Manual.query.get_or_404(manual_id)
+    
+    # Authorization check
+    if HAS_AUTH_SYSTEM and current_user.is_authenticated:
+        if manual.company_id != current_user.company_id:
+            return "アクセス権限がありません", 403
+    
+    return render_template('manual_detail.html', manual_id=manual_id, manual=manual)
 
 @app.route('/manual/<int:manual_id>/edit', methods=['GET'])
 def manual_edit(manual_id):

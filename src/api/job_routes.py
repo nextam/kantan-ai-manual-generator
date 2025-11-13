@@ -19,6 +19,98 @@ logger = logging.getLogger(__name__)
 job_bp = Blueprint('jobs', __name__, url_prefix='/api/jobs')
 
 
+@job_bp.route('', methods=['GET'])
+@require_authentication
+def list_all_jobs():
+    """
+    List all processing jobs for the current company
+    
+    GET /api/jobs?page=1&per_page=20&status=all&job_type=manual_generation
+    
+    Query params:
+        - page: Page number (default: 1)
+        - per_page: Items per page (default: 20)
+        - status: Filter by status (pending, processing, completed, failed, all)
+        - job_type: Filter by job type (manual_generation, pdf_generation, translation, etc.)
+    
+    Response: {
+        "jobs": [
+            {
+                "id": 1,
+                "job_type": "manual_generation",
+                "job_status": "processing",
+                "progress": 50,
+                "resource_type": "manual",
+                "resource_id": 123,
+                "created_at": "2025-01-05T10:30:00",
+                "started_at": "2025-01-05T10:30:05",
+                "completed_at": null,
+                "current_step": "Extracting key frames"
+            }
+        ],
+        "total": 10,
+        "page": 1,
+        "per_page": 20,
+        "pages": 1
+    }
+    """
+    try:
+        company_id = session.get('company_id')
+        if not company_id:
+            return jsonify({'error': 'Not authenticated'}), 401
+        
+        # Pagination
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        
+        # Base query with company isolation
+        query = ProcessingJob.query.filter_by(company_id=company_id)
+        
+        # Status filter
+        status = request.args.get('status', '').strip()
+        if status and status != 'all':
+            query = query.filter_by(job_status=status)
+        
+        # Job type filter
+        job_type = request.args.get('job_type', '').strip()
+        if job_type:
+            query = query.filter_by(job_type=job_type)
+        
+        # Order by creation date (newest first)
+        query = query.order_by(ProcessingJob.created_at.desc())
+        
+        # Execute pagination
+        paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+        
+        jobs = []
+        for job in paginated.items:
+            jobs.append({
+                'id': job.id,
+                'job_type': job.job_type,
+                'job_status': job.job_status,
+                'progress': job.progress,
+                'resource_type': job.resource_type,
+                'resource_id': job.resource_id,
+                'current_step': job.current_step,
+                'created_at': job.created_at.isoformat() if job.created_at else None,
+                'started_at': job.started_at.isoformat() if job.started_at else None,
+                'completed_at': job.completed_at.isoformat() if job.completed_at else None,
+                'error_message': job.error_message
+            })
+        
+        return jsonify({
+            'jobs': jobs,
+            'total': paginated.total,
+            'page': page,
+            'per_page': per_page,
+            'pages': paginated.pages
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error in list_all_jobs: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
 @job_bp.route('/<task_id>', methods=['GET'])
 @require_authentication
 def get_job_status(task_id):
@@ -91,239 +183,7 @@ def get_job_status(task_id):
         return {'error': str(e)}, 500
 
 
-@job_bp.route('/processing', methods=['GET'])
-@require_authentication
-def list_processing_jobs():
-    """
-    List processing jobs for the current company
-    
-    GET /api/jobs/processing?page=1&per_page=20&job_type=pdf_generation
-    
-    Response: {
-        "jobs": [
-            {
-                "id": 1,
-                "job_type": "pdf_generation",
-                "job_status": "processing",
-                "progress": 50,
-                "created_at": "2025-01-05T10:30:00"
-            }
-        ],
-        "total": 10,
-        "page": 1,
-        "per_page": 20
-    }
-    """
-    try:
-        company_id = session.get('company_id')
-        if not company_id:
-            return {'error': 'Not authenticated'}, 401
-        
-        # Get query parameters
-        page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 20, type=int)
-        job_type = request.args.get('job_type')
-        job_status = request.args.get('job_status')
-        
-        # Build query
-        query = ProcessingJob.query.filter_by(company_id=company_id)
-        
-        if job_type:
-            query = query.filter_by(job_type=job_type)
-        
-        if job_status:
-            query = query.filter_by(job_status=job_status)
-        
-        # Order by creation date (newest first)
-        query = query.order_by(ProcessingJob.created_at.desc())
-        
-        # Paginate
-        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-        
-        jobs = [job.to_dict() for job in pagination.items]
-        
-        return {
-            'jobs': jobs,
-            'total': pagination.total,
-            'page': page,
-            'per_page': per_page,
-            'pages': pagination.pages
-        }, 200
-        
-    except Exception as e:
-        logger.error(f"Error in list_processing_jobs: {str(e)}")
-        return {'error': str(e)}, 500
-
-
-@job_bp.route('/<task_id>/cancel', methods=['POST'])
-@require_authentication
-def cancel_job(task_id):
-    """
-    Cancel a running job
-    
-    POST /api/jobs/{task_id}/cancel
-    
-    Response: {
-        "message": "Job cancelled successfully",
-        "task_id": "abc123..."
-    }
-    """
-    try:
-        company_id = session.get('company_id')
-        if not company_id:
-            return {'error': 'Not authenticated'}, 401
-        
-        # Revoke task in Celery
-        celery.control.revoke(task_id, terminate=True)
-        
-        # Update ProcessingJob record if exists
-        job = ProcessingJob.query.filter_by(
-            company_id=company_id
-        ).filter(
-            ProcessingJob.job_params.contains(task_id)
-        ).first()
-        
-        if job:
-            job.job_status = 'cancelled'
-            db.session.commit()
-        
-        return {
-            'message': 'Job cancelled successfully',
-            'task_id': task_id
-        }, 200
-        
-    except Exception as e:
-        logger.error(f"Error in cancel_job: {str(e)}")
-        return {'error': str(e)}, 500
-
-
-@job_bp.route('/statistics', methods=['GET'])
-@require_authentication
-def get_job_statistics():
-    """
-    Get job statistics for the current company
-    
-    GET /api/jobs/statistics?days=7
-    
-    Response: {
-        "total_jobs": 100,
-        "pending": 5,
-        "processing": 10,
-        "completed": 80,
-        "failed": 5,
-        "by_type": {
-            "pdf_generation": 30,
-            "translation": 40,
-            "rag_indexing": 30
-        }
-    }
-    """
-    try:
-        company_id = session.get('company_id')
-        if not company_id:
-            return {'error': 'Not authenticated'}, 401
-        
-        # Get days parameter
-        days = request.args.get('days', 7, type=int)
-        cutoff_date = datetime.utcnow() - timedelta(days=days)
-        
-        # Get job counts
-        query = ProcessingJob.query.filter(
-            ProcessingJob.company_id == company_id,
-            ProcessingJob.created_at >= cutoff_date
-        )
-        
-        total_jobs = query.count()
-        
-        # Count by status
-        pending = query.filter_by(job_status='pending').count()
-        processing = query.filter_by(job_status='processing').count()
-        completed = query.filter_by(job_status='completed').count()
-        failed = query.filter_by(job_status='failed').count()
-        
-        # Count by type
-        job_types = db.session.query(
-            ProcessingJob.job_type,
-            db.func.count(ProcessingJob.id)
-        ).filter(
-            ProcessingJob.company_id == company_id,
-            ProcessingJob.created_at >= cutoff_date
-        ).group_by(ProcessingJob.job_type).all()
-        
-        by_type = {job_type: count for job_type, count in job_types}
-        
-        return {
-            'total_jobs': total_jobs,
-            'pending': pending,
-            'processing': processing,
-            'completed': completed,
-            'failed': failed,
-            'by_type': by_type,
-            'period_days': days
-        }, 200
-        
-    except Exception as e:
-        logger.error(f"Error in get_job_statistics: {str(e)}")
-        return {'error': str(e)}, 500
-
-
-@job_bp.route('/worker-status', methods=['GET'])
-@require_authentication
-def get_worker_status():
-    """
-    Get Celery worker status
-    
-    GET /api/jobs/worker-status
-    
-    Response: {
-        "workers": {
-            "celery@worker1": {
-                "status": "online",
-                "active_tasks": 2,
-                "total_tasks": 150
-            }
-        },
-        "active_queues": ["default", "rag_processing", "pdf_generation"]
-    }
-    """
-    try:
-        company_id = session.get('company_id')
-        if not company_id:
-            return {'error': 'Not authenticated'}, 401
-        
-        # Only super admin or admin can view worker status
-        user_role = session.get('user_role')
-        if user_role not in ['admin', 'super_admin']:
-            return {'error': 'Insufficient permissions'}, 403
-        
-        # Get worker stats
-        inspect = celery.control.inspect()
-        
-        # Get active workers
-        stats = inspect.stats() or {}
-        active_tasks = inspect.active() or {}
-        
-        workers = {}
-        for worker_name, worker_stats in stats.items():
-            workers[worker_name] = {
-                'status': 'online',
-                'active_tasks': len(active_tasks.get(worker_name, [])),
-                'total_tasks': worker_stats.get('total', {}).get('tasks', 0)
-            }
-        
-        # Get active queues
-        active_queues = list(set(
-            task.get('delivery_info', {}).get('routing_key', 'default')
-            for tasks in active_tasks.values()
-            for task in tasks
-        ))
-        
-        return {
-            'workers': workers,
-            'active_queues': active_queues,
-            'total_workers': len(workers)
-        }, 200
-        
-    except Exception as e:
-        logger.error(f"Error in get_worker_status: {str(e)}")
-        return {'error': str(e)}, 500
+# Legacy /api/jobs/processing removed - use /api/jobs with status=processing filter instead
+# Legacy /api/jobs/<task_id>/cancel removed - not implemented yet
+# Legacy /api/jobs/statistics removed - not implemented yet  
+# Legacy /api/jobs/worker-status removed - not implemented yet

@@ -12,6 +12,9 @@ from flask_login import current_user
 from datetime import datetime
 from sqlalchemy import or_, func
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 company_bp = Blueprint('company', __name__, url_prefix='/api/company')
 
@@ -530,6 +533,124 @@ def delete_template(template_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Failed to delete template: {str(e)}'}), 500
+
+
+@company_bp.route('/dashboard', methods=['GET'])
+@require_company_admin
+@log_activity('view_company_dashboard', 'Viewed company dashboard', 'dashboard')
+def get_company_dashboard():
+    """
+    Get company dashboard data with statistics and recent activity
+    
+    Response: {
+        "success": true,
+        "company_name": "Company Name",
+        "stats": {
+            "total_users": 10,
+            "active_users": 8,
+            "total_manuals": 25,
+            "total_templates": 5,
+            "manuals_today": 3,
+            "materials_today": 1,
+            "pdfs_today": 2,
+            "translations_today": 1
+        },
+        "recent_activity": [...]
+    }
+    """
+    try:
+        company_id = g.company_id
+        
+        # Get company info
+        company = Company.query.get(company_id)
+        if not company:
+            return jsonify({'error': 'Company not found'}), 404
+        
+        # Calculate statistics
+        from src.models.models import Manual, ReferenceMaterial
+        from datetime import datetime, timedelta
+        
+        today = datetime.utcnow().date()
+        today_start = datetime.combine(today, datetime.min.time())
+        
+        stats = {
+            'total_users': User.query.filter_by(company_id=company_id, is_active=True).count(),
+            'active_users': User.query.filter(
+                User.company_id == company_id,
+                User.is_active == True,
+                User.last_login >= datetime.utcnow() - timedelta(days=30)
+            ).count(),
+            'total_manuals': Manual.query.filter_by(company_id=company_id).count(),
+            'total_templates': ManualTemplate.query.filter(
+                (ManualTemplate.company_id == company_id) | (ManualTemplate.company_id == None),
+                ManualTemplate.is_active == True
+            ).count(),
+            'manuals_today': Manual.query.filter(
+                Manual.company_id == company_id,
+                Manual.created_at >= today_start
+            ).count(),
+            'materials_today': ReferenceMaterial.query.filter(
+                ReferenceMaterial.company_id == company_id,
+                ReferenceMaterial.uploaded_at >= today_start
+            ).count()
+        }
+        
+        # Get PDFs and translations created today (if those models exist)
+        try:
+            from src.models.models import PDFExport
+            stats['pdfs_today'] = PDFExport.query.filter(
+                PDFExport.company_id == company_id,
+                PDFExport.created_at >= today_start
+            ).count()
+        except:
+            stats['pdfs_today'] = 0
+        
+        try:
+            from src.models.models import ManualTranslation
+            stats['translations_today'] = ManualTranslation.query.filter(
+                ManualTranslation.company_id == company_id,
+                ManualTranslation.created_at >= today_start
+            ).count()
+        except:
+            stats['translations_today'] = 0
+        
+        # Get recent activity logs
+        recent_activity = ActivityLog.query.filter_by(
+            company_id=company_id
+        ).order_by(
+            ActivityLog.created_at.desc()
+        ).limit(20).all()
+        
+        activity_list = []
+        for log in recent_activity:
+            # Get user info if available
+            user = User.query.get(log.user_id) if log.user_id else None
+            
+            activity_list.append({
+                'id': log.id,
+                'user_id': log.user_id,
+                'username': user.username if user else 'System',
+                'action_type': log.action_type,
+                'action_detail': log.action_detail or '',
+                'resource_type': log.resource_type or '',
+                'created_at': log.created_at.isoformat() if log.created_at else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'company_name': company.name,
+            'statistics': stats,
+            'recent_activity': activity_list
+        }), 200
+    
+    except Exception as e:
+        logger.error(f"Failed to get company dashboard: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({
+            'error': 'Failed to load dashboard data',
+            'details': str(e)
+        }), 500
 
 
 @company_bp.route('/templates/<int:template_id>/preview', methods=['GET'])
