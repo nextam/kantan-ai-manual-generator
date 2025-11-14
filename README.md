@@ -863,6 +863,7 @@ sudo docker-compose logs --tail=100 manual
 - [Development Work Plan](docs/DEVELOPMENT_WORKPLAN.md) - Phase 1-9の詳細実装ガイド
 - [Performance Optimization Guide](docs/PERFORMANCE_OPTIMIZATION_GUIDE.md) - データベース・API・フロントエンド最適化
 - [Enterprise Features Specification](docs/SPECIFICATION_ENTERPRISE_FEATURES.md) - エンタープライズ機能の仕様書
+- [Manual Detail Components Guide](docs/MANUAL_DETAIL_COMPONENTS_GUIDE.md) - マニュアル詳細ページのコンポーネント実装ガイド
 
 詳細は上記ドキュメントを参照してください。
 

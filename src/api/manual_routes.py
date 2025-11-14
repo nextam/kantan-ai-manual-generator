@@ -733,3 +733,99 @@ def get_manual_generation_status(manual_id):
             'error': 'Failed to retrieve manual status',
             'details': str(e)
         }), 500
+
+
+@manual_bp.route('/image/rotate', methods=['POST'])
+@require_role_enhanced(['admin', 'user'])
+def rotate_manual_image():
+    """
+    Rotate an extracted image in a manual
+    
+    Request body:
+    {
+        "manual_id": 123,
+        "step_number": 1,
+        "rotation": 90
+    }
+    
+    Response:
+    {
+        "success": true,
+        "message": "Image rotation saved",
+        "rotation": 90
+    }
+    """
+    try:
+        data = request.json
+        manual_id = data.get('manual_id')
+        step_number = data.get('step_number')
+        rotation = data.get('rotation')
+        
+        if not all([manual_id, step_number is not None, rotation is not None]):
+            return jsonify({
+                'success': False,
+                'error': 'Missing required fields: manual_id, step_number, rotation'
+            }), 400
+        
+        # Validate rotation angle
+        if rotation not in [0, 90, 180, 270]:
+            return jsonify({
+                'success': False,
+                'error': 'Rotation must be 0, 90, 180, or 270 degrees'
+            }), 400
+        
+        # Get manual
+        company_id = session.get('company_id')
+        manual = Manual.query.filter_by(
+            id=manual_id,
+            company_id=company_id
+        ).first()
+        
+        if not manual:
+            return jsonify({
+                'success': False,
+                'error': 'Manual not found'
+            }), 404
+        
+        # Get extracted images
+        extracted_images = manual.get_extracted_images()
+        if not extracted_images:
+            return jsonify({
+                'success': False,
+                'error': 'No extracted images found in manual'
+            }), 404
+        
+        # Find and update the image
+        image_found = False
+        for img in extracted_images:
+            if img.get('step_number') == step_number:
+                img['rotation'] = rotation
+                image_found = True
+                logger.info(f"Updated rotation for manual {manual_id}, step {step_number}: {rotation}°")
+                break
+        
+        if not image_found:
+            return jsonify({
+                'success': False,
+                'error': f'Image for step {step_number} not found'
+            }), 404
+        
+        # Save updated images
+        manual.set_extracted_images(extracted_images)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Image rotation saved',
+            'rotation': rotation,
+            'step_number': step_number
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to rotate image: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to save image rotation',
+            'details': str(e)
+        }), 500

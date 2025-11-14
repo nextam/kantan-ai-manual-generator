@@ -1,0 +1,1675 @@
+﻿{% extends "base.html" %}
+
+{% block title %}・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ・ｽﾚ搾ｿｽ{% endblock %}
+{% block page_title %}・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ・ｽﾚ搾ｿｽ{% endblock %}
+
+{% block extra_styles %}
+<!-- Component Styles -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/manual_detail_components.css') }}">
+<style>
+    .breadcrumb {
+        margin-bottom: 30px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        color: #666;
+        border: 1px solid #e9ecef;
+    }
+
+    .breadcrumb a {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        color: #0056b3;
+    }
+
+    .manual-meta {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border: 1px solid #e9ecef;
+    }
+
+    .meta-info {
+        display: flex;
+        gap: 30px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .meta-item {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .meta-label {
+        font-weight: 600;
+        color: #666;
+        font-size: 12px;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+    }
+
+    .meta-value {
+        font-size: 16px;
+        color: #333;
+    }
+
+    .actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        padding-top: 15px;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,123,255,0.2);
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background-color: #545b62;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(108,117,125,0.2);
+    }
+
+    .video-section {
+        margin-bottom: 30px;
+    }
+
+    .video-section h3 {
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .video-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .video-item {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border: 1px solid #e9ecef;
+    }
+
+    .video-item video {
+        width: 100%;
+        display: block;
+    }
+
+    .video-item .video-info {
+        padding: 15px;
+    }
+
+    .video-item .video-title {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .manual-content {
+        background: white;
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border: 1px solid #e9ecef;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 50px;
+    }
+
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #007bff;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .tab-container {
+        margin-top: 20px;
+    }
+
+    .tab-headers {
+        display: flex;
+        gap: 5px;
+        border-bottom: 2px solid #e9ecef;
+        margin-bottom: 20px;
+    }
+
+    .tab-header {
+        padding: 12px 20px;
+        background: transparent;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        color: #666;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .tab-header:hover {
+        color: #007bff;
+        background: rgba(0,123,255,0.05);
+    }
+
+    .tab-header.active {
+        color: #007bff;
+        border-bottom-color: #007bff;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .stage-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border-left: 4px solid #007bff;
+    }
+
+    .stage-header h3 {
+        margin: 0 0 8px 0;
+        color: #007bff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 20px;
+    }
+
+    .stage-description {
+        margin: 0;
+        color: #666;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    .manual-text {
+        line-height: 1.8;
+    }
+
+    .manual-text img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin: 20px 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+
+    .manual-text img:hover {
+        transform: scale(1.02);
+    }
+
+    .manual-text table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+    }
+
+    .manual-text th,
+    .manual-text td {
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: left;
+    }
+
+    .manual-text th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .manual-text tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .rotation-controls {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        gap: 5px;
+        z-index: 100;
+    }
+
+    .rotation-btn {
+        background: rgba(255,255,255,0.9);
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 8px;
+        cursor: pointer;
+        font-size: 18px;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+    }
+
+    .rotation-btn:hover {
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    /* Format Switcher Styles */
+    .format-switcher {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .format-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .format-btn {
+        flex: 1;
+        min-width: 180px;
+        padding: 12px 16px;
+        border: 2px solid #e9ecef;
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .format-btn:hover:not(.active):not(:disabled) {
+        border-color: #007bff;
+        background: #f8f9ff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,123,255,0.1);
+    }
+
+    .format-btn.active {
+        border-color: #007bff;
+        background: #e7f1ff;
+        cursor: default;
+    }
+
+    .format-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .format-btn i {
+        font-size: 20px;
+        color: #007bff;
+        margin-bottom: 4px;
+    }
+
+    .format-btn strong {
+        font-size: 14px;
+        color: #333;
+    }
+
+    .format-description {
+        font-size: 12px;
+        color: #666;
+        margin-top: 4px;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 2px 6px;
+        font-size: 11px;
+        border-radius: 4px;
+        font-weight: 600;
+    }
+
+    .badge-success {
+        background: #28a745;
+        color: white;
+    }
+
+    @media (max-width: 768px) {
+        .meta-info {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .actions {
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .video-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .tab-headers {
+            flex-direction: column;
+        }
+
+        .tab-header {
+            padding: 12px 15px;
+            font-size: 14px;
+            justify-content: flex-start;
+        }
+
+        .format-buttons {
+            flex-direction: column;
+        }
+
+        .format-btn {
+            min-width: 100%;
+        }
+    }
+    
+    /* Images Grid Styles */
+    .images-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+    }
+    
+    .image-item {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .image-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .image-item img {
+        width: 100%;
+        height: auto;
+        display: block;
+        max-height: 400px;
+        object-fit: contain;
+        background: #f8f9fa;
+    }
+    
+    .image-item .caption {
+        padding: 12px;
+        font-size: 14px;
+        color: #495057;
+        border-top: 1px solid #dee2e6;
+        background: #f8f9fa;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div style="max-width: 1200px;">
+    <!-- ・ｽp・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽX・ｽg -->
+    <div class="breadcrumb">
+        <a href="/manual/list">
+            <span class="material-icons">menu_book</span>・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ・ｽ齬・
+        </a> >
+        <span class="material-icons">visibility</span>・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ・ｽﾚ搾ｿｽ
+    </div>
+
+    <!-- ・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ・ｽ・ｽ・ｽ -->
+    <div class="manual-meta">
+        <div class="meta-info">
+            <div class="meta-item">
+                <div class="meta-label">・ｽ・ｬ・ｽ・ｽ・ｽ・ｽ</div>
+                <div class="meta-value" id="created-date">-</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-label">・ｽo・ｽﾍ形・ｽ・ｽ</div>
+                <div class="meta-value" id="output-format">-</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-label">・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ・ｽ^・ｽC・ｽv</div>
+                <div class="meta-value" id="manual-type">-</div>
+            </div>
+        </div>
+        
+        <!-- Format Switcher -->
+        <div id="format-switcher" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; display: none;">
+            <div style="margin-bottom: 10px; font-weight: 600; color: #333;">?? ・ｽ\・ｽ・ｽ・ｽ`・ｽ・ｽ・ｽ・ｽﾘゑｿｽﾖゑｿｽ</div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;" id="format-buttons">
+                <!-- Dynamically generated format buttons -->
+            </div>
+        </div>
+        
+        <div class="actions">
+            <a href="/manual/list" class="btn btn-secondary">
+                <span class="material-icons">arrow_back</span>
+                ・ｽ齬暦ｿｽﾉ戻ゑｿｽ
+            </a>
+            <button type="button" id="convert-format-btn" class="btn btn-primary" onclick="showConvertModal()" style="display: none;">
+                <span class="material-icons">transform</span>
+                ・ｽﾊの形・ｽ・ｽ・ｽﾅ再撰ｿｽ・ｽ・ｽ
+            </button>
+            <a href="#" id="edit-manual-btn" class="btn btn-primary" style="display: none;">
+                <span class="material-icons">edit</span>
+                ・ｽﾒ集
+            </a>
+        </div>
+    </div>
+
+    <!-- ・ｽ・ｽ・ｽ・ｽZ・ｽN・ｽV・ｽ・ｽ・ｽ・ｽ -->
+    <div class="video-section" id="video-section" style="display: none;">
+        <h3>
+            <span class="material-icons">videocam</span>
+            ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
+        </h3>
+        <div class="video-grid" id="video-grid">
+            <!-- JavaScript・ｽﾅ難ｿｽ・ｽI・ｽﾉ撰ｿｽ・ｽ・ｽ -->
+        </div>
+    </div>
+
+    <!-- ・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ・ｽ{・ｽ・ｽ -->
+    <div class="manual-content">
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ・ｽ・ｽﾇみ搾ｿｽ・ｽﾝ抵ｿｽ...</p>
+        </div>
+
+        <!-- ・ｽ}・ｽ・ｽ・ｽ`・ｽX・ｽe・ｽ[・ｽW・ｽ^・ｽu・ｽimulti_stage・ｽ^・ｽC・ｽv・ｽﾌ場合・ｽﾌみ表・ｽ・ｽ・ｽj -->
+        <div id="multi-stage-tabs" class="tab-container" style="display: none;">
+            <div class="tab-headers">
+                <button class="tab-header active" data-tab="stage3">
+                    <span class="material-icons">assignment</span>
+                    ・ｽﾅ終・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ
+                </button>
+                <button class="tab-header" data-tab="stage1">
+                    <span class="material-icons">analytics</span>
+                    ・ｽ・ｽﾆ難ｿｽ・ｽe・ｽ・ｽ・ｽ・ｽ
+                </button>
+                <button class="tab-header" data-tab="stage2">
+                    <span class="material-icons">compare</span>
+                    ・ｽ・ｽ・ｽﾙ費ｿｽr
+                </button>
+            </div>
+            <div class="tab-contents">
+                <div id="tab-stage1" class="tab-content">
+                    <div class="stage-header">
+                        <h3>
+                            <span class="material-icons">analytics</span>
+                            Stage 1: ・ｽ・ｽﾆ難ｿｽ・ｽe・ｽ闖・ｿｽ・ｽ・ｽ・ｽ
+                        </h3>
+                        <p class="stage-description">・ｽ・ｽ・ｽ謔ｩ・ｽ迺奇ｿｽo・ｽ・ｽ・ｽ黷ｽ・ｽ・ｽﾆ難ｿｽ・ｽe・ｽﾆ手順・ｽﾌ詳細包ｿｽ・ｽﾍ鯉ｿｽ・ｽ・ｽ</p>
+                    </div>
+                    <div id="stage1-text" class="manual-text"></div>
+                </div>
+                <div id="tab-stage2" class="tab-content">
+                    <div class="stage-header">
+                        <h3>
+                            <span class="material-icons">compare</span>
+                            Stage 2: ・ｽn・ｽ・ｽ・ｽ・ｽ vs ・ｽ・ｽn・ｽ・ｽ・ｽ・ｽ ・ｽ・ｽ・ｽﾙ費ｿｽr
+                        </h3>
+                        <p class="stage-description">・ｽn・ｽ・ｽ・ｽﾒと費ｿｽn・ｽ・ｽ・ｽﾒの搾ｿｽﾆ包ｿｽ・ｽ@・ｽﾌ違い・ｽ・ｽ\・ｽ`・ｽ・ｽ・ｽﾅ詳細包ｿｽ・ｽ・ｽ</p>
+                    </div>
+                    <div id="stage2-text" class="manual-text"></div>
+                </div>
+                <div id="tab-stage3" class="tab-content active">
+                    <div class="stage-header">
+                        <h3>
+                            <span class="material-icons">assignment</span>
+                            Stage 3: ・ｽﾅ終・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ
+                        </h3>
+                        <p class="stage-description">・ｽ鞫懶ｿｽt・ｽ・ｽ・ｽﾌ趣ｿｽ・ｽ・ｽ・ｽI・ｽﾈ搾ｿｽﾆマ・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ</p>
+                    </div>
+                    <div id="stage3-text" class="manual-text"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ・ｽﾊ擾ｿｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ・ｽ\・ｽ・ｽ・ｽG・ｽ・ｽ・ｽA -->
+        <div id="normal-manual" style="display: none;">
+            <div id="manual-text" class="manual-text"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ・ｽ・ｽ・ｽ[・ｽ_・ｽ・ｽ・ｽ・ｽ・ｽC・ｽ・ｽ・ｽN・ｽ・ｽ・ｽ[・ｽh -->
+{% include 'modals/image_editor_modal.html' %}
+{% include 'modals/recapture_modal.html' %}
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Marked.js for Markdown parsing -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<!-- Component Scripts -->
+<script src="{{ url_for('static', filename='js/video_display.js') }}"></script>
+<script src="{{ url_for('static', filename='js/image_editor.js') }}"></script>
+<script src="{{ url_for('static', filename='js/manual_display.js') }}"></script>
+
+<script>
+    // marked.js・ｽﾌ設抵ｿｽ
+    marked.setOptions({
+            breaks: true,          // ・ｽ・ｽ・ｽs・ｽ・ｽ<br>・ｽﾉ変奇ｿｽ
+            gfm: true,            // GitHub Flavored Markdown
+            tables: true,         // ・ｽe・ｽ[・ｽu・ｽ・ｽ・ｽT・ｽ|・ｽ[・ｽg
+            sanitize: false,      // HTML・ｽ^・ｽO・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
+            highlight: function (code, lang) {
+                return code; // ・ｽ・ｽ{・ｽI・ｽﾈコ・ｽ[・ｽh・ｽu・ｽ・ｽ・ｽb・ｽN・ｽi・ｽV・ｽ・ｽ・ｽ^・ｽb・ｽN・ｽX・ｽn・ｽC・ｽ・ｽ・ｽC・ｽg・ｽﾍ鯉ｿｽﾅ追会ｿｽ・ｽﾂ能・ｽj
+            }
+        });
+
+        let manualData = null;
+
+        async function loadManual(manualId) {
+            try {
+                // Cache busting: HTTP・ｽw・ｽb・ｽ_・ｽ[・ｽﾅ具ｿｽ・ｽ・ｽ・ｽI・ｽﾉ最新・ｽf・ｽ[・ｽ^・ｽ・ｽ・ｽ謫ｾ
+                const response = await fetch(`/api/manual/${manualId}`, {
+                    cache: 'no-cache',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
+                const result = await response.json();
+                console.log('API・ｽ・ｽ・ｽX・ｽ|・ｽ・ｽ・ｽX:', result);
+
+                if (result.success) {
+                    manualData = result.manual;
+                    // Initialize components
+                    videoDisplay.init();
+                    // Display manual using component
+                    manualDisplay.displayManual(manualData);
+                } else {
+                    manualDisplay.showError('・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ・ｽﾌ読み搾ｿｽ・ｽﾝに趣ｿｽ・ｽs・ｽ・ｽ・ｽﾜゑｿｽ・ｽ・ｽ: ' + result.error);
+                }
+            } catch (error) {
+                manualDisplay.showError('・ｽG・ｽ・ｽ・ｽ[・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽ・ｽ: ' + error.message);
+            }
+        }
+
+    // Legacy function for backwards compatibility - delegates to manualDisplay component
+    function displayManual(manual) {
+        manualDisplay.displayManual(manual);
+    }
+
+    function displaySingleManual(manual) {
+            console.log('=== displaySingleManual ・ｽJ・ｽn ===');
+            console.log('content:', manual.content);
+            
+            // ・ｽP・ｽ・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ・ｽ\・ｽ・ｽ
+            const normalManual = document.getElementById('normal-manual');
+            const multiStage = document.getElementById('multi-stage-tabs');
+            
+            if (!normalManual) {
+                console.error('normal-manual element not found');
+                return;
+            }
+            if (!multiStage) {
+                console.error('multi-stage-tabs element not found');
+                return;
+            }
+            
+            console.log('Showing normal-manual, hiding multi-stage-tabs');
+            normalManual.style.display = 'block';
+            multiStage.style.display = 'none';
+
+            // content・ｽt・ｽB・ｽ[・ｽ・ｽ・ｽh・ｽﾌ擾ｿｽ・ｽ・ｽ
+            let contentToDisplay = manual.content;
+            
+            console.log('contentToDisplay type:', typeof contentToDisplay);
+            console.log('contentToDisplay starts with {:', contentToDisplay && contentToDisplay.startsWith('{'));
+            
+            // Python・ｽ・ｽ・ｽ・ｽ・ｽ`・ｽ・ｽ・ｽﾌ包ｿｽ・ｽ・ｽ・ｽ・ｽ・ｽJSON・ｽﾉ変奇ｿｽ・ｽ・ｽ・ｽﾄ会ｿｽ・ｽ
+            if (typeof contentToDisplay === 'string' && contentToDisplay.startsWith("{")) {
+                try {
+                    console.log('Python・ｽ・ｽ・ｽ・ｽ・ｽ`・ｽ・ｽ・ｽﾌ包ｿｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽo・ｽA・ｽp・ｽ[・ｽX・ｽ・ｽ・ｽs');
+                    // ・ｽV・ｽ・ｽ・ｽO・ｽ・ｽ・ｽN・ｽH・ｽ[・ｽg・ｽ・ｽ・ｽ_・ｽu・ｽ・ｽ・ｽN・ｽH・ｽ[・ｽg・ｽﾉ変奇ｿｽ・ｽi・ｽ・ｽ・ｽ・ｽ・ｽﾈ撰ｿｽ・ｽK・ｽ\・ｽ・ｽ・ｽj
+                    let jsonStr = contentToDisplay
+                        .replace(/'/g, '"')
+                        .replace(/\bNone\b/g, 'null')
+                        .replace(/\bTrue\b/g, 'true')
+                        .replace(/\bFalse\b/g, 'false');
+                    
+                    const parsedContent = JSON.parse(jsonStr);
+                    console.log('・ｽp・ｽ[・ｽX・ｽ・ｽ・ｽ・ｽ:', parsedContent);
+                    
+                    // analysis_result・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ鼾・ｿｽA・ｽ・ｽ・ｽ・ｽ・ｽ・ｽt・ｽH・ｽ[・ｽ}・ｽb・ｽg・ｽ・ｽ・ｽﾄ表・ｽ・ｽ
+                    if (parsedContent.analysis_result) {
+                        contentToDisplay = formatAnalysisResult(parsedContent.analysis_result);
+                    } else {
+                        contentToDisplay = JSON.stringify(parsedContent, null, 2);
+                    }
+                } catch (e) {
+                    console.error('・ｽp・ｽ[・ｽX・ｽ・ｽ・ｽs:', e);
+                    console.log('・ｽ・ｽ・ｽﾌコ・ｽ・ｽ・ｽe・ｽ・ｽ・ｽc・ｽ・ｽ・ｽ・ｽ・ｽﾌまま表・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ');
+                }
+            }
+            
+            console.log('・ｽ\・ｽ・ｽ・ｽ・ｽ・ｽ・ｽR・ｽ・ｽ・ｽe・ｽ・ｽ・ｽc:', contentToDisplay);
+            
+            // ・ｽ}・ｽ[・ｽN・ｽ_・ｽE・ｽ・ｽ・ｽ・ｽHTML・ｽﾉ変奇ｿｽ・ｽ・ｽ・ｽﾄ表・ｽ・ｽ
+            displayManualContent(contentToDisplay, 'manual-text');
+            
+            // output_format・ｽ・ｽ'text_with_images'・ｽﾌ場合・ｽA・ｽ鞫懶ｿｽ・ｽ\・ｽ・ｽ
+            console.log('=== ・ｽ鞫懶ｿｽ\・ｽ・ｽ・ｽ`・ｽF・ｽb・ｽN ===');
+            console.log('output_format:', manual.output_format);
+            console.log('extracted_images:', manual.extracted_images);
+            
+            if (manual.output_format === 'text_with_images' && manual.extracted_images && manual.extracted_images.length > 0) {
+                console.log('・ｽ鞫懶ｿｽ・ｽﾇ会ｿｽ・ｽ\・ｽ・ｽ:', manual.extracted_images.length, '・ｽ・ｽ');
+                
+                // ・ｽ鞫懶ｿｽZ・ｽN・ｽV・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｬ
+                const manualTextContainer = document.getElementById('manual-text');
+                if (manualTextContainer) {
+                    let imagesHtml = '<div class="images-grid" style="margin-top: 30px;">';
+                    imagesHtml += '<h2>・ｽ・ｽ・ｽo・ｽ・ｽ・ｽ黷ｽ・ｽ鞫・/h2>';
+                    
+                    manual.extracted_images.forEach((img, idx) => {
+                        const imageData = img.image || img.image_uri;
+                        console.log(`・ｽ鞫・${idx + 1}:`, imageData ? imageData.substring(0, 50) + '...' : '・ｽf・ｽ[・ｽ^・ｽﾈゑｿｽ');
+                        
+                        imagesHtml += `
+                            <div class="image-item">
+                                <img src="${imageData}" alt="${img.step_title || 'Step ' + img.step_number}" class="img-fluid" loading="lazy">
+                                <div class="caption">
+                                    <strong>${img.step_title || 'Step ' + img.step_number}</strong><br>
+                                    ${img.timestamp_formatted || (img.timestamp + 's')}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    imagesHtml += '</div>';
+                    
+                    // ・ｽR・ｽ・ｽ・ｽe・ｽ・ｽ・ｽc・ｽﾌ鯉ｿｽﾉ画像・ｽ・ｽﾇ会ｿｽ
+                    manualTextContainer.insertAdjacentHTML('beforeend', imagesHtml);
+                    console.log('・ｽ鞫廩TML・ｽ・ｽ}・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ');
+                } else {
+                    console.error('manual-text container not found');
+                }
+            } else {
+                console.log('・ｽ鞫懶ｿｽ\・ｽ・ｽ・ｽX・ｽL・ｽb・ｽv - ・ｽ・ｽ・ｽ・ｽ・ｽs・ｽ・ｽv');
+            }
+            
+            console.log('=== displaySingleManual ・ｽ・ｽ・ｽ・ｽ ===');
+        }
+        
+        function formatAnalysisResult(analysis) {
+            console.log('=== formatAnalysisResult ・ｽJ・ｽn ===');
+            if (!analysis) {
+                console.error('analysis ・ｽ・ｽ null ・ｽﾜゑｿｽ・ｽ・ｽ undefined ・ｽﾅゑｿｽ');
+                return '';
+            }
+            let html = `# ${analysis.title || '・ｽ^・ｽC・ｽg・ｽ・ｽ・ｽﾈゑｿｽ'}\n\n`;
+            html += `**・ｽ・ｽﾆ概・ｽv:** ${analysis.summary || '・ｽT・ｽv・ｽﾈゑｿｽ'}\n\n`;
+            html += `**・ｽ・ｽﾆ趣ｿｽ・ｽ・ｽ:** ${analysis.total_duration || 0}・ｽb\n\n`;
+            html += `**・ｽ・ｽﾕ度:** ${analysis.difficulty_level || '・ｽs・ｽ・ｽ'}\n\n`;
+            html += `**・ｽK・ｽv・ｽl・ｽ・ｽ:** ${analysis.estimated_workers || 1}・ｽ・ｽ\n\n`;
+            
+            if (analysis.required_tools && analysis.required_tools.length > 0) {
+                html += `**・ｽK・ｽv・ｽH・ｽ・ｽ:**\n`;
+                analysis.required_tools.forEach(tool => {
+                    html += `- ${tool}\n`;
+                });
+                html += '\n';
+            }
+            
+            html += `## ・ｽ・ｽﾆ手順\n\n`;
+            
+            if (analysis.steps && analysis.steps.length > 0) {
+                analysis.steps.forEach(step => {
+                    html += `### ・ｽX・ｽe・ｽb・ｽv ${step.step_number}: ${step.title}\n\n`;
+                    html += `${step.description}\n\n`;
+                    html += `**・ｽ^・ｽC・ｽ・ｽ・ｽX・ｽ^・ｽ・ｽ・ｽv:** ${step.timestamp_start}・ｽb - ${step.timestamp_end}・ｽb\n\n`;
+                    
+                    if (step.key_points && step.key_points.length > 0) {
+                        html += `**・ｽd・ｽv・ｽ|・ｽC・ｽ・ｽ・ｽg:**\n`;
+                        step.key_points.forEach(point => {
+                            html += `- ${point}\n`;
+                        });
+                        html += '\n';
+                    }
+                    
+                    if (step.safety_notes) {
+                        html += `?? **・ｽ・ｽ・ｽS・ｽ・ｽ・ｽﾓ趣ｿｽ・ｽ・ｽ:** ${step.safety_notes}\n\n`;
+                    }
+                    
+                    html += '---\n\n';
+                });
+            }
+            
+            console.log('・ｽt・ｽH・ｽ[・ｽ}・ｽb・ｽg・ｽﾏゑｿｽHTML:', html);
+            return html;
+        }
+
+    function displayMultiStageManual(manual) {
+            // ・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ・ｽi・ｽ鞫懶ｿｽ・ｽ・ｽ・ｽj・ｽ\・ｽ・ｽ
+            document.getElementById('normal-manual').style.display = 'none';
+            const multiStageContainer = document.getElementById('multi-stage-tabs');
+            multiStageContainer.style.display = 'block';
+
+            // ・ｽ鞫懶ｿｽ・ｽ・ｽ・ｽo・ｽ[・ｽW・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾇゑｿｽ・ｽ・ｽ・ｽi・ｽﾅ終・ｽI・ｽ・ｽHTML・ｽo・ｽﾍ済みのはゑｿｽ・ｽj
+            const isImageVersion = manual.manual_type === 'manual_with_images';
+
+            // ・ｽe・ｽi・ｽK・ｽﾌコ・ｽ・ｽ・ｽe・ｽ・ｽ・ｽc・ｽ・ｽ\・ｽ・ｽ・ｽiJSON・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾌ場合・ｽﾍパ・ｽ[・ｽX・ｽj
+            displayManualContent(parseContentIfNeeded(manual.stage1_content), 'stage1-text', !isImageVersion);
+            displayManualContent(parseContentIfNeeded(manual.stage2_content), 'stage2-text', !isImageVersion);
+            displayManualContent(parseContentIfNeeded(manual.stage3_content), 'stage3-text', !isImageVersion);
+
+            // ・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ・ｽ^・ｽC・ｽv・ｽﾉ会ｿｽ・ｽ・ｽ・ｽﾄタ・ｽu・ｽﾆヘ・ｽb・ｽ_・ｽ[・ｽﾌ表・ｽ・ｽ・ｽｧ鯉ｿｽ
+            // ・ｽ・ｽﾅ費ｿｽ・ｽ・ｽﾏみゑｿｽ isImageVersion ・ｽ・p
+            console.log('・ｽ鞫懶ｿｽ・ｽ・ｽ・ｽo・ｽ[・ｽW・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ:', isImageVersion);
+            
+            if (isImageVersion) {
+                // ・ｽ鞫懶ｿｽ・ｽ・ｽ・ｽo・ｽ[・ｽW・ｽ・ｽ・ｽ・ｽ・ｽﾌ場合・ｽF・ｽ^・ｽu・ｽﾆヘ・ｽb・ｽ_・ｽ[・ｽ・ｽ・ｽ\・ｽ・ｽ
+                multiStageContainer.classList.add('image-version');
+                document.querySelector('.tab-headers').style.display = 'none';
+                document.querySelectorAll('.stage-header').forEach(header => {
+                    header.style.display = 'none';
+                });
+                
+                // ・ｽﾅ終・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ・ｽ^・ｽu・ｽﾌみゑｿｽ\・ｽ・ｽ・ｽi・ｽ^・ｽu・ｽw・ｽb・ｽ_・ｽ[・ｽﾈゑｿｽ・ｽﾅ）
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById('tab-stage3').classList.add('active');
+                document.getElementById('tab-stage3').style.display = 'block';
+                
+                console.log('・ｽ鞫懶ｿｽ・ｽ・ｽ・ｽo・ｽ[・ｽW・ｽ・ｽ・ｽ・ｽ: ・ｽ^・ｽu・ｽﾆヘ・ｽb・ｽ_・ｽ[・ｽ・ｽ・ｽ\・ｽ・ｽ・ｽﾉゑｿｽ・ｽﾜゑｿｽ・ｽ・ｽ');
+            } else {
+                // ・ｽ鞫懶ｿｽﾈゑｿｽ・ｽo・ｽ[・ｽW・ｽ・ｽ・ｽ・ｽ・ｽﾌ場合・ｽF・ｽ^・ｽu・ｽﾆヘ・ｽb・ｽ_・ｽ[・ｽ・ｽ\・ｽ・ｽ
+                multiStageContainer.classList.remove('image-version');
+                document.querySelector('.tab-headers').style.display = 'flex';
+                document.querySelectorAll('.stage-header').forEach(header => {
+                    header.style.display = 'block';
+                });
+                
+                // ・ｽ^・ｽu・ｽ@・ｽ\・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
+                initializeTabs();
+                
+                console.log('・ｽ鞫懶ｿｽﾈゑｿｽ・ｽo・ｽ[・ｽW・ｽ・ｽ・ｽ・ｽ: ・ｽ^・ｽu・ｽﾆヘ・ｽb・ｽ_・ｽ[・ｽ・ｽ\・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽ・ｽ');
+            }
+
+            // ・ｽ・ｽ]・ｽﾒ集UI・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽi・ｽ鞫懶ｿｽ・ｽ・ｽ・ｽo・ｽ[・ｽW・ｽ・ｽ・ｽ・ｽ・ｽﾌみ）
+            if (isImageVersion) {
+                initializeRotationUI(manual);
+            }
+        }
+
+        function parseContentIfNeeded(content) {
+            if (!content) return '';
+            
+            // JSON・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾆゑｿｽ・ｽﾄ保托ｿｽ・ｽ・ｽ・ｽ・ｽﾄゑｿｽ・ｽ・ｽ鼾・ｿｽﾍパ・ｽ[・ｽX
+            if (typeof content === 'string' && content.startsWith('{')) {
+                try {
+                    const parsed = JSON.parse(content);
+                    // ・ｽp・ｽ[・ｽX・ｽ・ｽ・ｽ黷ｽ・ｽI・ｽu・ｽW・ｽF・ｽN・ｽg・ｽ・ｽ・ｽ・ｽK・ｽﾘなコ・ｽ・ｽ・ｽe・ｽ・ｽ・ｽc・ｽ鰹o
+                    if (parsed.analysis || parsed.content || parsed.html_manual) {
+                        return parsed.analysis || parsed.content || parsed.html_manual || '';
+                    }
+                    // ・ｽI・ｽu・ｽW・ｽF・ｽN・ｽg・ｽS・ｽﾌを文趣ｿｽ・ｽ・ｽﾆゑｿｽ・ｽﾄ返ゑｿｽ
+                    return JSON.stringify(parsed, null, 2);
+                } catch (e) {
+                    // JSON・ｽp・ｽ[・ｽX・ｽG・ｽ・ｽ・ｽ[・ｽﾌ場合・ｽﾍ鯉ｿｽ・ｽﾌ包ｿｽ・ｽ・ｽ・ｽ・ｽ・ｽﾔゑｿｽ
+                    return content;
+                }
+            }
+            
+            return content;
+        }
+
+    // allowMarkdown: true ・ｽﾌ場合・ｽﾌゑｿｽ markdown ・ｽ・ｽ HTML ・ｽﾏ奇ｿｽ・ｽBfalse ・ｽﾈらそ・ｽﾌまま（・ｽ・ｽﾉ画像・ｽ・ｽ・ｽ・ｽo・ｽ[・ｽW・ｽ・ｽ・ｽ・ｽ・ｽﾅ奇ｿｽ・ｽ・ｽHTML・ｽz・ｽ・ｽj
+    function displayManualContent(content, containerId, allowMarkdown = true) {
+            console.log('=== displayManualContent ・ｽJ・ｽn ===');
+            console.log('containerId:', containerId);
+            console.log('allowMarkdown:', allowMarkdown);
+            console.log('content length:', content ? content.length : 0);
+            
+            const container = document.getElementById(containerId);
+            
+            if (!container) {
+                console.error('Container not found:', containerId);
+                return;
+            }
+            
+            console.log('Container found:', container);
+            
+            if (!content) {
+                container.innerHTML = '<p>・ｽR・ｽ・ｽ・ｽe・ｽ・ｽ・ｽc・ｽ・ｽ・ｽ・ｽ・ｽﾂゑｿｽ・ｽ・ｽﾜゑｿｽ・ｽ・ｽB</p>';
+                return;
+            }
+
+            let html;
+            
+            // allowMarkdown ・ｽ・ｽ false ・ｽﾌ場合・ｽﾌみ撰ｿｽHTML・ｽ・ｽ・ｽ・ｽ・ｽi・ｽ鞫懶ｿｽ・ｽ・ｽ・ｽo・ｽ[・ｽW・ｽ・ｽ・ｽ・ｽ・ｽj・ｽBtrue ・ｽﾌ場合・ｽﾍタ・ｽO・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾄゑｿｽ・ｽﾄゑｿｽMarkdown・ｽﾆゑｿｽ・ｽﾄ擾ｿｽ・ｽ・ｽ
+            if (!allowMarkdown) {
+                // HTML・ｽﾆゑｿｽ・ｽﾄ茨ｿｽ・ｽ・ｽ
+                html = content;
+                
+                // ・ｽZ・ｽL・ｽ・ｽ・ｽ・ｽ・ｽe・ｽB・ｽﾎ搾ｿｽF・ｽ・ｯ・ｽﾈタ・ｽO・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
+                html = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+                html = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ''); // ・ｽX・ｽ^・ｽC・ｽ・ｽ・ｽ^・ｽO・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
+                html = html.replace(/<link[^>]*>/gi, ''); // ・ｽO・ｽ・ｽCSS・ｽ・ｽ・ｽ・ｽ・ｽN・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
+                
+                // ・ｽ・ｽ・ｽC・ｽA・ｽE・ｽg・ｽj・ｽ・ｽ・ｽh・ｽ・ｽ・ｽX・ｽ^・ｽC・ｽ・ｽ・ｽﾌみ撰ｿｽ・ｽ・ｽ
+                html = html.replace(/position\s*:\s*fixed/gi, 'position: relative');
+                html = html.replace(/position\s*:\s*absolute/gi, 'position: relative');
+                html = html.replace(/z-index\s*:\s*\d+/gi, '');
+                html = html.replace(/overflow\s*:\s*hidden/gi, ''); // ・ｽe・ｽv・ｽf・ｽﾖの影・ｽ・ｽ・ｽh・ｽ~
+                
+                // ・ｽ・ｽ・ｽF・ｽn・ｽﾌ色・ｽﾌみゑｿｽﾂ色・ｽn・ｽﾉ変奇ｿｽ・ｽi・ｽ・ｽ・ｽﾌ色・ｽﾍ保趣ｿｽ・ｽj
+                html = html.replace(/#6A4C93/gi, '#007bff');
+                html = html.replace(/#8B5A96/gi, '#007bff');
+                html = html.replace(/#9D4EDD/gi, '#007bff');
+                html = html.replace(/purple/gi, '#007bff');
+                
+                // ・ｽw・ｽi・ｽF・ｽﾌ趣ｿｽ・ｽn・ｽﾌみ変奇ｿｽ
+                html = html.replace(/background-color\s*:\s*#6A4C93/gi, 'background-color: #e3f2fd');
+                html = html.replace(/background-color\s*:\s*#8B5A96/gi, 'background-color: #e3f2fd');
+                html = html.replace(/background-color\s*:\s*#9D4EDD/gi, 'background-color: #e3f2fd');
+                html = html.replace(/background-color\s*:\s*purple/gi, 'background-color: #e3f2fd');
+                
+                // HTML・ｽR・ｽ・ｽ・ｽe・ｽ・ｽ・ｽc・ｽ・ｽ・ｽ・ｽ・ｽS・ｽﾈコ・ｽ・ｽ・ｽe・ｽi・ｽﾅ・ｿｽ・ｽb・ｽv
+                html = `<div class="generated-content-wrapper">${html}</div>`;
+                
+                // HTML・ｽR・ｽ・ｽ・ｽe・ｽ・ｽ・ｽc・ｽp・ｽﾌク・ｽ・ｽ・ｽX・ｽ・ｽﾇ会ｿｽ
+                container.classList.add('html-content');
+            } else {
+                // ・ｽ・ｽ・ｽ・ｽMarkdown・ｽp・ｽ[・ｽX・ｽiHTML・ｽ^・ｽO・ｽ・ｽ・ｽﾝ可）
+                let mdSource = content;
+                // ・ｽ・ｽﾉ危険・ｽ^・ｽO(script/style/link)・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾄゑｿｽ・ｽ・ｽMarkdown・ｽp・ｽ[・ｽX・ｽiMarkdown・ｽL・ｽ・ｽ・ｽ・ｽF・ｽh・ｽ~・ｽj
+                mdSource = mdSource.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+                                   .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+                                   .replace(/<link[^>]*>/gi, '');
+                html = marked.parse(mdSource);
+                
+                // Custom callout boxes transformation (after marked.js processing)
+                // Warning box: ⚠️ text -> styled warning div
+                html = html.replace(/⚠️(.*?)(?=<\/p>)/gs, '<div class="warning"><span class="material-icons">warning</span>$1</div>');
+                // Danger box: ❌ text -> styled danger div
+                html = html.replace(/❌(.*?)(?=<\/p>)/gs, '<div class="danger"><span class="material-icons">error</span>$1</div>');
+                // Info box: ℹ️ text -> styled info div
+                html = html.replace(/ℹ️(.*?)(?=<\/p>)/gs, '<div class="info"><span class="material-icons">info</span>$1</div>');
+                // Success box: ✅ text -> styled success div
+                html = html.replace(/✅(.*?)(?=<\/p>)/gs, '<div class="success"><span class="material-icons">check_circle</span>$1</div>');
+
+                // ・ｽ・ｽ・ｽﾓ趣ｿｽ・ｽ・ｽ・ｽ{・ｽb・ｽN・ｽX・ｽ・ｽ・ｽﾜゑｿｽp・ｽ^・ｽO・ｽ・ｽ・ｽ尞・
+                html = html.replace(/<p>(<div class="(warning|danger|info|success)">)/g, '$1');
+                html = html.replace(/(<\/div>)<\/p>/g, '$1');
+                
+                // Markdown・ｽR・ｽ・ｽ・ｽe・ｽ・ｽ・ｽc・ｽp・ｽﾌク・ｽ・ｽ・ｽX・ｽ・ｽﾇ会ｿｽ
+                container.classList.add('markdown-content');
+            }
+
+            container.innerHTML = html;
+            console.log('Content rendered successfully in:', containerId);
+            console.log('=== displayManualContent ・ｽ・ｽ・ｽ・ｽ ===');
+        }
+
+        function isHtmlContent(content) {
+            // HTML・ｽ^・ｽO・ｽ・ｽ・ｽﾜまゑｿｽﾄゑｿｽ・ｽ驍ｩ・ｽｻ抵ｿｽ
+            const htmlTagPattern = /<\/?\w+[^>]*>/;
+            return htmlTagPattern.test(content);
+        }
+
+        function initializeTabs() {
+            // ・ｽ^・ｽu・ｽw・ｽb・ｽ_・ｽ[・ｽﾌク・ｽ・ｽ・ｽb・ｽN・ｽC・ｽx・ｽ・ｽ・ｽg
+            const tabHeaders = document.querySelectorAll('.tab-header');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabHeaders.forEach(header => {
+                header.addEventListener('click', function () {
+                    const targetTab = this.getAttribute('data-tab');
+
+                    // ・ｽ・ｽ・ｽﾗてのタ・ｽu・ｽ・ｽ・ｽA・ｽN・ｽe・ｽB・ｽu・ｽ・ｽ
+                    tabHeaders.forEach(h => h.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+
+                    // ・ｽI・ｽ・ｽ・ｽ・ｽ・ｽ黷ｽ・ｽ^・ｽu・ｽ・ｽ・ｽA・ｽN・ｽe・ｽB・ｽu・ｽ・ｽ
+                    this.classList.add('active');
+                    document.getElementById(`tab-${targetTab}`).classList.add('active');
+                });
+            });
+        }
+
+    function displayVideos(videos, manualType) {
+        console.log('displayVideos・ｽﾖ撰ｿｽ・ｽ・ｽ・ｽﾄばゑｿｽﾜゑｿｽ・ｽ・ｽ:', videos);
+        const videoSection = document.getElementById('video-section');
+        const videoGrid = document.getElementById('video-grid');
+
+        let videosHtml = '';
+        videos.forEach(video => {
+            // ・ｽ・ｽ・ｽ・ｽURL・ｽﾌ鯉ｿｽ・ｽ・ｽ
+            if (!video.url) {
+                console.warn('・ｽ・ｽ・ｽ・ｽURL・ｽ・ｽ・ｽ・ｽﾅゑｿｽ・ｽA・ｽX・ｽL・ｽb・ｽv・ｽ・ｽ・ｽﾜゑｿｽ:', video);
+                return;
+            }
+            
+            const isExpert = video.type === 'expert';
+            const labelClass = isExpert ? 'expert-label' : 'novice-label';
+            // ・ｽv・ｽ・ｽ: ・ｽ鞫懶ｿｽ・ｽ・ｽ・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ(manual_with_images)・ｽﾅは費ｿｽn・ｽ・ｽ・ｽﾒ・ｿｽ・ｽx・ｽ・ｽ・ｽ・ｽ・ｽ\・ｽ・ｽ
+            const hideNoviceLabel = (manualType === 'manual_with_images') && !isExpert;
+            const labelText = isExpert
+                ? '<span class="material-icons" style="font-size: 20px; vertical-align: middle; margin-right: 5px;">star</span>・ｽn・ｽ・ｽ・ｽﾒ難ｿｽ・ｽ・ｽ'
+                : (hideNoviceLabel ? '' : '<span class="material-icons" style="font-size: 20px; vertical-align: middle; margin-right: 5px;">school</span>・ｽ・ｽn・ｽ・ｽ・ｽﾒ難ｿｽ・ｽ・ｽ');
+
+            videosHtml += `
+                <div class="video-item">
+                    ${hideNoviceLabel ? '' : `<div class="video-label ${labelClass}">${labelText}</div>`}
+                    <video controls>
+                        <source src="${video.url}" type="video/mp4">
+                        ・ｽ・ｽ・ｽg・ｽ・ｽ・ｽﾌブ・ｽ・ｽ・ｽE・ｽU・ｽﾍ難ｿｽ・ｽ・ｽ^・ｽO・ｽ・ｽ・ｽT・ｽ|・ｽ[・ｽg・ｽ・ｽ・ｽﾄゑｿｽ・ｽﾜゑｿｽ・ｽ・ｽB
+                    </video>
+                    <div style="margin-top: 10px; font-size: 14px; color: #666;">
+                        <div><strong>・ｽt・ｽ@・ｽC・ｽ・ｽ・ｽ・ｽ:</strong> ${video.filename}</div>
+                        ${video.duration ? `<div><strong>・ｽ・ｽ・ｽ・ｽ:</strong> ${video.duration}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        videoGrid.innerHTML = videosHtml;
+        if (manualType === 'manual_with_images') {
+            videoGrid.querySelectorAll('.video-item').forEach(item => {
+                const label = item.querySelector('.video-label');
+                if (!label) {
+                    item.style.paddingTop = '10px';
+                }
+            });
+        }
+        videoSection.style.display = 'block';
+    }
+
+        function getFormatText(format) {
+            const formatMap = {
+                'text_only': '・ｽe・ｽL・ｽX・ｽg・ｽﾌゑｿｽ',
+                'text_with_images': '・ｽe・ｽL・ｽX・ｽg + ・ｽ鞫・,
+                'text_with_video_clips': '・ｽe・ｽL・ｽX・ｽg + ・ｽ・ｽ・ｽ・ｽN・ｽ・ｽ・ｽb・ｽv',
+                'subtitle_video': '・ｽ・ｽ・ｽ・ｽ・ｽt・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ',
+                'hybrid': '・ｽn・ｽC・ｽu・ｽ・ｽ・ｽb・ｽh'
+            };
+            return formatMap[format] || format || '・ｽe・ｽL・ｽX・ｽg + ・ｽ鞫・;
+        }
+
+        function getTypeText(type) {
+            const typeMap = {
+                'basic': '・ｽ・ｽ{・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ',
+                'multi_stage': '・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ・ｽi・ｽ鞫懶ｿｽﾈゑｿｽ・ｽj',
+                'manual_with_images': '・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ・ｽi・ｽ鞫懶ｿｽ・ｽ・ｽ・ｽj'
+            };
+            return typeMap[type] || type;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '・ｽ・ｽ・ｽﾝ抵ｿｽ';
+
+            // ・ｽT・ｽ[・ｽo・ｽ[・ｽ・ｽ・ｽ迹暦ｿｽ・ｽ・ｽﾄゑｿｽ・ｽ・ｽﾌゑｿｽJST・ｽ・ｽ・ｽﾔの包ｿｽ・ｽ・ｽ・ｽ・ｽi・ｽ^・ｽC・ｽ・ｽ・ｽ]・ｽ[・ｽ・ｽ・ｽ・ｽ・ｽﾈゑｿｽ・ｽj
+            // ・ｽ・ｽ・ｽ・ｽ・ｽI・ｽ・ｽJST・ｽﾆゑｿｽ・ｽﾄ会ｿｽ・ｽﾟゑｿｽ・ｽ・ｽ
+            let date;
+            if (dateString.includes('T') && !dateString.includes('+') && !dateString.includes('Z')) {
+                // ISO・ｽ`・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ^・ｽC・ｽ・ｽ・ｽ]・ｽ[・ｽ・ｽ・ｽ・ｽｪなゑｿｽ・ｽ鼾・ｿｽ・ｽJST・ｽﾆゑｿｽ・ｽﾄ茨ｿｽ・ｽ・ｽ
+                date = new Date(dateString + '+09:00');
+            } else {
+                date = new Date(dateString);
+            }
+
+            return date.toLocaleDateString('ja-JP', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function showError(message) {
+            document.getElementById('loading').innerHTML = `
+                <div style="color: #dc3545; font-weight: bold;">
+                    <span class="material-icons" style="font-size: 16px; vertical-align: middle; margin-right: 5px;">error</span>${message}
+                </div>
+                <div style="margin-top: 20px;">
+                    <a href="/manual/list" class="btn btn-secondary"><span class="material-icons">arrow_back</span>・ｽ齬暦ｿｽﾉ戻ゑｿｽ</a>
+                </div>
+            `;
+        }
+
+        // ・ｽ・ｽ・ｽO・ｽA・ｽE・ｽg・ｽ@・ｽ\
+        async function logout() {
+            try {
+                const response = await fetch('/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    window.location.href = '/login';
+                } else {
+                    // fetch・ｽ・ｽ・ｽs・ｽ・ｽ・ｽ・ｽform submit ・ｽﾉゑｿｽ・ｽ・ｽﾖ趣ｿｽi
+                    document.getElementById('logout-form').submit();
+                }
+            } catch (error) {
+                console.log('Logout fetch failed, trying form submit:', error);
+                document.getElementById('logout-form').submit();
+            }
+        }
+
+        // ・ｽ・ｽ・ｽ[・ｽU・ｽ[・ｽ・ｽ・ｽﾌ設抵ｿｽ
+        async function setUserInfo() {
+            try {
+                const response = await fetch('/api/user-info');
+                if (response.ok) {
+                    const userInfo = await response.json();
+                    if (userInfo.user) {
+                        const userInfoElement = document.getElementById('user-info');
+                        if (userInfoElement) {
+                            userInfoElement.textContent = 
+                                userInfo.user.name + ' (' + userInfo.user.company + ')';
+                        } else {
+                            console.warn('user-info element not found');
+                        }
+                    }
+                }
+            } catch (error) {
+                console.log('Failed to load user info:', error);
+            }
+        }
+
+        // DOMContentLoaded・ｽC・ｽx・ｽ・ｽ・ｽg - ・ｽS・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ搓・ｽ
+        document.addEventListener('DOMContentLoaded', function () {
+            // ・ｽ・ｽ・ｽ[・ｽU・ｽ[・ｽ・ｽ・ｽﾝ抵ｿｽ
+            setUserInfo();
+            
+            // ・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ・ｽﾇみ搾ｿｽ・ｽ・ｽ
+            const pathParts = window.location.pathname.split('/');
+            const manualId = pathParts[pathParts.length - 1];
+
+            if (manualId) {
+                loadManual(manualId);
+            } else {
+                showError('・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽID・ｽ・ｽ・ｽw・ｽ閧ｳ・ｽ・ｽﾄゑｿｽ・ｽﾜゑｿｽ・ｽ・ｽ');
+            }
+            
+            // ・ｽL・ｽ・ｽ・ｽ・ｽ・ｽo・ｽX・ｽC・ｽx・ｽ・ｽ・ｽg・ｽ・ｽ・ｽX・ｽi・ｽ[・ｽﾝ抵ｿｽ
+            setTimeout(() => {
+        // ===== Legacy rotation UI and canvas event listeners removed =====
+        // Now handled by image_editor.js component
+
+            try { return JSON.parse(raw);} catch{ return null; }
+        }
+
+        // ===== Legacy image editor and recapture functions removed =====
+        // Now using component-based architecture: image_editor.js, video_display.js
+        
+        // ===== Format switching functionality =====
+        // Legacy image editor code removed - now using component-based architecture
+
+        // Format conversion functions
+        async function loadAvailableFormats() {
+            try {
+                const response = await fetch('/api/manuals/output-formats', {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const formats = data.formats || [];
+                const currentFormat = '{{ manual.output_format or "text_with_images" }}';
+                
+                const formatButtons = document.getElementById('format-buttons');
+                if (!formatButtons) return;
+                
+                formatButtons.innerHTML = formats.map(format => {
+                    const isCurrent = format.id === currentFormat;
+                    const buttonClass = isCurrent ? 'format-btn active' : 'format-btn';
+                    const badge = format.recommended ? '<span class="badge badge-success ml-2">・ｽ・ｽ・ｽ・ｽ</span>' : '';
+                    
+                    return `
+                        <button class="${buttonClass}" 
+                                data-format="${format.id}" 
+                                ${isCurrent ? 'disabled' : ''}>
+                            <i class="${format.icon}"></i>
+                            <strong>${format.name_ja}</strong>
+                            ${badge}
+                            <div class="format-description">${format.description}</div>
+                        </button>
+                    `;
+                }).join('');
+                
+                // Add click handlers for format switching
+                document.querySelectorAll('.format-btn:not(.active)').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const targetFormat = this.dataset.format;
+                        switchFormat(targetFormat);
+                    });
+                });
+                
+            } catch (error) {
+                console.error('Failed to load formats:', error);
+                showNotification('・ｽt・ｽH・ｽ[・ｽ}・ｽb・ｽg・ｽ・ｽ・ｽﾌ取得・ｽﾉ趣ｿｽ・ｽs・ｽ・ｽ・ｽﾜゑｿｽ・ｽ・ｽ', 'error');
+            }
+        }
+
+        async function switchFormat(targetFormat) {
+            const currentFormat = '{{ manual.output_format or "text_with_images" }}';
+            
+            if (targetFormat === currentFormat) {
+                showNotification('・ｽ・ｽ・ｽﾉゑｿｽ・ｽﾌフ・ｽH・ｽ[・ｽ}・ｽb・ｽg・ｽﾅゑｿｽ', 'info');
+                return;
+            }
+            
+            // Check if content exists for target format
+            const hasContent = checkFormatContent(targetFormat);
+            
+            if (hasContent) {
+                // Just switch display without regeneration
+                displayFormatContent(targetFormat);
+                updateFormatButtons(targetFormat);
+                showNotification(`${getFormatName(targetFormat)}・ｽﾉ切ゑｿｽﾖゑｿｽ・ｽﾜゑｿｽ・ｽ・ｽ`, 'success');
+            } else {
+                // Need to regenerate - show conversion modal
+                showConvertModal(targetFormat);
+            }
+        }
+
+        // ・ｽO・ｽ・ｽ・ｽ[・ｽo・ｽ・ｽ・ｽ}・ｽj・ｽ・ｽ・ｽA・ｽ・ｽ・ｽt・ｽH・ｽ[・ｽ}・ｽb・ｽg・ｽf・ｽ[・ｽ^・ｽi・ｽd・ｽ・ｽ・ｽ・ｽ`・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽj
+        const manualFormatData = {
+            content_html: {{ manual.content_html|tojson|safe }},
+            content_text: {{ manual.content_text|tojson|safe }},
+            content_video_uri: {{ manual.content_video_uri|tojson|safe }},
+            extracted_images: {{ manual.get_extracted_images()|tojson|safe }},
+            video_clips: {{ manual.get_video_clips()|tojson|safe }},
+            subtitles_data: {{ manual.get_subtitles_data()|tojson|safe }}
+        };
+        
+        function checkFormatContent(format) {
+            // Check if content exists for the target format
+            const manual = manualFormatData;
+            
+            switch (format) {
+                case 'text_only':
+                    return !!manual.content_text;
+                case 'text_with_images':
+                    return !!manual.content_html && !!manual.extracted_images;
+                case 'text_with_video_clips':
+                    return !!manual.content_html && !!manual.video_clips;
+                case 'subtitle_video':
+                    return !!manual.content_video_uri && !!manual.subtitles_data;
+                case 'hybrid':
+                    return !!manual.content_html && !!manual.video_clips && !!manual.extracted_images;
+                default:
+                    return false;
+            }
+        }
+
+        function displayFormatContent(format) {
+            // Update the display to show the selected format content
+            const manual = manualFormatData;
+            
+            const contentArea = document.querySelector('.manual-content, .content-area, #manual-content');
+            if (!contentArea) {
+                console.warn('Content area not found');
+                return;
+            }
+            
+            // Clear current content
+            contentArea.innerHTML = '';
+            
+            switch (format) {
+                case 'text_only':
+                    // Display text-only content
+                    if (manual.content_text) {
+                        contentArea.innerHTML = `<div class="text-content">${escapeHtml(manual.content_text).replace(/\n/g, '<br>')}</div>`;
+                    } else {
+                        contentArea.innerHTML = '<p class="text-muted">・ｽe・ｽL・ｽX・ｽg・ｽR・ｽ・ｽ・ｽe・ｽ・ｽ・ｽc・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽ・ｽ</p>';
+                    }
+                    break;
+                
+                case 'text_with_images':
+                    // Display HTML with images
+                    if (manual.content_html) {
+                        contentArea.innerHTML = manual.content_html;
+                    } else if (manual.extracted_images && manual.extracted_images.length > 0) {
+                        console.log('・ｽ鞫懶ｿｽ・ｽ\・ｽ・ｽ:', manual.extracted_images.length, '・ｽ・ｽ');
+                        // Fallback: show images in grid
+                        let html = '<div class="images-grid">';
+                        manual.extracted_images.forEach((img, idx) => {
+                            // Support both 'image' and 'image_uri' field names
+                            const imageData = img.image || img.image_uri;
+                            console.log(`・ｽ鞫・{idx + 1}:`, imageData ? imageData.substring(0, 50) + '...' : '・ｽﾈゑｿｽ');
+                            html += `
+                                <div class="image-item">
+                                    <img src="${imageData}" alt="${img.step_title || 'Step ' + img.step_number}" class="img-fluid">
+                                    <div class="caption">${img.step_title || 'Step ' + img.step_number} (${img.timestamp_formatted || img.timestamp + 's'})</div>
+                                </div>
+                            `;
+                        });
+                        html += '</div>';
+                        contentArea.innerHTML = html;
+                    } else {
+                        console.log('・ｽ鞫懶ｿｽR・ｽ・ｽ・ｽe・ｽ・ｽ・ｽc・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽ・ｽ');
+                        contentArea.innerHTML = '<p class="text-muted">・ｽ鞫懶ｿｽR・ｽ・ｽ・ｽe・ｽ・ｽ・ｽc・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽ・ｽ</p>';
+                    }
+                    break;
+                
+                case 'text_with_video_clips':
+                    // Display HTML with video clips
+                    if (manual.content_html) {
+                        contentArea.innerHTML = manual.content_html;
+                    } else if (manual.video_clips && manual.video_clips.length > 0) {
+                        // Fallback: show video clips list
+                        let html = '<div class="clips-list">';
+                        manual.video_clips.forEach(clip => {
+                            html += `
+                                <div class="clip-item">
+                                    <h4>${clip.step_title}</h4>
+                                    <video controls>
+                                        <source src="${clip.video_uri}#t=${clip.start_time},${clip.end_time}" type="video/mp4">
+                                    </video>
+                                    <div class="caption">${clip.start_formatted} - ${clip.end_formatted}</div>
+                                </div>
+                            `;
+                        });
+                        html += '</div>';
+                        contentArea.innerHTML = html;
+                    } else {
+                        contentArea.innerHTML = '<p class="text-muted">・ｽ・ｽ・ｽ・ｽN・ｽ・ｽ・ｽb・ｽv・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽ・ｽ</p>';
+                    }
+                    break;
+                
+                case 'subtitle_video':
+                    // Display video with subtitles
+                    if (manual.content_video_uri) {
+                        let html = '<div class="subtitle-video">';
+                        html += `
+                            <video controls class="video-player">
+                                <source src="${manual.content_video_uri}" type="video/mp4">
+                        `;
+                        
+                        // Add subtitle tracks if available
+                        if (manual.subtitles_data && manual.subtitles_data.length > 0) {
+                            // Note: Browser subtitle support requires VTT format
+                            html += '<track kind="subtitles" src="#" srclang="ja" label="・ｽ・ｽ・ｽ{・ｽ・ｽ">';
+                        }
+                        
+                        html += '</video>';
+                        
+                        // Show subtitle data as text fallback
+                        if (manual.subtitles_data && manual.subtitles_data.length > 0) {
+                            html += '<div class="subtitles-list"><h4>・ｽ・ｽ・ｽ・ｽ・ｽf・ｽ[・ｽ^</h4><ul>';
+                            manual.subtitles_data.forEach(sub => {
+                                html += `<li>[${sub.start_formatted} - ${sub.end_formatted}] ${escapeHtml(sub.text)}</li>`;
+                            });
+                            html += '</ul></div>';
+                        }
+                        
+                        html += '</div>';
+                        contentArea.innerHTML = html;
+                    } else {
+                        contentArea.innerHTML = '<p class="text-muted">・ｽ・ｽ・ｽ・ｽ・ｽt・ｽ・ｽ・ｽ・ｽ・ｽ謔ｪ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽ・ｽ</p>';
+                    }
+                    break;
+                
+                case 'hybrid':
+                    // Display rich HTML with all content types
+                    if (manual.content_html) {
+                        contentArea.innerHTML = manual.content_html;
+                    } else {
+                        contentArea.innerHTML = '<p class="text-muted">・ｽn・ｽC・ｽu・ｽ・ｽ・ｽb・ｽh・ｽR・ｽ・ｽ・ｽe・ｽ・ｽ・ｽc・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽ・ｽ</p>';
+                    }
+                    break;
+                
+                default:
+                    contentArea.innerHTML = '<p class="text-muted">・ｽs・ｽ・ｽ・ｽﾈフ・ｽH・ｽ[・ｽ}・ｽb・ｽg</p>';
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function updateFormatButtons(activeFormat) {
+            document.querySelectorAll('.format-btn').forEach(btn => {
+                if (btn.dataset.format === activeFormat) {
+                    btn.classList.add('active');
+                    btn.disabled = true;
+                } else {
+                    btn.classList.remove('active');
+                    btn.disabled = false;
+                }
+            });
+        }
+
+        function getFormatName(formatId) {
+            const names = {
+                'text_only': '・ｽe・ｽL・ｽX・ｽg・ｽﾌゑｿｽ',
+                'text_with_images': '・ｽe・ｽL・ｽX・ｽg + ・ｽ鞫・,
+                'text_with_video_clips': '・ｽe・ｽL・ｽX・ｽg + ・ｽ・ｽ・ｽ・ｽN・ｽ・ｽ・ｽb・ｽv',
+                'subtitle_video': '・ｽ・ｽ・ｽ・ｽ・ｽt・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ',
+                'hybrid': '・ｽn・ｽC・ｽu・ｽ・ｽ・ｽb・ｽh'
+            };
+            return names[formatId] || formatId;
+        }
+
+        function showConvertModal(targetFormat) {
+            const modal = document.getElementById('convertModal');
+            const formatName = getFormatName(targetFormat);
+            
+            document.getElementById('targetFormatName').textContent = formatName;
+            document.getElementById('targetFormatId').value = targetFormat;
+            
+            // Show modal (assuming Bootstrap modal)
+            if (window.bootstrap && window.bootstrap.Modal) {
+                const bsModal = new bootstrap.Modal(modal);
+                bsModal.show();
+            } else {
+                modal.style.display = 'block';
+            }
+        }
+
+        async function convertManualFormat() {
+            const targetFormat = document.getElementById('targetFormatId').value;
+            const regenerateAnalysis = document.getElementById('regenerateAnalysis').checked;
+            
+            try {
+                showNotification('・ｽt・ｽH・ｽ[・ｽ}・ｽb・ｽg・ｽﾏ奇ｿｽ・ｽ・ｽ・ｽJ・ｽn・ｽ・ｽ・ｽﾄゑｿｽ・ｽﾜゑｿｽ...', 'info');
+                
+                const response = await fetch('/api/manuals/{{ manual.id }}/convert', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        target_format: targetFormat,
+                        regenerate_analysis: regenerateAnalysis
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Conversion failed');
+                }
+                
+                const result = await response.json();
+                
+                // Close modal
+                const modal = document.getElementById('convertModal');
+                if (window.bootstrap && window.bootstrap.Modal) {
+                    const bsModal = bootstrap.Modal.getInstance(modal);
+                    bsModal.hide();
+                } else {
+                    modal.style.display = 'none';
+                }
+                
+                showNotification(
+                    `・ｽt・ｽH・ｽ[・ｽ}・ｽb・ｽg・ｽﾏ奇ｿｽ・ｽW・ｽ・ｽ・ｽu・ｽ・ｽ・ｽJ・ｽn・ｽ・ｽ・ｽﾜゑｿｽ・ｽ・ｽ (Job ID: ${result.job_id})・ｽB・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽy・ｽ[・ｽW・ｽ・ｽ・ｽX・ｽV・ｽ・ｽ・ｽﾄゑｿｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽB`,
+                    'success'
+                );
+                
+                // Optional: Poll for job completion
+                // pollJobStatus(result.job_id);
+                
+            } catch (error) {
+                console.error('Conversion error:', error);
+                showNotification(`・ｽﾏ奇ｿｽ・ｽG・ｽ・ｽ・ｽ[: ${error.message}`, 'error');
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            // Simple notification implementation
+            const alertClass = type === 'error' ? 'alert-danger' : 
+                              type === 'success' ? 'alert-success' : 
+                              'alert-info';
+            
+            const notification = document.createElement('div');
+            notification.className = `alert ${alertClass} alert-dismissible fade show`;
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.zIndex = '9999';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+</script>
+
+<!-- Format Conversion Modal -->
+<div class="modal fade" id="convertModal" tabindex="-1" role="dialog" aria-labelledby="convertModalLabel" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="convertModalLabel">・ｽt・ｽH・ｽ[・ｽ}・ｽb・ｽg・ｽﾏ奇ｿｽ</h5>
+                <button type="button" class="close" onclick="closeConvertModal()" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    <strong id="targetFormatName"></strong>・ｽ`・ｽ・ｽ・ｽﾉ変奇ｿｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽ・ｽ?
+                </p>
+                <input type="hidden" id="targetFormatId">
+                
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" id="regenerateAnalysis">
+                    <label class="form-check-label" for="regenerateAnalysis">
+                        ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾄ包ｿｽ・ｽﾍゑｿｽ・ｽ・ｽi・ｽ・ｽ關ｳ・ｽm・ｽﾈ鯉ｿｽ・ｽﾊゑｿｽ・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽ・ｽ・ｽA・ｽ・ｽ・ｽﾔゑｿｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽj
+                    </label>
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle"></i>
+                    ・ｽﾏ奇ｿｽ・ｽ・ｽ・ｽ・ｽ・ｽﾍバ・ｽb・ｽN・ｽO・ｽ・ｽ・ｽE・ｽ・ｽ・ｽh・ｽﾅ趣ｿｽ・ｽs・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽB・ｽ・ｽ・ｽ・ｽ・ｽﾜで撰ｿｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ鼾・ｿｽ・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽB
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeConvertModal()">・ｽL・ｽ・ｽ・ｽ・ｽ・ｽZ・ｽ・ｽ</button>
+                <button type="button" class="btn btn-primary" onclick="convertManualFormat()">
+                    <i class="fas fa-sync-alt"></i> ・ｽﾏ奇ｿｽ・ｽJ・ｽn
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</script>
+
+<style>
+/* Format Conversion Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1050;
+    overflow: auto;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.fade {
+    display: none;
+}
+
+.modal.show {
+    display: flex !important;
+}
+
+.modal-dialog {
+    max-width: 500px;
+    margin: 1.75rem auto;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 500;
+}
+
+.modal-header .close {
+    padding: 0;
+    background: transparent;
+    border: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #000;
+    opacity: 0.5;
+    cursor: pointer;
+}
+
+.modal-header .close:hover {
+    opacity: 0.75;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-check-input {
+    margin: 0;
+}
+
+.alert {
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+}
+
+.mt-3 {
+    margin-top: 1rem;
+}
+</style>
+
+<script>
+function showConvertModal() {
+    const modal = document.getElementById('convertModal');
+    if (modal) {
+        modal.classList.remove('fade');
+        modal.classList.add('show');
+        modal.style.display = 'flex';
+    }
+}
+
+function closeConvertModal() {
+    const modal = document.getElementById('convertModal');
+    if (modal) {
+        modal.classList.remove('show');
+        modal.classList.add('fade');
+        modal.style.display = 'none';
+    }
+}
+</script>
+
+{% endblock %}

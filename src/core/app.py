@@ -2294,6 +2294,9 @@ def manual_create():
 @app.route('/manual/view/<manual_id>')
 def manual_detail(manual_id):
     """マニュアル詳細画面"""
+    import re
+    from urllib.parse import quote
+    
     # Fetch manual data for template rendering
     manual = Manual.query.get_or_404(manual_id)
     
@@ -2302,7 +2305,43 @@ def manual_detail(manual_id):
         if manual.company_id != current_user.company_id:
             return "アクセス権限がありません", 403
     
-    return render_template('manual_detail.html', manual_id=manual_id, manual=manual)
+    # Use to_dict_with_sources() to include source_videos array for video display
+    manual_data = manual.to_dict_with_sources()
+    
+    # Convert gs:// URLs to /api/video/ URLs for browser playback
+    def replace_gs_url(match):
+        gs_url = match.group(1)
+        # Extract path after gs://bucket_name/
+        if gs_url.startswith('gs://'):
+            # Remove gs:// and bucket name, get the file path
+            path_parts = gs_url.replace('gs://', '').split('/', 1)
+            if len(path_parts) > 1:
+                file_path = path_parts[1]
+                # Remove fragment (#t=start,end) temporarily
+                if '#' in file_path:
+                    file_path, fragment = file_path.split('#', 1)
+                    encoded_path = quote(f'gs://{path_parts[0]}/{file_path}', safe='')
+                    return f'/api/video/{encoded_path}#{fragment}'
+                else:
+                    encoded_path = quote(f'gs://{path_parts[0]}/{file_path}', safe='')
+                    return f'/api/video/{encoded_path}'
+        return gs_url
+    
+    # Replace all gs:// URLs in src attributes for all content fields
+    for field in ['content', 'content_html', 'content_text']:
+        if manual_data.get(field):
+            original_content = manual_data[field]
+            manual_data[field] = re.sub(
+                r'src="(gs://[^"]+)"',
+                lambda m: f'src="{replace_gs_url(m)}"',
+                manual_data[field]
+            )
+            # Log conversion for debugging
+            if original_content != manual_data[field]:
+                gs_urls = re.findall(r'gs://[^\s"\'<>]+', original_content)
+                logger.info(f"Converted {len(gs_urls)} gs:// URLs in {field} field for manual {manual_id}")
+    
+    return render_template('manual_detail.html', manual_id=manual_id, manual=manual_data)
 
 @app.route('/manual/<int:manual_id>/edit', methods=['GET'])
 def manual_edit(manual_id):
@@ -2610,6 +2649,9 @@ def api_create_manual():
 @app.route('/api/manual/<int:manual_id>', methods=['GET'])
 def api_get_manual(manual_id):
     """マニュアル詳細取得API"""
+    import re
+    from urllib.parse import quote
+    
     try:
         manual = Manual.query.get_or_404(manual_id)
         
@@ -2622,9 +2664,40 @@ def api_get_manual(manual_id):
                 }), 403
         
         # 元動画表示再発防止: source_videos を含む拡張版を返す
+        manual_data = manual.to_dict_with_sources()
+        
+        # Convert gs:// URLs to /api/video/ URLs for browser playback
+        def replace_gs_url(match):
+            gs_url = match.group(1)
+            if gs_url.startswith('gs://'):
+                path_parts = gs_url.replace('gs://', '').split('/', 1)
+                if len(path_parts) > 1:
+                    file_path = path_parts[1]
+                    if '#' in file_path:
+                        file_path, fragment = file_path.split('#', 1)
+                        encoded_path = quote(f'gs://{path_parts[0]}/{file_path}', safe='')
+                        return f'/api/video/{encoded_path}#{fragment}'
+                    else:
+                        encoded_path = quote(f'gs://{path_parts[0]}/{file_path}', safe='')
+                        return f'/api/video/{encoded_path}'
+            return gs_url
+        
+        # Replace all gs:// URLs in src attributes for all content fields
+        for field in ['content', 'content_html', 'content_text']:
+            if manual_data.get(field):
+                original_content = manual_data[field]
+                manual_data[field] = re.sub(
+                    r'src="(gs://[^"]+)"',
+                    lambda m: f'src="{replace_gs_url(m)}"',
+                    manual_data[field]
+                )
+                if original_content != manual_data[field]:
+                    gs_urls = re.findall(r'gs://[^\s"\'<>]+', original_content)
+                    logger.info(f"API: Converted {len(gs_urls)} gs:// URLs in {field} for manual {manual_id}")
+        
         return jsonify({
             'success': True,
-            'manual': manual.to_dict_with_sources()
+            'manual': manual_data
         })
         
     except Exception as e:

@@ -240,7 +240,8 @@ class UnifiedManualGenerator:
         return {
             'content': content,
             'content_text': content,
-            'content_html': self._convert_markdown_to_html(content)
+            'content_html': self._convert_markdown_to_html(content),
+            'analysis_result': analysis
         }
     
     async def _generate_manual_with_images(
@@ -278,7 +279,8 @@ class UnifiedManualGenerator:
             'content': html_content,
             'content_html': html_content,
             'content_text': text_result['content_text'],
-            'extracted_images': images
+            'extracted_images': images,
+            'analysis_result': analysis
         }
     
     async def _generate_manual_with_clips(
@@ -316,7 +318,8 @@ class UnifiedManualGenerator:
             'content': html_content,
             'content_html': html_content,
             'content_text': text_result['content_text'],
-            'video_clips': clips
+            'video_clips': clips,
+            'analysis_result': analysis
         }
     
     async def _generate_subtitle_video(
@@ -339,9 +342,23 @@ class UnifiedManualGenerator:
         logger.info("Generating subtitle data")
         
         try:
+            # Try multiple paths to get work_steps
             work_steps = analysis.get('work_steps', [])
+            
+            # If not found, try arguments.steps (from function call response)
+            if not work_steps and 'arguments' in analysis:
+                work_steps = analysis['arguments'].get('steps', [])
+            
+            # If still not found, try expert_analysis or novice_analysis (for comparison mode)
+            if not work_steps:
+                if 'expert_analysis' in analysis:
+                    work_steps = analysis['expert_analysis'].get('work_steps', [])
+                    if not work_steps and 'arguments' in analysis['expert_analysis']:
+                        work_steps = analysis['expert_analysis']['arguments'].get('steps', [])
+            
             if not work_steps:
                 logger.warning("No work steps found for subtitle generation")
+                logger.warning(f"Analysis keys: {list(analysis.keys())}")
                 return {
                     'content': '字幕データなし',
                     'content_video_uri': videos[0]['uri'] if videos else None,
@@ -381,7 +398,8 @@ class UnifiedManualGenerator:
                 'content': f'字幕データ生成完了 ({len(subtitles)}件)\n\nFFmpegによる動画焼き込みは未実装です。',
                 'content_video_uri': videos[0]['uri'] if videos else None,
                 'subtitles_data': subtitles,
-                'srt_content': srt_content
+                'srt_content': srt_content,
+                'analysis_result': analysis  # Include analysis for database storage
             }
             
         except Exception as e:
@@ -490,7 +508,8 @@ class UnifiedManualGenerator:
             'content_html': html_content,
             'content_text': text_result['content_text'],
             'extracted_images': images,
-            'video_clips': clips
+            'video_clips': clips,
+            'analysis_result': analysis
         }
     
     async def _extract_keyframes(
@@ -609,7 +628,20 @@ class UnifiedManualGenerator:
         logger.info(f"Extracting video clips from {video_uri}")
         
         try:
+            # Try multiple paths to get work_steps
             work_steps = analysis.get('work_steps', [])
+            
+            # If not found, try arguments.steps (from function call response)
+            if not work_steps and 'arguments' in analysis:
+                work_steps = analysis['arguments'].get('steps', [])
+            
+            # If still not found, try expert_analysis or novice_analysis (for comparison mode)
+            if not work_steps:
+                if 'expert_analysis' in analysis:
+                    work_steps = analysis['expert_analysis'].get('work_steps', [])
+                    if not work_steps and 'arguments' in analysis['expert_analysis']:
+                        work_steps = analysis['expert_analysis']['arguments'].get('steps', [])
+            
             if not work_steps:
                 logger.warning("No work steps found for clip extraction")
                 return []

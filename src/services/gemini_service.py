@@ -647,6 +647,16 @@ class GeminiUnifiedService:
         
         result = self._parse_function_call_response(response)
         logger.info(f"{skill_level}動画の分析が完了")
+        
+        # Transform result to include work_steps at top level for compatibility
+        if result.get('function_name') == 'extract_work_steps' and 'arguments' in result:
+            args = result['arguments']
+            # Add work_steps from arguments.steps for subtitle generation compatibility
+            result['work_steps'] = args.get('steps', [])
+            result['work_title'] = args.get('work_title', '')
+            result['estimated_time'] = args.get('estimated_time')
+            result['skill_level'] = args.get('skill_level', 'intermediate')
+        
         return result
     
     async def _load_local_video(self, video_path: str) -> Part:
