@@ -60,6 +60,9 @@ kantan-ai-manual-generator/
 - **クラウド直接アップロード**: Google Cloud Storage への直接アップロード
 - **リアルタイムプレビュー**: 署名付きURLによる安全な動画プレビュー
 - **対応形式**: MP4, AVI, MOV, MKV, WebM（最大2GB）
+- **🆕 自動動画最適化**: H.264圧縮、Web再生最適化（50-80%サイズ削減）
+- **🆕 HLS適応ストリーミング**: 複数画質対応、回線速度に応じた自動切り替え
+- **🆕 CDN統合**: キャッシュ最適化、高速配信（2回目以降10-50倍高速）
 
 ### 2. 🤖 AI マニュアル生成
 - **Gemini AI 統合**: Google Gemini 2.5 Flash / 2.5 Pro
@@ -99,6 +102,11 @@ kantan-ai-manual-generator/
 ### フロントエンド
 - **HTML5/CSS3**: セマンティックマークアップ、Flexboxレイアウト
 - **Vanilla JavaScript**: 軽量実装、Fetch API
+- **HLS.js**: 適応的ビットレートストリーミング（Safari native HLS対応）
+
+### 動画処理
+- **FFmpeg**: 動画圧縮、形式変換、HLS生成
+- **H.264/AAC**: 高互換性コーデック
 - **Material Design**: 配色・アイコン
 
 ### インフラ
@@ -208,6 +216,7 @@ User {
 - Google Cloud Project（Vertex AI, Cloud Storage有効）
 - Google Cloud 認証情報（サービスアカウントキー）
 - Docker + Docker Compose（本番デプロイ時）
+- **FFmpeg**（動画最適化・HLS生成に必須）
 
 ### 1. リポジトリクローン
 ```bash
@@ -221,7 +230,39 @@ cd manual_generator
 pip install -r requirements.txt
 ```
 
-### 3. Google Cloud 設定
+### 3. FFmpeg インストール
+
+**Windows**:
+```powershell
+# Chocolateyを使用（推奨）
+choco install ffmpeg
+
+# 確認
+ffmpeg -version
+```
+
+**Linux**:
+```bash
+# Ubuntu/Debian
+sudo apt-get update && sudo apt-get install -y ffmpeg
+
+# CentOS/RHEL
+sudo yum install -y ffmpeg
+
+# 確認
+ffmpeg -version
+```
+
+**macOS**:
+```bash
+# Homebrewを使用
+brew install ffmpeg
+
+# 確認
+ffmpeg -version
+```
+
+### 4. Google Cloud 設定
 
 #### 認証ファイル配置
 ```bash
@@ -272,6 +313,13 @@ GCS_BUCKET_NAME="your-gcs-bucket-name"
 # ============================================
 # Generate with: python -c "import secrets; print(secrets.token_hex(32))"
 SECRET_KEY="your-random-secret-key-here"
+
+# ============================================
+# オプション: 動画最適化設定
+# ============================================
+ENABLE_VIDEO_OPTIMIZATION="true"
+VIDEO_OPTIMIZATION_QUALITY="720p"
+ENABLE_HLS_GENERATION="true"
 ```
 
 **セキュリティ上の重要なポイント**:

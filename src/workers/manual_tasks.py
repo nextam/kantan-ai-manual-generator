@@ -141,79 +141,85 @@ def process_manual_generation_task(self, job_id):
             manual.content = manual_content
             manual.generation_status = 'completed'
             
-            # Extract and save images from frame_data
-            # IMPORTANT: Parse content string back to dict for image extraction
-            content_dict = None
+            # Extract and save images from manual_content_result
+            # PRIORITY 1: Check if extracted_images is directly in the result
+            extracted_images = None
             
-            # Try to parse manual_content (which is stored as string)
-            if isinstance(manual_content, str):
-                try:
-                    import ast
-                    content_dict = ast.literal_eval(manual_content)
-                    logger.debug(f"Successfully parsed manual_content as Python dict")
-                except Exception as parse_error:
-                    logger.warning(f"Failed to parse manual_content: {parse_error}")
-            elif isinstance(manual_content, dict):
-                content_dict = manual_content
-            
-            # If parsing failed, try manual_content_result (original dict)
-            if not content_dict and isinstance(manual_content_result, dict):
-                content_dict = manual_content_result
-            
-            # Extract images from parsed content
-            analysis = None
-            steps_data = None
-            
-            if content_dict and 'analysis_result' in content_dict:
-                analysis = content_dict['analysis_result']
-            elif content_dict and 'analysis' in content_dict:
-                analysis = content_dict['analysis']
-            
-            if analysis and isinstance(analysis, dict):
-                # Try multiple paths to get steps
-                steps_data = analysis.get('steps')
-                if not steps_data:
-                    steps_data = analysis.get('work_steps')
-                if not steps_data and 'arguments' in analysis:
-                    steps_data = analysis['arguments'].get('steps')
-                if not steps_data and 'expert_analysis' in analysis:
-                    expert_analysis = analysis['expert_analysis']
-                    steps_data = expert_analysis.get('steps') or expert_analysis.get('work_steps')
-                    if not steps_data and 'arguments' in expert_analysis:
-                        steps_data = expert_analysis['arguments'].get('steps')
-            
-            if steps_data and isinstance(steps_data, list):
-                extracted_images = []
-                
-                for step in steps_data:
-                    frame_data = step.get('frame_data')
-                    if frame_data and isinstance(frame_data, dict):
-                        image_base64 = frame_data.get('image_base64')
-                        if image_base64:
-                            # Create image entry for extracted_images field
+            if isinstance(manual_content_result, dict):
+                # Check for extracted_images at top level (from UnifiedManualGenerator)
+                if 'extracted_images' in manual_content_result:
+                    raw_images = manual_content_result['extracted_images']
+                    if raw_images and isinstance(raw_images, list):
+                        extracted_images = []
+                        for img in raw_images:
+                            # UnifiedManualGenerator returns: step_number, step_title, timestamp, timestamp_formatted, image_uri, image_base64
                             image_entry = {
-                                'step_number': step.get('step_number'),
-                                'step_title': step.get('title', f"Step {step.get('step_number')}"),
-                                'timestamp': frame_data.get('timestamp', 0),
-                                'timestamp_formatted': f"{frame_data.get('timestamp', 0):.1f}s",
-                                'image': f"data:image/jpeg;base64,{image_base64}",
-                                'format': frame_data.get('format', 'jpeg'),
-                                'shape': frame_data.get('shape')
+                                'step_number': img.get('step_number'),
+                                'step_title': img.get('step_title', f"Step {img.get('step_number')}"),
+                                'timestamp': img.get('timestamp', 0),
+                                'timestamp_formatted': img.get('timestamp_formatted', f"{img.get('timestamp', 0):.1f}s"),
+                                'gcs_uri': img.get('image_uri'),  # GCS URI for backend
+                                'image': f"data:image/jpeg;base64,{img['image_base64']}" if 'image_base64' in img else None,  # Base64 for frontend
+                                'filename': img.get('filename', f"keyframe_{img.get('step_number')}.jpg")
                             }
                             extracted_images.append(image_entry)
-                            logger.info(f"Extracted image for step {step.get('step_number')}: {len(image_base64)} bytes")
+                        logger.info(f"Found {len(extracted_images)} images in 'extracted_images' field (text_with_images mode)")
                 
-                # Save extracted images to database
-                if extracted_images:
-                    manual.set_extracted_images(extracted_images)
-                    logger.info(f"Saved {len(extracted_images)} extracted images for manual {manual_id}")
-                else:
-                    logger.warning(f"No images extracted for manual {manual_id} (no image_base64 found in steps)")
+                # PRIORITY 2: Fallback - check analysis_result.steps with frame_data (legacy compatibility)
+                if not extracted_images:
+                    logger.info("No 'extracted_images' field found, checking analysis_result.steps for frame_data")
+                    
+                    # Parse content string back to dict if needed
+                    content_dict = None
+                    if isinstance(manual_content, str):
+                        try:
+                            import ast
+                            content_dict = ast.literal_eval(manual_content)
+                        except:
+                            pass
+                    elif isinstance(manual_content, dict):
+                        content_dict = manual_content
+                    
+                    if not content_dict:
+                        content_dict = manual_content_result
+                    
+                    # Extract images from analysis.steps.frame_data
+                    analysis = content_dict.get('analysis_result') or content_dict.get('analysis')
+                    
+                    if analysis and isinstance(analysis, dict):
+                        steps_data = analysis.get('steps') or analysis.get('work_steps')
+                        if not steps_data and 'expert_analysis' in analysis:
+                            expert_analysis = analysis['expert_analysis']
+                            steps_data = expert_analysis.get('steps') or expert_analysis.get('work_steps')
+                        
+                        if steps_data and isinstance(steps_data, list):
+                            extracted_images = []
+                            for step in steps_data:
+                                frame_data = step.get('frame_data')
+                                if frame_data and isinstance(frame_data, dict):
+                                    image_base64 = frame_data.get('image_base64')
+                                    if image_base64:
+                                        image_entry = {
+                                            'step_number': step.get('step_number'),
+                                            'step_title': step.get('title', f"Step {step.get('step_number')}"),
+                                            'timestamp': frame_data.get('timestamp', 0),
+                                            'timestamp_formatted': f"{frame_data.get('timestamp', 0):.1f}s",
+                                            'image': f"data:image/jpeg;base64,{image_base64}",
+                                            'format': frame_data.get('format', 'jpeg'),
+                                            'shape': frame_data.get('shape')
+                                        }
+                                        extracted_images.append(image_entry)
+                            
+                            if extracted_images:
+                                logger.info(f"Found {len(extracted_images)} images in analysis.steps.frame_data (legacy mode)")
+            
+            # Save extracted images to database
+            if extracted_images and len(extracted_images) > 0:
+                manual.set_extracted_images(extracted_images)
+                logger.info(f"✅ Saved {len(extracted_images)} extracted images for manual {manual_id}")
             else:
-                if analysis:
-                    logger.warning(f"No valid steps found in analysis for manual {manual_id}. Analysis keys: {list(analysis.keys()) if isinstance(analysis, dict) else 'not a dict'}")
-                else:
-                    logger.warning(f"No analysis found in content for manual {manual_id}")
+                logger.warning(f"⚠️ No images extracted for manual {manual_id}. Output format: {manual.output_format}")
+                logger.warning(f"   manual_content_result keys: {list(manual_content_result.keys()) if isinstance(manual_content_result, dict) else 'not a dict'}")
             
             # Store RAG sources if used
             if use_rag and rag_context:

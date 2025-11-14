@@ -753,43 +753,16 @@
             // マークダウンをHTMLに変換して表示
             displayManualContent(contentToDisplay, 'manual-text');
             
-            // output_formatが'text_with_images'の場合、画像を表示
+            // Note: text_with_images format already has images embedded in HTML content
+            // No need to add images separately - they are inserted by unified_manual_generator.py
             console.log('=== 画像表示チェック ===');
             console.log('output_format:', manual.output_format);
             console.log('extracted_images:', manual.extracted_images);
             
             if (manual.output_format === 'text_with_images' && manual.extracted_images && manual.extracted_images.length > 0) {
-                console.log('画像を追加表示:', manual.extracted_images.length, '個');
-                
-                // 画像セクションを作成
-                const manualTextContainer = document.getElementById('manual-text');
-                if (manualTextContainer) {
-                    let imagesHtml = '<div class="images-grid" style="margin-top: 30px;">';
-                    imagesHtml += '<h2>抽出された画像</h2>';
-                    
-                    manual.extracted_images.forEach((img, idx) => {
-                        const imageData = img.image || img.image_uri;
-                        console.log(`画像 ${idx + 1}:`, imageData ? imageData.substring(0, 50) + '...' : 'データなし');
-                        
-                        imagesHtml += `
-                            <div class="image-item">
-                                <img src="${imageData}" alt="${img.step_title || 'Step ' + img.step_number}" class="img-fluid" loading="lazy">
-                                <div class="caption">
-                                    <strong>${img.step_title || 'Step ' + img.step_number}</strong><br>
-                                    ${img.timestamp_formatted || (img.timestamp + 's')}
-                                </div>
-                            </div>
-                        `;
-                    });
-                    
-                    imagesHtml += '</div>';
-                    
-                    // コンテンツの後に画像を追加
-                    manualTextContainer.insertAdjacentHTML('beforeend', imagesHtml);
-                    console.log('画像HTMLを挿入完了');
-                } else {
-                    console.error('manual-text container not found');
-                }
+                console.log('画像は既にHTML内に埋め込まれています:', manual.extracted_images.length, '個');
+                // Images are already embedded in the content HTML by the backend
+                // No additional processing needed here
             } else {
                 console.log('画像表示スキップ - 条件不一致');
             }
@@ -1211,6 +1184,13 @@
                         'Content-Type': 'application/json'
                     }
                 });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const formats = data.formats || [];
 
                 const currentFormat = '{{ manual.output_format or "text_with_images" }}';
                 

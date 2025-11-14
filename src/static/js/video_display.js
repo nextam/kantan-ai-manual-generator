@@ -1,8 +1,8 @@
 /**
  * File: video_display.js
- * Purpose: Video display and clip playback functionality for manual detail page
- * Main functionality: Display source videos, support video clip playback with time ranges
- * Dependencies: None (vanilla JavaScript)
+ * Purpose: Video display and clip playback functionality for manual detail page with HLS support
+ * Main functionality: Display source videos, support video clip playback with time ranges, HLS adaptive streaming
+ * Dependencies: HLS.js (loaded from CDN)
  */
 
 class VideoDisplay {
@@ -10,6 +10,135 @@ class VideoDisplay {
         this.videoSection = null;
         this.videoGrid = null;
         this.currentManual = null;
+        this.hlsInstances = new Map(); // Track HLS instances for cleanup
+        this.hlsLoaded = false;
+        this._loadHlsLibrary();
+    }
+    
+    /**
+     * Load HLS.js library from CDN
+     */
+    _loadHlsLibrary() {
+        if (window.Hls) {
+            this.hlsLoaded = true;
+            console.log('HLS.js already loaded');
+            return;
+        }
+        
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
+        script.onload = () => {
+            this.hlsLoaded = true;
+            console.log('HLS.js loaded successfully');
+        };
+        script.onerror = () => {
+            console.error('Failed to load HLS.js');
+        };
+        document.head.appendChild(script);
+    }
+    
+    /**
+     * Check if URL is HLS manifest
+     */
+    _isHlsUrl(url) {
+        return url && (url.endsWith('.m3u8') || url.includes('master.m3u8'));
+    }
+    
+    /**
+     * Setup video player with HLS support
+     */
+    _setupVideoPlayer(videoElement, videoUrl) {
+        if (!videoUrl) {
+            console.error('No video URL provided');
+            return false;
+        }
+        
+        const videoId = videoElement.id || `video_${Date.now()}`;
+        videoElement.id = videoId;
+        
+        // Clean up existing HLS instance if any
+        this._cleanupHlsInstance(videoId);
+        
+        // Check if HLS
+        if (this._isHlsUrl(videoUrl)) {
+            return this._setupHlsPlayer(videoElement, videoUrl, videoId);
+        } else {
+            // Regular MP4 video
+            videoElement.src = videoUrl;
+            return true;
+        }
+    }
+    
+    /**
+     * Setup HLS player
+     */
+    _setupHlsPlayer(videoElement, hlsUrl, videoId) {
+        // Safari native HLS support
+        if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+            console.log('Using native HLS support (Safari)');
+            videoElement.src = hlsUrl;
+            return true;
+        }
+        
+        // HLS.js for other browsers
+        if (window.Hls && Hls.isSupported()) {
+            console.log('Using HLS.js for:', videoId);
+            
+            const hls = new Hls({
+                enableWorker: true,
+                lowLatencyMode: false,
+                backBufferLength: 90
+            });
+            
+            hls.loadSource(hlsUrl);
+            hls.attachMedia(videoElement);
+            
+            // Event listeners
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                console.log('HLS manifest loaded, qualities:', hls.levels.length);
+            });
+            
+            hls.on(Hls.Events.ERROR, (event, data) => {
+                if (data.fatal) {
+                    console.error('Fatal HLS error:', data);
+                    switch (data.type) {
+                        case Hls.ErrorTypes.NETWORK_ERROR:
+                            console.error('Network error, trying to recover...');
+                            hls.startLoad();
+                            break;
+                        case Hls.ErrorTypes.MEDIA_ERROR:
+                            console.error('Media error, trying to recover...');
+                            hls.recoverMediaError();
+                            break;
+                        default:
+                            console.error('Unrecoverable error, destroying HLS instance');
+                            hls.destroy();
+                            break;
+                    }
+                }
+            });
+            
+            // Store instance for cleanup
+            this.hlsInstances.set(videoId, hls);
+            
+            return true;
+        }
+        
+        console.warn('HLS not supported, falling back to src');
+        videoElement.src = hlsUrl;
+        return false;
+    }
+    
+    /**
+     * Cleanup HLS instances
+     */
+    _cleanupHlsInstance(videoId) {
+        if (this.hlsInstances.has(videoId)) {
+            const hls = this.hlsInstances.get(videoId);
+            hls.destroy();
+            this.hlsInstances.delete(videoId);
+            console.log(`HLS instance cleaned up: ${videoId}`);
+        }
     }
 
     /**
@@ -49,11 +178,11 @@ class VideoDisplay {
                 ? '<span class="material-icons" style="font-size: 20px; vertical-align: middle; margin-right: 5px;">star</span>熟練者動画'
                 : (hideNoviceLabel ? '' : '<span class="material-icons" style="font-size: 20px; vertical-align: middle; margin-right: 5px;">school</span>非熟練者動画');
 
+            const videoId = `source-video-${video.file_id}`;
             videosHtml += `
                 <div class="video-item">
                     ${hideNoviceLabel ? '' : `<div class="video-label ${labelClass}">${labelText}</div>`}
-                    <video controls id="source-video-${video.file_id}" data-video-id="${video.file_id}">
-                        <source src="${video.url}" type="video/mp4">
+                    <video controls id="${videoId}" data-video-id="${video.file_id}" data-video-url="${video.url}">
                         お使いのブラウザは動画タグをサポートしていません。
                     </video>
                     <div style="margin-top: 10px; font-size: 14px; color: #666;">
@@ -65,6 +194,17 @@ class VideoDisplay {
         });
 
         this.videoGrid.innerHTML = videosHtml;
+        
+        // Setup HLS for each video after DOM insertion
+        videos.forEach(video => {
+            if (video.url) {
+                const videoId = `source-video-${video.file_id}`;
+                const videoElement = document.getElementById(videoId);
+                if (videoElement) {
+                    this._setupVideoPlayer(videoElement, video.url);
+                }
+            }
+        });
         
         if (manualType === 'manual_with_images') {
             this.videoGrid.querySelectorAll('.video-item').forEach(item => {
@@ -144,6 +284,17 @@ class VideoDisplay {
         });
 
         clipsGrid.innerHTML = clipsHtml;
+        
+        // Setup HLS for each clip video after DOM insertion
+        clips.forEach((clip, index) => {
+            const clipId = `video-clip-${index}`;
+            const videoElement = document.getElementById(clipId);
+            if (videoElement) {
+                const videoUrl = clip.video_uri || sourceVideoUrl;
+                this._setupVideoPlayer(videoElement, videoUrl);
+            }
+        });
+        
         clipsSection.style.display = 'block';
 
         // Setup clip playback handlers

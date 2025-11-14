@@ -713,39 +713,81 @@ class UnifiedManualGenerator:
             return html_content
         
         try:
-            # Insert images after step headings
+            # Insert images after step headings in the procedure section
             import re
             
-            for img in images:
+            # First, find the procedure section (作業手順)
+            procedure_patterns = [
+                r'<h2[^>]*>.*?作業手順.*?</h2>',
+                r'<h2[^>]*>.*?手順.*?</h2>',
+                r'<h2[^>]*>.*?Procedure.*?</h2>',
+                r'<h2[^>]*>.*?Steps.*?</h2>'
+            ]
+            
+            procedure_start = -1
+            for pattern in procedure_patterns:
+                match = re.search(pattern, html_content, re.IGNORECASE)
+                if match:
+                    procedure_start = match.start()
+                    logger.debug(f"Found procedure section at position {procedure_start}")
+                    break
+            
+            if procedure_start == -1:
+                logger.warning("Could not find procedure section (作業手順), inserting images after any matching heading")
+                search_content = html_content
+                search_offset = 0
+            else:
+                # Search only within procedure section and after
+                search_content = html_content[procedure_start:]
+                search_offset = procedure_start
+            
+            # Sort images by step_number to insert in correct order
+            sorted_images = sorted(images, key=lambda x: x.get('step_number', 0), reverse=True)
+            
+            for img in sorted_images:
                 step_num = img.get('step_number', 0)
                 step_title = img.get('step_title', '')
-                image_uri = img.get('image_uri', '')
                 timestamp = img.get('timestamp_formatted', '')
                 
-                # Create image HTML
+                # Use base64 data URI for embedded images (works in browser without server routes)
+                image_base64 = img.get('image_base64', '')
+                if image_base64:
+                    # Create data URI
+                    image_src = f"data:image/jpeg;base64,{image_base64}"
+                else:
+                    # Fallback to GCS URI (may not work in browser without proxy)
+                    image_src = img.get('image_uri', '')
+                    logger.warning(f"No base64 data for step {step_num}, using GCS URI (may not display)")
+                
+                # Create image HTML with better styling
                 img_html = f'''
-                <div class="step-image" data-step="{step_num}">
-                    <img src="{image_uri}" alt="{step_title}" class="img-fluid" />
-                    <div class="image-caption">図{step_num}: {step_title} ({timestamp})</div>
+                <div class="step-image" data-step="{step_num}" style="margin: 20px 0; text-align: center;">
+                    <img src="{image_src}" alt="{step_title}" class="img-fluid" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; padding: 5px;" />
+                    <div class="image-caption" style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                        <strong>図{step_num}:</strong> {step_title} <span style="color: #999;">({timestamp})</span>
+                    </div>
                 </div>
                 '''
                 
-                # Find step heading and insert image after it
-                # Look for h3 or h4 tags containing step number or title
-                pattern = rf'(<h[34][^>]*>.*?{re.escape(str(step_num))}.*?</h[34]>)'
-                match = re.search(pattern, html_content, re.IGNORECASE)
+                # Find step heading in procedure section
+                # Match h3 tags with step number at the beginning (e.g., "1. ", "2. ", "3. ")
+                pattern = rf'(<h3[^>]*>\s*{re.escape(str(step_num))}\.\s+.*?</h3>)'
+                match = re.search(pattern, search_content, re.IGNORECASE)
                 
                 if match:
-                    # Insert after the heading
-                    insert_pos = match.end()
+                    # Calculate absolute position in original content
+                    insert_pos = search_offset + match.end()
                     html_content = (
                         html_content[:insert_pos] + 
                         img_html + 
                         html_content[insert_pos:]
                     )
+                    logger.debug(f"Inserted image for step {step_num} at position {insert_pos}")
+                    
+                    # Update offsets for subsequent insertions (we're inserting in reverse order)
+                    search_offset += len(img_html)
                 else:
-                    # Fallback: append to end of content
-                    logger.debug(f"Could not find heading for step {step_num}, appending image")
+                    logger.warning(f"Could not find heading for step {step_num} in procedure section")
             
             return html_content
             
