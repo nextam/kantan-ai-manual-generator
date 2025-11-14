@@ -455,6 +455,9 @@ def update_template(template_id):
     
     data = request.json if request.is_json else {}
     
+    logger.info(f"[UPDATE TEMPLATE] Received data for template {template_id}")
+    logger.info(f"[UPDATE TEMPLATE] Keys in request: {list(data.keys())}")
+    
     try:
         if 'name' in data:
             name = data['name'].strip()
@@ -474,8 +477,30 @@ def update_template(template_id):
             template.description = data['description'].strip()
         
         if 'template_content' in data:
+            logger.info(f"[UPDATE TEMPLATE] template_content type: {type(data['template_content'])}")
+            if isinstance(data['template_content'], dict) and 'sections' in data['template_content']:
+                sections = data['template_content']['sections']
+                logger.info(f"[UPDATE TEMPLATE] Number of sections: {len(sections)}")
+                for i, section in enumerate(sections):
+                    prompt_len = len(section.get('custom_prompt', ''))
+                    logger.info(f"[UPDATE TEMPLATE] Section {i} ({section.get('title')}): custom_prompt length = {prompt_len}")
+                    if prompt_len > 0:
+                        logger.info(f"[UPDATE TEMPLATE]   First 100 chars: {section.get('custom_prompt', '')[:100]}")
+        
+        if 'template_content' in data:
             template_content = data['template_content']
-            template.template_content = json.dumps(template_content) if isinstance(template_content, dict) else template_content
+            # Always serialize as JSON string - database stores it as text
+            if isinstance(template_content, (dict, list)):
+                template.template_content = json.dumps(template_content)
+            elif isinstance(template_content, str):
+                # Validate it's valid JSON if already string
+                try:
+                    json.loads(template_content)
+                    template.template_content = template_content
+                except json.JSONDecodeError:
+                    return jsonify({'error': 'Invalid JSON in template_content'}), 400
+            else:
+                return jsonify({'error': 'template_content must be JSON object, array, or valid JSON string'}), 400
         
         if 'is_default' in data:
             is_default = bool(data['is_default'])
@@ -533,6 +558,42 @@ def delete_template(template_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Failed to delete template: {str(e)}'}), 500
+
+
+@company_bp.route('/templates/<int:template_id>/set-default', methods=['POST'])
+@require_company_admin
+@log_activity('set_default_template', 'Set default template', 'template', 'template_id')
+def set_default_template(template_id):
+    """Set a template as the default for the company"""
+    template = ManualTemplate.query.filter_by(
+        id=template_id,
+        company_id=g.company_id,
+        is_active=True
+    ).first()
+    
+    if not template:
+        return jsonify({'error': 'Template not found or not in your company'}), 404
+    
+    try:
+        # Unset all other default templates for this company
+        ManualTemplate.query.filter_by(
+            company_id=g.company_id,
+            is_active=True
+        ).update({'is_default': False})
+        
+        # Set this template as default
+        template.is_default = True
+        template.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Default template set successfully',
+            'template_id': template_id
+        }), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to set default template: {str(e)}'}), 500
 
 
 @company_bp.route('/dashboard', methods=['GET'])
@@ -639,7 +700,7 @@ def get_company_dashboard():
         return jsonify({
             'success': True,
             'company_name': company.name,
-            'statistics': stats,
+            'stats': stats,  # Changed from 'statistics' to 'stats' to match frontend
             'recent_activity': activity_list
         }), 200
     
@@ -661,6 +722,8 @@ def preview_template(template_id):
     Preview template structure
     Returns template content with sample data filled in
     """
+    from flask import render_template
+    
     template = ManualTemplate.query.filter_by(
         id=template_id,
         company_id=g.company_id,
@@ -679,20 +742,20 @@ def preview_template(template_id):
     preview_data = {
         'template_id': template.id,
         'template_name': template.name,
+        'template_type': 'Standard',  # Default type since template_type field doesn't exist in model
+        'description': template.description,
         'template_structure': template_content,
         'sample_output': {
             'title': 'Sample Manual Title',
             'sections': [
                 {
-                    'section_name': 'Introduction',
-                    'content': 'This is a sample introduction section based on the template structure.'
-                },
-                {
-                    'section_name': 'Main Content',
-                    'content': 'This is the main content section.'
+                    'section_name': section.get('title', f"Section {i+1}"),
+                    'content': f"This is sample content for {section.get('title', f'Section {i+1}')}."
                 }
+                for i, section in enumerate(template_content.get('sections', []))
             ]
         }
     }
     
-    return jsonify(preview_data), 200
+    # Render HTML template for preview
+    return render_template('template_preview.html', preview=preview_data)

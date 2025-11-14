@@ -125,7 +125,7 @@
         </div>
         <button class="btn-create" onclick="createUser()">
             <span class="material-icons" style="vertical-align: middle; font-size: 18px;">person_add</span>
-            Invite User
+            新規追加
         </button>
     </div>
     
@@ -137,11 +137,11 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Username</th>
+                        <th>ユーザー名</th>
                         <th>Email</th>
-                        <th>Role</th>
-                        <th>Last Login</th>
-                        <th>Actions</th>
+                        <th>権限</th>
+                        <th>最終ログイン</th>
+                        <th>操作</th>
                     </tr>
                 </thead>
                 <tbody id="usersTableBody">
@@ -192,11 +192,57 @@
     }
     
     function createUser() {
-        alert('Invite user functionality - to be implemented');
+        // Show modal or redirect to user creation form
+        const username = prompt('Enter username:');
+        if (!username) return;
+        
+        const email = prompt('Enter email:');
+        if (!email) return;
+        
+        const role = confirm('Should this user be an admin?') ? 'admin' : 'user';
+        
+        fetch('/api/company/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, role })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(`Error: ${data.error}`);
+            } else {
+                alert('User created successfully');
+                loadUsers();
+            }
+        })
+        .catch(error => {
+            alert('Error creating user');
+            console.error(error);
+        });
     }
     
     function editUser(userId) {
-        alert(`Edit user: ${userId}`);
+        // Show modal or redirect to user edit form
+        const newRole = confirm('Set as admin? (Cancel for user role)') ? 'admin' : 'user';
+        
+        fetch(`/api/company/users/${userId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: newRole })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(`Error: ${data.error}`);
+            } else {
+                alert('User updated successfully');
+                loadUsers();
+            }
+        })
+        .catch(error => {
+            alert('Error updating user');
+            console.error(error);
+        });
     }
     
     async function deleteUser(userId) {

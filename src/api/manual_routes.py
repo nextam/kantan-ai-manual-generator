@@ -25,8 +25,17 @@ logger = logging.getLogger(__name__)
 
 manual_bp = Blueprint('manual_api', __name__, url_prefix='/api/manuals')
 
-# Initialize file manager
-file_manager = FileManager()
+# Initialize file manager with GCS storage (both development and production)
+# GCS credentials are configured via GOOGLE_APPLICATION_CREDENTIALS env variable
+# Bucket is auto-selected based on ENVIRONMENT: development → -dev, production → -live
+file_manager = FileManager(
+    storage_type=os.getenv('STORAGE_TYPE', 'gcs'),
+    storage_config={
+        'bucket_name': os.getenv('GCS_BUCKET_NAME', 'kantan-ai-manual-generator-dev'),
+        'project_id': os.getenv('PROJECT_ID', 'kantan-ai-database'),
+        'credentials_path': os.getenv('GOOGLE_APPLICATION_CREDENTIALS', 'gcp-credentials.json')
+    }
+)
 
 # Allowed video formats
 ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'webm', 'mkv', 'flv', 'wmv', 'mpeg', 'mpg', '3gp'}
@@ -122,7 +131,8 @@ def upload_video_file():
             file_obj=file,
             filename=filename,
             file_type='video',
-            folder=folder
+            folder=folder,
+            company_id=company_id
         )
         
         logger.info(f"Upload result: {result}")
@@ -446,23 +456,20 @@ def generate_manual_with_rag():
         
         logger.info(f"Authenticated user: ID={user_id}, Company={company_id}")
         
-        # Get template IDs (default to all active templates if not specified)
+        # Get template IDs (support both template_id and template_ids)
         template_ids = data.get('template_ids', [])
         
+        # If template_ids not provided, check for single template_id
         if not template_ids:
-            # Use default template or company's default template
-            default_template = ManualTemplate.query.filter(
-                (ManualTemplate.company_id == company_id) | (ManualTemplate.company_id == None),
-                ManualTemplate.is_default == True,
-                ManualTemplate.is_active == True
-            ).first()
-            
-            if default_template:
-                template_ids = [default_template.id]
-            else:
-                return jsonify({
-                    'error': 'No templates specified and no default template found'
-                }), 400
+            single_template_id = data.get('template_id')
+            if single_template_id:
+                template_ids = [single_template_id]
+        
+        if not template_ids:
+            # No templates specified - return error since templates are now required
+            return jsonify({
+                'error': 'Template selection is required. Please select a template.'
+            }), 400
         
         # Validate templates
         templates = ManualTemplate.query.filter(
@@ -570,8 +577,14 @@ def generate_manual_with_rag():
                 template_content = {**template_content, **data['template_override']}
             
             # Create manual record
+            # Only append template name if multiple templates are used
+            if len(templates) > 1:
+                manual_title = f"{data['title']} - {template.name}"
+            else:
+                manual_title = data['title']
+            
             manual = Manual(
-                title=f"{data['title']} - {template.name}",
+                title=manual_title,
                 company_id=company_id,
                 created_by=user_id,
                 video_uri=data['video_uri'],
@@ -587,7 +600,8 @@ def generate_manual_with_rag():
                 'custom_prompt': data.get('custom_prompt'),
                 'detail_level': template_content.get('content_structure', {}).get('detail_level', 'normal'),
                 'writing_style': template_content.get('content_structure', {}).get('writing_style', 'formal'),
-                'sections': template_content.get('content_structure', {}).get('sections', [])
+                'sections': template_content.get('sections', []),
+                'template_description': template.description or ''
             })
             
             db.session.add(manual)

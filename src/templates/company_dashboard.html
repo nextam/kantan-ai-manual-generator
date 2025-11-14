@@ -235,12 +235,6 @@
 {% endblock %}
 
 {% block content %}
-                    ログアウト
-                </a>
-            </div>
-        </div>
-    </div>
-
     <div class="container">
         <!-- Statistics Grid -->
         <div class="dashboard-grid">
@@ -294,7 +288,7 @@
             <div class="card">
                 <h3><span class="material-icons">speed</span>クイックアクション</h3>
                 <div class="action-buttons">
-                    <a href="/manual/create" class="btn btn-primary">
+                    <a href="/manuals/create" class="btn btn-primary">
                         <span class="material-icons">add</span>
                         新規マニュアル作成
                     </a>
@@ -302,11 +296,11 @@
                         <span class="material-icons">upload_file</span>
                         資料アップロード
                     </a>
-                    <a href="/templates" class="btn btn-info">
+                    <a href="/company/templates" class="btn btn-info">
                         <span class="material-icons">description</span>
                         テンプレート管理
                     </a>
-                    <a href="/users" class="btn btn-warning">
+                    <a href="/company/users" class="btn btn-warning">
                         <span class="material-icons">people</span>
                         ユーザー管理
                     </a>
@@ -318,7 +312,7 @@
         <div class="card" style="margin-bottom: 30px;">
             <h3><span class="material-icons">link</span>主要機能へのアクセス</h3>
             <div class="quick-links">
-                <a href="/manuals" class="quick-link">
+                <a href="/manual/list" class="quick-link">
                     <span class="material-icons">menu_book</span>
                     <span>マニュアル一覧</span>
                 </a>
@@ -326,29 +320,29 @@
                     <span class="material-icons">folder</span>
                     <span>参照資料</span>
                 </a>
-                <a href="/templates" class="quick-link">
+                <a href="/company/templates" class="quick-link">
                     <span class="material-icons">description</span>
                     <span>テンプレート</span>
                 </a>
-                <a href="/translations" class="quick-link">
+                <a href="#" class="quick-link" style="opacity: 0.5; pointer-events: none;">
                     <span class="material-icons">translate</span>
-                    <span>翻訳管理</span>
+                    <span>翻訳管理 (未実装)</span>
                 </a>
-                <a href="/pdfs" class="quick-link">
+                <a href="#" class="quick-link" style="opacity: 0.5; pointer-events: none;">
                     <span class="material-icons">picture_as_pdf</span>
-                    <span>PDF管理</span>
+                    <span>PDF管理 (未実装)</span>
                 </a>
-                <a href="/users" class="quick-link">
+                <a href="/company/users" class="quick-link">
                     <span class="material-icons">people</span>
                     <span>ユーザー管理</span>
                 </a>
-                <a href="/activity-logs" class="quick-link">
+                <a href="#" class="quick-link" style="opacity: 0.5; pointer-events: none;">
                     <span class="material-icons">history</span>
-                    <span>活動ログ</span>
+                    <span>活動ログ (未実装)</span>
                 </a>
-                <a href="/settings" class="quick-link">
+                <a href="#" class="quick-link" style="opacity: 0.5; pointer-events: none;">
                     <span class="material-icons">settings</span>
-                    <span>設定</span>
+                    <span>設定 (未実装)</span>
                 </a>
             </div>
         </div>

@@ -53,7 +53,7 @@
         {% endif %}
 
         <!-- Company Admin Menu -->
-        {% if session.get('company_id') and session.get('user_role') == 'admin' %}
+        {% if session.get('company_id') and (session.get('user_role') == 'admin' or session.get('user_role') == 'super_admin' or session.get('is_super_admin')) %}
             <div class="menu-section">
                 <div class="menu-section-title">企業管理者</div>
                 <a href="/company/dashboard" class="menu-item">
@@ -81,7 +81,7 @@
                 </a>
                 <a href="/manuals/create" class="menu-item" style="background: rgba(76, 175, 80, 0.15); border-left: 3px solid #4caf50;">
                     <span class="material-icons">auto_awesome</span>
-                    <span>マニュアル作成（統一版）</span>
+                    <span>マニュアル作成</span>
                 </a>
                 <div style="padding: 8px 20px; font-size: 11px; color: rgba(255,255,255,0.5); border-top: 1px solid rgba(255,255,255,0.1); margin-top: 8px;">旧バージョン（非推奨）</div>
                 <a href="/manual/create" class="menu-item" style="opacity: 0.6;">

@@ -53,7 +53,18 @@ def process_manual_generation_task(self, job_id):
         
         # Parse job parameters
         params = json.loads(job.job_params) if job.job_params else {}
-        video_uri = params.get('video_uri')
+        
+        # Prefer manual.video_uri (GCS URI) over params video_uri (may be local path)
+        video_uri = manual.video_uri or params.get('video_uri')
+        
+        if not video_uri:
+            job.job_status = 'failed'
+            job.error_message = 'Video URI not found in manual record or job parameters'
+            db.session.commit()
+            return {'error': 'Video URI missing'}
+        
+        logger.info(f"Using video URI from manual record: {video_uri}")
+        
         template_content = params.get('template_content', {})
         rag_context = params.get('rag_context')
         use_rag = params.get('use_rag', False)
@@ -64,16 +75,34 @@ def process_manual_generation_task(self, job_id):
         db.session.commit()
         
         try:
-            from src.services.video_manual_generator import VideoManualGenerator
-            generator = VideoManualGenerator()
+            from src.services.unified_manual_generator import UnifiedManualGenerator
+            import asyncio
+            
+            generator = UnifiedManualGenerator()
             
             logger.info(f"Generating manual content for manual {manual_id}")
             logger.info(f"Video URI: {video_uri}")
             logger.info(f"RAG enabled: {use_rag}")
+            logger.info(f"Output format: {manual.output_format}")
             
-            # Generate manual using video manual generator
-            # video_uri is a local file path like: uploads\company_1\videos\xxx.MOV
-            manual_content_result = generator.generate_manual_data(video_uri)
+            # Get generation options from manual
+            generation_options = manual.get_generation_options()
+            logger.info(f"Generation options: {generation_options}")
+            
+            # Generate manual using unified manual generator with async support
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                manual_content_result = loop.run_until_complete(
+                    generator.generate_manual(
+                        videos=[{'uri': video_uri, 'type': 'primary'}],
+                        output_format=manual.output_format or 'text_with_images',
+                        generation_config=generation_options,
+                        rag_context=rag_context
+                    )
+                )
+            finally:
+                loop.close()
             
             # Extract content from result
             if isinstance(manual_content_result, dict):
@@ -111,6 +140,60 @@ def process_manual_generation_task(self, job_id):
             # Save manual content
             manual.content = manual_content
             manual.generation_status = 'completed'
+            
+            # Extract and save images from frame_data
+            # IMPORTANT: Parse content string back to dict for image extraction
+            content_dict = None
+            
+            # Try to parse manual_content (which is stored as string)
+            if isinstance(manual_content, str):
+                try:
+                    import ast
+                    content_dict = ast.literal_eval(manual_content)
+                    logger.debug(f"Successfully parsed manual_content as Python dict")
+                except Exception as parse_error:
+                    logger.warning(f"Failed to parse manual_content: {parse_error}")
+            elif isinstance(manual_content, dict):
+                content_dict = manual_content
+            
+            # If parsing failed, try manual_content_result (original dict)
+            if not content_dict and isinstance(manual_content_result, dict):
+                content_dict = manual_content_result
+            
+            # Extract images from parsed content
+            if content_dict and 'analysis_result' in content_dict:
+                analysis = content_dict['analysis_result']
+                if isinstance(analysis, dict) and 'steps' in analysis:
+                    extracted_images = []
+                    
+                    for step in analysis['steps']:
+                        frame_data = step.get('frame_data')
+                        if frame_data and isinstance(frame_data, dict):
+                            image_base64 = frame_data.get('image_base64')
+                            if image_base64:
+                                # Create image entry for extracted_images field
+                                image_entry = {
+                                    'step_number': step.get('step_number'),
+                                    'step_title': step.get('title', f"Step {step.get('step_number')}"),
+                                    'timestamp': frame_data.get('timestamp', 0),
+                                    'timestamp_formatted': f"{frame_data.get('timestamp', 0):.1f}s",
+                                    'image': f"data:image/jpeg;base64,{image_base64}",
+                                    'format': frame_data.get('format', 'jpeg'),
+                                    'shape': frame_data.get('shape')
+                                }
+                                extracted_images.append(image_entry)
+                                logger.info(f"Extracted image for step {step.get('step_number')}: {len(image_base64)} bytes")
+                    
+                    # Save extracted images to database
+                    if extracted_images:
+                        manual.set_extracted_images(extracted_images)
+                        logger.info(f"✅ Saved {len(extracted_images)} extracted images for manual {manual_id}")
+                    else:
+                        logger.warning(f"⚠️ No images extracted for manual {manual_id} (no image_base64 found in steps)")
+                else:
+                    logger.warning(f"⚠️ No valid steps in analysis_result for manual {manual_id}")
+            else:
+                logger.warning(f"⚠️ No analysis_result in content for manual {manual_id}")
             
             # Store RAG sources if used
             if use_rag and rag_context:

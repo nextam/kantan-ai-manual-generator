@@ -569,14 +569,18 @@ class GeminiUnifiedService:
         
         # URIの種類に応じて処理を分岐
         if video_uri.startswith('gs://'):
-            # GCS URI の場合
+            # GCS URI の場合 - Part.from_uri()を使用
+            logger.info(f"Using GCS URI for video analysis: {video_uri}")
             video_part = Part.from_uri(video_uri, mime_type='video/mp4')
         elif video_uri.startswith('http://') or video_uri.startswith('https://'):
             # HTTP URL の場合
+            logger.info(f"Using HTTP URL for video analysis: {video_uri}")
             video_part = Part.from_uri(video_uri, mime_type='video/mp4')
         else:
-            # ローカルファイルパスの場合、Base64エンコードして送信
-            video_part = await self._load_local_video(video_uri)
+            # ローカルファイルパスはサポートしない
+            error_msg = f"Local file paths are not supported. Please upload video to GCS first. Path: {video_uri}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         
         skill_level_ja = "熟練者" if skill_level == "expert" else "非熟練者"
         
@@ -697,8 +701,10 @@ class GeminiUnifiedService:
 
         logger.info(f"動画ファイル読み込み完了: {len(video_data)} bytes")
 
-        # Partオブジェクトを作成（bytesデータを直接使用）
-        part = Part.from_bytes(data=video_data, mime_type='video/mp4')
+        # Partオブジェクトを作成（新しいSDKではinline_dataを使用）
+        import base64
+        video_base64 = base64.b64encode(video_data).decode('utf-8')
+        part = Part(inline_data={'mime_type': 'video/mp4', 'data': video_base64})
         logger.info(f"Partオブジェクト作成完了 - サイズ: {len(video_data)} bytes, mime_type: video/mp4")
         return part
     
@@ -803,13 +809,13 @@ extract_document_data関数を呼び出して、構造化データとして出�
             logger.error(f"文書処理でエラーが発生: {document_path} - {str(e)}")
             raise e
     
-    async def generate_comprehensive_manual(
+    async def generate_comprehensive_manual_react(
         self, 
         analysis_data: Dict[str, Any], 
         output_config: Dict[str, Any]
     ) -> str:
         """
-        包括的マニュアル生成
+        ReAct形式での包括的マニュアル生成（推論を繰り返して精度向上）
         
         Args:
             analysis_data: 分析結果データ
@@ -818,7 +824,7 @@ extract_document_data関数を呼び出して、構造化データとして出�
         Returns:
             生成されたマニュアル内容
         """
-        logger.info("包括的マニュアル生成を開始")
+        logger.info("ReAct形式でのマニュアル生成を開始")
         
         # デフォルト設定
         config = {
@@ -831,6 +837,294 @@ extract_document_data関数を呼び出して、構造化データとして出�
             **output_config
         }
         
+        # Extract template requirements
+        template_description = config.get('template_description', '')
+        custom_prompt = config.get('custom_prompt', '')
+        sections_with_prompts = config.get('sections_with_prompts', [])
+        
+        logger.info(f"[REACT-INIT] Template description length: {len(template_description) if template_description else 0}")
+        logger.info(f"[REACT-INIT] Template description: {template_description[:300] if template_description else 'None'}")
+        logger.info(f"[REACT-INIT] Custom prompt: {custom_prompt[:200] if custom_prompt else 'None'}")
+        logger.info(f"[REACT-INIT] Sections count: {len(sections_with_prompts)}")
+        for idx, section in enumerate(sections_with_prompts):
+            logger.info(f"[REACT-INIT] Section {idx}: {section.get('title')} - Custom prompt length: {len(section.get('custom_prompt', ''))}")
+        
+        # Step 1: Planning phase - Define structure
+        planning_result = await self._react_planning_phase(analysis_data, config, sections_with_prompts)
+        
+        # Step 2: Generate each section iteratively
+        section_contents = {}
+        for section in sections_with_prompts:
+            section_id = section.get('id')
+            section_title = section.get('title')
+            section_prompt = section.get('custom_prompt', '')
+            
+            logger.info(f"Generating section: {section_title} (ID: {section_id})")
+            
+            section_content = await self._react_generate_section(
+                section_id=section_id,
+                section_title=section_title,
+                section_prompt=section_prompt,
+                analysis_data=analysis_data,
+                config=config,
+                planning=planning_result
+            )
+            
+            section_contents[section_id] = section_content
+        
+        # Step 3: Assemble final manual
+        final_manual = await self._react_assembly_phase(
+            section_contents=section_contents,
+            sections_with_prompts=sections_with_prompts,
+            template_description=template_description,
+            config=config
+        )
+        
+        logger.info("ReAct形式でのマニュアル生成が完了")
+        return final_manual
+    
+    async def _react_planning_phase(
+        self,
+        analysis_data: Dict[str, Any],
+        config: Dict[str, Any],
+        sections_with_prompts: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """ReAct Step 1: Plan the manual structure"""
+        
+        sections_info = "\n".join([
+            f"- {s.get('title')} (ID: {s.get('id')}): {s.get('custom_prompt', 'デフォルト')}"
+            for s in sections_with_prompts
+        ])
+        
+        planning_prompt = f"""
+あなたは製造業マニュアル作成の専門家です。以下の情報を基に、マニュアル構成を計画してください。
+
+# 動画分析結果の概要
+作業タイプ: {analysis_data.get('work_type', '不明')}
+主要ステップ数: {len(analysis_data.get('steps', []))}
+
+# 要求されるセクション構成
+{sections_info}
+
+# タスク
+各セクションに含めるべき具体的な内容を箇条書きで計画してください。
+動画分析結果から得られた情報をどのセクションに配置するか明確にしてください。
+
+出力形式（JSON）:
+{{
+  "section_id": {{
+    "key_points": ["ポイント1", "ポイント2", ...],
+    "data_sources": ["分析結果のどの部分を使うか"],
+    "focus_areas": ["重点的に記述する内容"]
+  }}
+}}
+"""
+        
+        response = self.model.generate_content(
+            planning_prompt,
+            generation_config={"temperature": 0.2, "max_output_tokens": 4096}
+        )
+        
+        try:
+            import re
+            json_match = re.search(r'\{.*\}', response.text, re.DOTALL)
+            if json_match:
+                return json.loads(json_match.group())
+            else:
+                logger.warning("Planning phase returned no valid JSON, using default")
+                return {}
+        except Exception as e:
+            logger.error(f"Planning phase parsing failed: {e}")
+            return {}
+    
+    def _get_section_guidance(self, section_title: str) -> str:
+        """Get standard guidance based on section title"""
+        title_lower = section_title.lower()
+        
+        # Common section patterns and their guidance
+        guidance_map = {
+            'はじめに': '作業の目的、重要性、全体の流れを簡潔に説明。読者が作業を開始する前に知っておくべき基本情報を提供。',
+            '概要': '作業の全体像、目的、期待される結果を説明。',
+            '準備': '必要な工具、材料、環境条件をリスト形式で列挙。各項目の用途や重要性も簡潔に説明。',
+            '準備物': '必要な工具、材料、部品を箇条書きで列挙。それぞれの用途や注意点も記載。',
+            '必要なもの': '作業に必要な全ての物品をカテゴリ別（工具、材料、保護具など）に整理して列挙。',
+            '手順': 'ステップバイステップで作業を詳細に説明。各ステップに番号を付け、注意点を明記。',
+            '作業手順': '作業を順序立てて説明。各ステップで何をするか、なぜそうするか、注意すべき点を記載。',
+            '実施手順': '実施する作業を時系列で詳しく記述。各工程の目的と期待される結果も説明。',
+            '注意事項': '安全に関する警告、よくある間違い、トラブルシューティングを記載。重要度の高い順に整理。',
+            '安全': '作業中の安全に関する注意点、保護具の使用方法、緊急時の対応を詳しく説明。',
+            '品質': '品質基準、検査方法、合格/不合格の判定基準を明確に記載。',
+            'チェック': '確認すべき項目をチェックリスト形式で列挙。各項目の確認方法と基準を説明。',
+            'トラブルシューティング': 'よくある問題とその解決方法を、問題→原因→対処法の形式で記載。',
+            'まとめ': '作業の要点を振り返り、次のステップや関連情報を提供。',
+            '参考': '関連資料、参考文献、追加情報へのリンクを提供。'
+        }
+        
+        # Check for exact match or partial match
+        for key, guidance in guidance_map.items():
+            if key in title_lower or title_lower in key:
+                return guidance
+        
+        # Default guidance if no match
+        return f'「{section_title}」というタイトルに相応しい内容を生成してください。タイトルから期待される情報を適切に含めてください。'
+    
+    async def _react_generate_section(
+        self,
+        section_id: str,
+        section_title: str,
+        section_prompt: str,
+        analysis_data: Dict[str, Any],
+        config: Dict[str, Any],
+        planning: Dict[str, Any]
+    ) -> str:
+        """ReAct Step 2: Generate individual section with reasoning"""
+        
+        section_plan = planning.get(section_id, {})
+        
+        logger.info(f"[REACT-SECTION] Generating: {section_title} (ID: {section_id})")
+        logger.info(f"[REACT-SECTION] Custom prompt length: {len(section_prompt) if section_prompt else 0}")
+        logger.info(f"[REACT-SECTION] Custom prompt: {section_prompt[:300] if section_prompt else 'None'}")
+        
+        # Build section-specific instructions based on title
+        section_guidance = self._get_section_guidance(section_title)
+        logger.info(f"[REACT-SECTION] Section guidance: {section_guidance}")
+        
+        section_generation_prompt = f"""
+# セクション生成タスク
+
+## セクション情報
+- タイトル: {section_title}
+- ID: {section_id}
+
+## セクションの役割と標準的な内容
+{section_guidance}
+
+## 追加のカスタム要件
+{section_prompt if section_prompt else '特になし（上記の標準的な内容に従ってください）'}
+
+## 計画された内容
+{json.dumps(section_plan, ensure_ascii=False, indent=2) if section_plan else 'なし'}
+
+## 利用可能なデータ
+{json.dumps(analysis_data, ensure_ascii=False, indent=2)}
+
+## 生成条件
+- 文体: {config.get('writing_style', 'formal')}
+- 詳細度: {config.get('content_length', 'normal')}
+- 言語: {config.get('language', 'ja')}
+
+# タスク
+1. まず「セクションの役割と標準的な内容」に従って基本構成を決定
+2. 「追加のカスタム要件」が指定されている場合は、それを**厳密に反映**
+3. 計画に沿って、利用可能なデータを活用してこのセクションの内容を生成
+
+**重要**: 
+- セクションタイトル（## {section_title}）から開始してください
+- 前置きや説明は不要です。直接内容を書いてください
+- カスタム要件がある場合は必ずその指示に従ってください
+"""
+        
+        response = self.model.generate_content(
+            section_generation_prompt,
+            generation_config={
+                "temperature": 0.3,
+                "top_p": 0.9,
+                "max_output_tokens": 8192
+            },
+            safety_settings=self.safety_settings
+        )
+        
+        return response.text if hasattr(response, 'text') else str(response)
+    
+    async def _react_assembly_phase(
+        self,
+        section_contents: Dict[str, str],
+        sections_with_prompts: List[Dict[str, Any]],
+        template_description: str,
+        config: Dict[str, Any]
+    ) -> str:
+        """ReAct Step 3: Assemble and refine the complete manual"""
+        
+        # Assemble sections in order
+        assembled_content = f"# 作業マニュアル\n\n"
+        
+        if template_description:
+            assembled_content += f"> {template_description}\n\n"
+        
+        for section in sections_with_prompts:
+            section_id = section.get('id')
+            if section_id in section_contents:
+                assembled_content += section_contents[section_id] + "\n\n"
+        
+        return assembled_content
+    
+    async def generate_comprehensive_manual(
+        self, 
+        analysis_data: Dict[str, Any], 
+        output_config: Dict[str, Any]
+    ) -> str:
+        """
+        包括的マニュアル生成（ReAct形式を使用）
+        
+        Args:
+            analysis_data: 分析結果データ
+            output_config: 出力設定
+            
+        Returns:
+            生成されたマニュアル内容
+        """
+        logger.info("包括的マニュアル生成を開始")
+        
+        # Check if ReAct mode should be used
+        sections_with_prompts = output_config.get('sections_with_prompts', [])
+        use_react = len(sections_with_prompts) > 0
+        
+        if use_react:
+            logger.info(f"[REACT] ReAct形式を使用してマニュアルを生成 (sections: {len(sections_with_prompts)})")
+            template_description = output_config.get('template_description', '')
+            logger.info(f"[REACT] Template description length: {len(template_description) if template_description else 0}")
+            logger.info(f"[REACT] Sections: {[(s.get('title'), len(s.get('custom_prompt', ''))) for s in sections_with_prompts]}")
+            
+            print(f"\n{'='*80}")
+            print(f"[REACT] ReAct形式を使用してマニュアルを生成 (sections: {len(sections_with_prompts)})")
+            print(f"[REACT] Sections: {[(s.get('title'), len(s.get('custom_prompt', ''))) for s in sections_with_prompts]}")
+            print(f"{'='*80}\n")
+            
+            return await self.generate_comprehensive_manual_react(analysis_data, output_config)
+        
+        # Fallback to original method
+        logger.info("従来形式でマニュアルを生成")
+        
+        # デフォルト設定
+        config = {
+            "format": "detailed",
+            "sections": ["overview", "preparation", "steps", "expert_tips", "safety", "quality", "troubleshooting"],
+            "content_length": "normal",
+            "writing_style": "formal",
+            "language": "ja",
+            "include_comparisons": True,
+            **output_config
+        }
+        
+        # Build custom instructions
+        template_description = config.get('template_description', '')
+        custom_prompt = config.get('custom_prompt', '')
+        sections_with_prompts = config.get('sections_with_prompts', [])
+        
+        custom_instructions = ""
+        if template_description:
+            custom_instructions += f"\n\n## テンプレート要件\n{template_description}\n"
+        
+        if custom_prompt:
+            custom_instructions += f"\n\n## カスタム指示\n{custom_prompt}\n"
+        
+        if sections_with_prompts:
+            custom_instructions += "\n\n## セクション別カスタム要件\n"
+            for section in sections_with_prompts:
+                if isinstance(section, dict) and section.get('custom_prompt'):
+                    custom_instructions += f"\n### {section.get('title', section.get('id'))}\n"
+                    custom_instructions += f"{section['custom_prompt']}\n"
+        
         generation_prompt = f"""
 製造業作業マニュアルの自動生成を行います。
 
@@ -839,6 +1133,7 @@ extract_document_data関数を呼び出して、構造化データとして出�
 
 # 出力設定
 {json.dumps(config, ensure_ascii=False, indent=2)}
+{custom_instructions}
 
 # 重要な出力ルール
 **前置きの文章は一切書かずに、直接マニュアル内容から開始してください。**

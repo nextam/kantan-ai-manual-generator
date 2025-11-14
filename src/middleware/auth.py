@@ -258,13 +258,18 @@ class CompanyManager:
             return False
 
 def require_role(role: str):
-    """特定のロールが必要なエンドポイントのデコレーター"""
+    """特定のロールが必要なエンドポイントのデコレーター（super_adminは全てのロールにアクセス可能）"""
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if not current_user.is_authenticated:
                 return redirect(url_for('auth.login'))
             
+            # super_admin は全てのロールにアクセス可能
+            if current_user.role == 'super_admin':
+                return f(*args, **kwargs)
+            
+            # 要求されたロールまたはadminロールを持っているか確認
             if current_user.role != role and current_user.role != 'admin':
                 return {'error': 'アクセス権限がありません'}, 403
             

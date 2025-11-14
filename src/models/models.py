@@ -584,6 +584,11 @@ class ActivityLog(db.Model):
     )
     
     def to_dict(self):
+        # Format action_detail into a readable message
+        message = self.action_detail or f"{self.action_type}"
+        if self.resource_type and self.resource_id:
+            message = f"{message} ({self.resource_type} ID: {self.resource_id})"
+        
         return {
             'id': self.id,
             'user_id': self.user_id,
@@ -593,6 +598,7 @@ class ActivityLog(db.Model):
             'resource_type': self.resource_type,
             'resource_id': self.resource_id,
             'result_status': self.result_status,
+            'message': message,  # Added formatted message for frontend
             'created_at': utc_to_jst_isoformat(self.created_at)
         }
 

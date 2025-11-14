@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}Template Management - Company Admin{% endblock %}
+{% block title %}テンプレート管理{% endblock %}
 
-{% block page_title %}Template Management{% endblock %}
+{% block page_title %}テンプレート管理{% endblock %}
 
 {% block extra_styles %}
 <style>
@@ -41,34 +41,44 @@
         font-size: 14px;
     }
     
-    .templates-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 20px;
-    }
-    
-    .template-card {
+    .templates-list {
         background: white;
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        padding: 20px;
-        transition: transform 0.2s;
+        overflow: hidden;
     }
     
-    .template-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    .template-item {
+        display: flex;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.2s;
+    }
+    
+    .template-item:last-child {
+        border-bottom: none;
+    }
+    
+    .template-item:hover {
+        background-color: #f9f9f9;
+    }
+    
+    .template-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
     }
     
     .template-header {
         display: flex;
-        justify-content: space-between;
-        align-items: start;
-        margin-bottom: 15px;
+        align-items: center;
+        gap: 12px;
     }
     
     .template-title {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 600;
         color: #333;
         margin: 0;
@@ -76,7 +86,7 @@
     
     .template-type {
         display: inline-block;
-        padding: 4px 12px;
+        padding: 3px 10px;
         border-radius: 12px;
         font-size: 11px;
         font-weight: 500;
@@ -84,27 +94,39 @@
         color: #1565c0;
     }
     
+    .badge-default {
+        background: #ffd700;
+        color: #856404;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+    
     .template-description {
         color: #666;
-        font-size: 14px;
-        margin: 10px 0;
-        line-height: 1.5;
+        font-size: 13px;
+        line-height: 1.4;
+        max-width: 600px;
     }
     
     .template-meta {
         display: flex;
-        gap: 15px;
+        gap: 20px;
         font-size: 12px;
         color: #999;
-        margin: 15px 0;
+    }
+    
+    .template-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
     }
     
     .template-actions {
         display: flex;
         gap: 8px;
-        margin-top: 15px;
-        padding-top: 15px;
-        border-top: 1px solid #f0f0f0;
+        margin-left: 20px;
     }
     
     .btn-action {
@@ -116,12 +138,7 @@
         font-size: 13px;
     }
     
-    .btn-preview {
-        background: #2196F3;
-        color: white;
-    }
-    
-    .btn-edit {
+    .btn-detail {
         background: #4CAF50;
         color: white;
     }
@@ -155,22 +172,22 @@
         </div>
         <button class="btn-create" onclick="createTemplate()">
             <span class="material-icons" style="vertical-align: middle; font-size: 18px;">add</span>
-            Create Template
+            新規追加
         </button>
     </div>
     
     <div id="loadingIndicator" class="loading">
-        Loading templates...
+        読み込み中...
     </div>
     
-    <div id="templatesGrid" class="templates-grid" style="display: none;">
+    <div id="templatesList" class="templates-list" style="display: none;">
     </div>
     
     <div id="emptyState" class="empty-state" style="display: none;">
         <span class="material-icons" style="font-size: 64px; color: #ccc;">description</span>
-        <p>No templates found</p>
+        <p>テンプレートが見つかりません</p>
         <button class="btn-create" onclick="createTemplate()" style="margin-top: 20px;">
-            Create Your First Template
+            最初のテンプレートを作成
         </button>
     </div>
 </div>
@@ -193,29 +210,38 @@
                 return;
             }
             
-            const grid = document.getElementById('templatesGrid');
-            grid.innerHTML = templates.map(template => `
-                <div class="template-card">
-                    <div class="template-header">
-                        <h3 class="template-title">${template.name}</h3>
-                        <span class="template-type">${template.template_type || 'Standard'}</span>
-                    </div>
-                    <p class="template-description">${template.description || 'No description'}</p>
-                    <div class="template-meta">
-                        <span><span class="material-icons" style="font-size: 14px; vertical-align: middle;">event</span> ${new Date(template.created_at).toLocaleDateString()}</span>
-                        <span><span class="material-icons" style="font-size: 14px; vertical-align: middle;">edit</span> ${new Date(template.updated_at).toLocaleDateString()}</span>
+            const list = document.getElementById('templatesList');
+            list.innerHTML = templates.map(template => `
+                <div class="template-item" data-template-id="${template.id}">
+                    <div class="template-info">
+                        <div class="template-header">
+                            <h3 class="template-title">${template.name}</h3>
+                            <span class="template-type">${template.template_type || 'Standard'}</span>
+                        </div>
+                        <p class="template-description">${template.description || 'No description provided'}</p>
+                        <div class="template-meta">
+                            <div class="template-meta-item">
+                                <span class="material-icons" style="font-size: 14px;">event</span>
+                                <span>作成日: ${new Date(template.created_at).toLocaleDateString()}</span>
+                            </div>
+                            <div class="template-meta-item">
+                                <span class="material-icons" style="font-size: 14px;">update</span>
+                                <span>更新日: ${new Date(template.updated_at).toLocaleDateString()}</span>
+                            </div>
+                        </div>
                     </div>
                     <div class="template-actions">
-                        <button class="btn-action btn-preview" onclick="previewTemplate(${template.id})">Preview</button>
-                        <button class="btn-action btn-edit" onclick="editTemplate(${template.id})">Edit</button>
-                        <button class="btn-action btn-delete" onclick="deleteTemplate(${template.id})">
+                        <button class="btn-action btn-detail" onclick="editTemplate(${template.id})" title="Detail">
+                            <span class="material-icons" style="font-size: 16px;">description</span>
+                        </button>
+                        <button class="btn-action btn-delete" onclick="deleteTemplate(${template.id})" title="Delete">
                             <span class="material-icons" style="font-size: 16px;">delete</span>
                         </button>
                     </div>
                 </div>
             `).join('');
             
-            grid.style.display = 'grid';
+            list.style.display = 'block';
         } catch (error) {
             console.error('Error loading templates:', error);
             document.getElementById('loadingIndicator').innerHTML = '<p style="color: red;">Error loading templates</p>';
@@ -223,15 +249,13 @@
     }
     
     function createTemplate() {
-        alert('Create template functionality - to be implemented');
-    }
-    
-    function previewTemplate(templateId) {
-        window.open(`/api/company/templates/${templateId}/preview`, '_blank');
+        // Redirect to template creation page
+        window.location.href = '/company/templates/new';
     }
     
     function editTemplate(templateId) {
-        alert(`Edit template: ${templateId}`);
+        // Redirect to template detail/edit page
+        window.location.href = `/company/templates/${templateId}/edit`;
     }
     
     async function deleteTemplate(templateId) {
@@ -255,11 +279,11 @@
     
     document.getElementById('searchInput').addEventListener('input', function(e) {
         const searchTerm = e.target.value.toLowerCase();
-        const cards = document.querySelectorAll('.template-card');
+        const items = document.querySelectorAll('.template-item');
         
-        cards.forEach(card => {
-            const text = card.textContent.toLowerCase();
-            card.style.display = text.includes(searchTerm) ? 'block' : 'none';
+        items.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            item.style.display = text.includes(searchTerm) ? 'flex' : 'none';
         });
     });
     

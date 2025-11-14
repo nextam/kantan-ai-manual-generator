@@ -23,7 +23,7 @@ class StorageBackend(ABC):
     """ストレージバックエンドの抽象基底クラス"""
     
     @abstractmethod
-    def save_file(self, file_obj: BinaryIO, filename: str, folder: str = None) -> Dict[str, Any]:
+    def save_file(self, file_obj: BinaryIO, filename: str, folder: str = None, company_id: int = None) -> Dict[str, Any]:
         """ファイルを保存"""
         pass
     
@@ -49,7 +49,7 @@ class LocalStorageBackend(StorageBackend):
         self.base_path = Path(base_path)
         self.base_path.mkdir(parents=True, exist_ok=True)
     
-    def save_file(self, file_obj: BinaryIO, filename: str, folder: str = None) -> Dict[str, Any]:
+    def save_file(self, file_obj: BinaryIO, filename: str, folder: str = None, company_id: int = None) -> Dict[str, Any]:
         """ローカルファイル保存"""
         # ファイル名を安全に処理（拡張子を保持）
         secure_name = secure_filename(filename)
@@ -131,8 +131,20 @@ class LocalStorageBackend(StorageBackend):
 class GCSStorageBackend(StorageBackend):
     """Google Cloud Storageバックエンド"""
     
-    def __init__(self, bucket_name: str, credentials_path: str = None):
+    def __init__(self, bucket_name: str = None, credentials_path: str = None):
+        # Auto-select bucket based on ENVIRONMENT variable if not explicitly provided
+        if not bucket_name:
+            environment = os.getenv('ENVIRONMENT', 'development')
+            if environment == 'production':
+                bucket_name = 'kantan-ai-manual-generator-live'
+            else:
+                bucket_name = 'kantan-ai-manual-generator-dev'
+            logger.info(f"GCS Backend auto-selected bucket: environment={environment}, bucket={bucket_name}")
+        else:
+            logger.info(f"GCS Backend using provided bucket: {bucket_name}")
+        
         self.bucket_name = bucket_name
+        
         # { file_path: { 'local_path': str, 'size': int } }
         self._download_cache = {}
         self._cache_lock = threading.Lock()
@@ -196,8 +208,8 @@ class GCSStorageBackend(StorageBackend):
         self.client = gcs.Client()
         self.bucket = self.client.bucket(bucket_name)
     
-    def save_file(self, file_obj: BinaryIO, filename: str, folder: str = None) -> Dict[str, Any]:
-        """GCSファイル保存"""
+    def save_file(self, file_obj: BinaryIO, filename: str, folder: str = None, company_id: int = None) -> Dict[str, Any]:
+        """GCSファイル保存（company_idベースのフォルダ構造）"""
         # ファイル名を安全に処理（拡張子を保持）
         secure_name = secure_filename(filename)
         
@@ -216,6 +228,9 @@ class GCSStorageBackend(StorageBackend):
         
         unique_filename = f"{uuid.uuid4()}_{secure_name}"
         
+        # Folder structure enforces tenant isolation at root level
+        # For multi-tenancy: folder should already be in format "company_{id}/videos"
+        # No additional prepending needed if folder already contains company prefix
         if folder:
             blob_name = f"{folder}/{unique_filename}"
         else:
@@ -352,9 +367,10 @@ class GCSStorageBackend(StorageBackend):
 class FileManager:
     """統一ファイル管理システム"""
     
-    def __init__(self, storage_type: str = 'local', storage_config: Dict[str, Any] = None):
+    def __init__(self, storage_type: str = 'gcs', storage_config: Dict[str, Any] = None):
         self.storage_type = storage_type
         self.storage_config = storage_config or {}
+        self.environment = os.getenv('ENVIRONMENT', 'development')
         self.backend = self._create_backend()
     
     def _create_backend(self) -> StorageBackend:
@@ -372,13 +388,13 @@ class FileManager:
             raise ValueError(f"Unsupported storage type: {self.storage_type}")
     
     def save_file(self, file_obj: BinaryIO, filename: str, 
-                  file_type: str = None, folder: str = None) -> Dict[str, Any]:
+                  file_type: str = None, folder: str = None, company_id: int = None) -> Dict[str, Any]:
         """ファイル保存"""
         # ファイルタイプに基づくフォルダ分類
         if file_type and not folder:
             folder = file_type
         
-        result = self.backend.save_file(file_obj, filename, folder)
+        result = self.backend.save_file(file_obj, filename, folder, company_id)
         result['file_type'] = file_type
         return result
     
@@ -442,7 +458,20 @@ class FileManager:
         # 元の結果を返す（存在しない場合でも）
         return try_get_path(file_path)
 
-def create_file_manager(company_storage_type: str = 'local', 
+def create_file_manager(company_storage_type: str = 'gcs', 
                        company_storage_config: Dict[str, Any] = None) -> FileManager:
     """企業設定に基づくファイルマネージャー作成"""
+    if not company_storage_config:
+        # Use environment-based defaults
+        environment = os.getenv('ENVIRONMENT', 'development')
+        if environment == 'production':
+            bucket_name = 'kantan-ai-manual-generator-live'
+        else:
+            bucket_name = 'kantan-ai-manual-generator-dev'
+        
+        company_storage_config = {
+            'bucket_name': bucket_name,
+            'credentials_path': os.getenv('GOOGLE_APPLICATION_CREDENTIALS', 'gcp-credentials.json')
+        }
+    
     return FileManager(company_storage_type, company_storage_config)

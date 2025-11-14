@@ -355,6 +355,17 @@
                 </div>
 
                 <div class="form-group">
+                    <label>テンプレート選択 <span style="color: red;">*</span></label>
+                    <div id="templateList" style="border: 1px solid #ddd; border-radius: 4px; padding: 10px; max-height: 200px; overflow-y: auto; background: white;">
+                        <p style="color: #999; text-align: center;">読み込み中...</p>
+                    </div>
+                    <div class="help-text">複数のテンプレートを選択すると、それぞれのテンプレートでマニュアルが生成されます</div>
+                    <div id="selectedTemplatesInfo" style="margin-top: 10px; padding: 10px; background: #e3f2fd; border-radius: 4px; display: none;">
+                        <strong>選択中:</strong> <span id="selectedTemplatesCount">0</span> 件
+                    </div>
+                </div>
+
+                <div class="form-group">
                     <label>動画アップロード <span style="color: red;">*</span></label>
                     <div class="upload-area" id="uploadArea">
                         <input type="file" id="videoFile" accept="video/*" style="display: none;">
@@ -498,9 +509,57 @@
         let uploadedFile = null;
         let formats = [];
 
+        // Load templates
+        async function loadTemplates() {
+            try {
+                const response = await fetch('/api/company/templates');
+                if (!response.ok) throw new Error('Failed to load templates');
+                
+                const data = await response.json();
+                const templates = data.templates || [];
+                
+                const listContainer = document.getElementById('templateList');
+                
+                if (templates.length === 0) {
+                    listContainer.innerHTML = '<p style="color: #999; text-align: center;">テンプレートがありません</p>';
+                    return;
+                }
+                
+                listContainer.innerHTML = templates.map(template => `
+                    <label style="display: flex; align-items: center; padding: 8px; margin-bottom: 5px; cursor: pointer; border-radius: 4px; transition: background 0.2s;"
+                           onmouseover="this.style.background='#f5f5f5'"
+                           onmouseout="this.style.background='transparent'">
+                        <input type="checkbox" 
+                               class="template-checkbox" 
+                               value="${template.id}"
+                               onchange="updateSelectedTemplates()"
+                               style="margin-right: 10px; cursor: pointer;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #333;">${template.name}</div>
+                            ${template.description ? `<div style="font-size: 12px; color: #666; margin-top: 2px;">${template.description}</div>` : ''}
+                        </div>
+                    </label>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading templates:', error);
+                document.getElementById('templateList').innerHTML = '<p style="color: #f44336; text-align: center;">テンプレートの読み込みに失敗しました</p>';
+            }
+        }
+        
+        function updateSelectedTemplates() {
+            const checkboxes = document.querySelectorAll('.template-checkbox:checked');
+            const count = checkboxes.length;
+            const infoDiv = document.getElementById('selectedTemplatesInfo');
+            const countSpan = document.getElementById('selectedTemplatesCount');
+            
+            countSpan.textContent = count;
+            infoDiv.style.display = count > 0 ? 'block' : 'none';
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             loadOutputFormats();
+            loadTemplates();
             setupFileUpload();
         });
 
@@ -802,6 +861,14 @@
                 generateBtn.textContent = '🚀 生成中...';
 
                 // Step 2: Generate manual
+                const selectedCheckboxes = document.querySelectorAll('.template-checkbox:checked');
+                const selectedTemplateIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
+                
+                // Validate template selection
+                if (selectedTemplateIds.length === 0) {
+                    throw new Error('少なくとも1つのテンプレートを選択してください');
+                }
+                
                 const generatePayload = {
                     title: document.getElementById('manualTitle').value,
                     description: document.getElementById('manualDescription').value,
@@ -809,6 +876,7 @@
                     output_format: selectedFormat,
                     use_rag: document.getElementById('useRAG').checked,
                     custom_prompt: document.getElementById('customPrompt').value,
+                    template_ids: selectedTemplateIds,
                     template_override: {
                         content_structure: {
                             detail_level: document.getElementById('detailLevel').value,
@@ -843,7 +911,8 @@
 
                 // Redirect to manual list with success message
                 console.log('[DEBUG] Redirecting to /manual/list');
-                alert('✅ マニュアルの生成を開始しました！\n\n生成が完了すると一覧に表示されます。');
+                const manualCount = generateData.manuals ? generateData.manuals.length : selectedTemplateIds.length;
+                alert(`✅ ${manualCount}件のマニュアル生成を開始しました！\n\n生成が完了すると一覧に表示されます。`);
                 window.location.href = '/manual/list';
 
             } catch (error) {

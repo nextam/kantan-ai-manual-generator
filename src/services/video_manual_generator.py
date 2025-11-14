@@ -333,22 +333,27 @@ class VideoManualGenerator:
             for step in result.get("steps", []):
                 frame_idx = step.get("frame_index", 0)
                 if 0 <= frame_idx < len(frames):
-                    # numpy arrayをbase64エンコードされた画像に変換
-                    frame_image = frames[frame_idx]
-                    if frame_image is not None:
+                    # framesは辞書のリストなので、'frame'キーから実際の画像を取得
+                    frame_dict = frames[frame_idx]
+                    frame_image = frame_dict.get('frame') if isinstance(frame_dict, dict) else frame_dict
+                    
+                    if frame_image is not None and hasattr(frame_image, 'shape'):
                         try:
                             # OpenCVでエンコード（JPEGフォーマット）
-                            _, buffer = cv2.imencode('.jpg', frame_image)
+                            _, buffer = cv2.imencode('.jpg', frame_image, [cv2.IMWRITE_JPEG_QUALITY, 85])
                             frame_base64 = base64.b64encode(buffer).decode('utf-8')
                             step["frame_data"] = {
                                 "image_base64": frame_base64,
                                 "format": "jpeg",
-                                "shape": frame_image.shape if hasattr(frame_image, 'shape') else None
+                                "shape": list(frame_image.shape),
+                                "timestamp": frame_dict.get('timestamp', 0) if isinstance(frame_dict, dict) else 0
                             }
+                            logger.debug(f"Step {step.get('step_number')}: フレーム画像変換成功 (shape: {frame_image.shape})")
                         except Exception as e:
                             logger.warning(f"フレーム画像の変換に失敗: {e}")
                             step["frame_data"] = None
                     else:
+                        logger.warning(f"Step {step.get('step_number')}: フレーム画像が無効 (frame_idx={frame_idx})")
                         step["frame_data"] = None
             
             logger.info("Gemini解析完了")

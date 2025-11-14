@@ -415,6 +415,45 @@
             min-width: 100%;
         }
     }
+    
+    /* Images Grid Styles */
+    .images-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+    }
+    
+    .image-item {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .image-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .image-item img {
+        width: 100%;
+        height: auto;
+        display: block;
+        max-height: 400px;
+        object-fit: contain;
+        background: #f8f9fa;
+    }
+    
+    .image-item .caption {
+        padding: 12px;
+        font-size: 14px;
+        color: #495057;
+        border-top: 1px solid #dee2e6;
+        background: #f8f9fa;
+    }
 </style>
 {% endblock %}
 {% block content %}
@@ -595,6 +634,8 @@
             console.log('=== displayManual 開始 ===');
             console.log('manual:', manual);
             console.log('manual.manual_type:', manual.manual_type);
+            console.log('manual.output_format:', manual.output_format);
+            console.log('manual.extracted_images:', manual.extracted_images);
             console.log('stage1_content:', manual.stage1_content);
             console.log('stage2_content:', manual.stage2_content);
             console.log('stage3_content:', manual.stage3_content);
@@ -711,6 +752,47 @@
             
             // マークダウンをHTMLに変換して表示
             displayManualContent(contentToDisplay, 'manual-text');
+            
+            // output_formatが'text_with_images'の場合、画像を表示
+            console.log('=== 画像表示チェック ===');
+            console.log('output_format:', manual.output_format);
+            console.log('extracted_images:', manual.extracted_images);
+            
+            if (manual.output_format === 'text_with_images' && manual.extracted_images && manual.extracted_images.length > 0) {
+                console.log('画像を追加表示:', manual.extracted_images.length, '個');
+                
+                // 画像セクションを作成
+                const manualTextContainer = document.getElementById('manual-text');
+                if (manualTextContainer) {
+                    let imagesHtml = '<div class="images-grid" style="margin-top: 30px;">';
+                    imagesHtml += '<h2>抽出された画像</h2>';
+                    
+                    manual.extracted_images.forEach((img, idx) => {
+                        const imageData = img.image || img.image_uri;
+                        console.log(`画像 ${idx + 1}:`, imageData ? imageData.substring(0, 50) + '...' : 'データなし');
+                        
+                        imagesHtml += `
+                            <div class="image-item">
+                                <img src="${imageData}" alt="${img.step_title || 'Step ' + img.step_number}" class="img-fluid" loading="lazy">
+                                <div class="caption">
+                                    <strong>${img.step_title || 'Step ' + img.step_number}</strong><br>
+                                    ${img.timestamp_formatted || (img.timestamp + 's')}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    imagesHtml += '</div>';
+                    
+                    // コンテンツの後に画像を追加
+                    manualTextContainer.insertAdjacentHTML('beforeend', imagesHtml);
+                    console.log('画像HTMLを挿入完了');
+                } else {
+                    console.error('manual-text container not found');
+                }
+            } else {
+                console.log('画像表示スキップ - 条件不一致');
+            }
             
             console.log('=== displaySingleManual 完了 ===');
         }
@@ -2119,19 +2201,24 @@
                     if (manual.content_html) {
                         contentArea.innerHTML = manual.content_html;
                     } else if (manual.extracted_images && manual.extracted_images.length > 0) {
+                        console.log('画像を表示:', manual.extracted_images.length, '個');
                         // Fallback: show images in grid
                         let html = '<div class="images-grid">';
-                        manual.extracted_images.forEach(img => {
+                        manual.extracted_images.forEach((img, idx) => {
+                            // Support both 'image' and 'image_uri' field names
+                            const imageData = img.image || img.image_uri;
+                            console.log(`画像${idx + 1}:`, imageData ? imageData.substring(0, 50) + '...' : 'なし');
                             html += `
                                 <div class="image-item">
-                                    <img src="${img.image_uri}" alt="${img.step_title}" class="img-fluid">
-                                    <div class="caption">${img.step_title} (${img.timestamp_formatted})</div>
+                                    <img src="${imageData}" alt="${img.step_title || 'Step ' + img.step_number}" class="img-fluid">
+                                    <div class="caption">${img.step_title || 'Step ' + img.step_number} (${img.timestamp_formatted || img.timestamp + 's'})</div>
                                 </div>
                             `;
                         });
                         html += '</div>';
                         contentArea.innerHTML = html;
                     } else {
+                        console.log('画像コンテンツがありません');
                         contentArea.innerHTML = '<p class="text-muted">画像コンテンツがありません</p>';
                     }
                     break;

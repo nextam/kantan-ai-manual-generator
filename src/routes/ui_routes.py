@@ -11,6 +11,13 @@ from src.middleware.auth import require_role
 # Super Admin UI Blueprint
 super_admin_ui_bp = Blueprint('super_admin_ui', __name__, url_prefix='/super-admin')
 
+@super_admin_ui_bp.route('/dashboard')
+def dashboard():
+    """Super admin dashboard"""
+    if not session.get('is_super_admin'):
+        return redirect(url_for('super_admin_login'))
+    return render_template('super_admin_dashboard.html')
+
 @super_admin_ui_bp.route('/companies')
 def companies():
     """Company management page"""
@@ -53,6 +60,18 @@ def users():
 def templates():
     """Template management page"""
     return render_template('company_templates.html')
+
+@company_ui_bp.route('/templates/new')
+@require_role('admin')
+def new_template():
+    """Template creation page"""
+    return render_template('template_edit.html', template_id=None)
+
+@company_ui_bp.route('/templates/<int:template_id>/edit')
+@require_role('admin')
+def edit_template(template_id):
+    """Template edit page"""
+    return render_template('template_edit.html', template_id=template_id)
 
 
 # General UI Blueprint

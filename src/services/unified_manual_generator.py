@@ -63,8 +63,16 @@ class UnifiedManualGenerator:
     
     def __init__(self):
         """Initialize unified manual generator"""
+        import os
         self.gemini_service = GeminiService()
-        self.file_manager = FileManager()
+        
+        # Initialize FileManager with GCS configuration
+        storage_type = os.getenv('STORAGE_TYPE', 'gcs')
+        storage_config = {
+            'bucket_name': os.getenv('GCS_BUCKET_NAME', 'kantan-ai-manual-generator-dev'),
+            'credentials_path': os.getenv('GOOGLE_APPLICATION_CREDENTIALS', 'gcp-credentials.json')
+        }
+        self.file_manager = FileManager(storage_type=storage_type, storage_config=storage_config)
     
     async def generate_manual(
         self,
@@ -165,12 +173,14 @@ class UnifiedManualGenerator:
             else:
                 # Fallback to single video analysis
                 analysis = await self.gemini_service._analyze_single_video(
-                    videos[0]['uri']
+                    videos[0]['uri'],
+                    skill_level='standard'
                 )
         else:
             # Single video analysis
             analysis = await self.gemini_service._analyze_single_video(
-                videos[0]['uri']
+                videos[0]['uri'],
+                skill_level='standard'
             )
         
         return analysis
@@ -194,17 +204,33 @@ class UnifiedManualGenerator:
         """
         logger.info("Generating text-only manual")
         
+        # Get sections configuration with custom prompts
+        sections_config = generation_config.get('sections', [])
+        
         output_config = {
             "format": "detailed",
-            "sections": generation_config.get('sections', [
+            "sections": sections_config if isinstance(sections_config, list) and len(sections_config) > 0 and isinstance(sections_config[0], str) else [
                 "overview", "preparation", "steps", 
                 "expert_tips", "safety", "quality", "troubleshooting"
-            ]),
+            ],
+            "sections_with_prompts": sections_config if isinstance(sections_config, list) and len(sections_config) > 0 and isinstance(sections_config[0], dict) else [],
             "content_length": generation_config.get('detail_level', 'normal'),
             "writing_style": generation_config.get('writing_style', 'formal'),
             "language": "ja",
-            "include_comparisons": len(analysis.get('comparison', {})) > 0
+            "include_comparisons": len(analysis.get('comparison', {})) > 0,
+            "custom_prompt": custom_prompt,
+            "template_description": generation_config.get('template_description', '')
         }
+        
+        # Debug logging - write to both logger and print for Celery
+        logger.info(f"[PROMPT DEBUG] sections_config type: {type(sections_config)}")
+        logger.info(f"[PROMPT DEBUG] sections_config length: {len(sections_config) if isinstance(sections_config, list) else 0}")
+        logger.info(f"[PROMPT DEBUG] sections_with_prompts: {output_config['sections_with_prompts']}")
+        logger.info(f"[PROMPT DEBUG] template_description: {output_config['template_description'][:100] if output_config['template_description'] else 'None'}")
+        
+        print(f"[PROMPT DEBUG] sections_config type: {type(sections_config)}")
+        print(f"[PROMPT DEBUG] sections_with_prompts length: {len(output_config['sections_with_prompts'])}")
+        print(f"[PROMPT DEBUG] Will trigger ReAct: {len(output_config['sections_with_prompts']) > 0}")
         
         content = await self.gemini_service.generate_comprehensive_manual(
             analysis_data=analysis,
