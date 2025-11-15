@@ -29,25 +29,25 @@
     </div>
 
     <div class="sidebar-menu">
-        <!-- Super Admin Menu -->
-        {% if session.get('is_super_admin') %}
+        <!-- General User Menu (All authenticated users) -->
+        {% if session.get('company_id') or session.get('is_super_admin') %}
             <div class="menu-section">
-                <div class="menu-section-title">スーパー管理者</div>
-                <a href="/super-admin/dashboard" class="menu-item">
-                    <span class="material-icons">dashboard</span>
-                    <span>ダッシュボード</span>
+                <div class="menu-section-title">マニュアル</div>
+                <a href="/manual/list" class="menu-item">
+                    <span class="material-icons">list</span>
+                    <span>マニュアル一覧</span>
                 </a>
-                <a href="/super-admin/companies" class="menu-item">
-                    <span class="material-icons">business</span>
-                    <span>企業管理</span>
+                <a href="/manuals/create" class="menu-item" style="background: rgba(76, 175, 80, 0.15); border-left: 3px solid #4caf50;">
+                    <span class="material-icons">auto_awesome</span>
+                    <span>マニュアル作成</span>
                 </a>
-                <a href="/super-admin/users" class="menu-item">
-                    <span class="material-icons">people</span>
-                    <span>ユーザー管理</span>
-                </a>
-                <a href="/super-admin/activity-logs" class="menu-item">
-                    <span class="material-icons">history</span>
-                    <span>活動ログ</span>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-section-title">リソース</div>
+                <a href="/materials" class="menu-item">
+                    <span class="material-icons">folder_open</span>
+                    <span>学習資料</span>
                 </a>
             </div>
         {% endif %}
@@ -71,42 +71,25 @@
             </div>
         {% endif %}
 
-        <!-- General User Menu (All authenticated users) -->
-        {% if session.get('company_id') or session.get('is_super_admin') %}
+        <!-- Super Admin Menu -->
+        {% if session.get('is_super_admin') %}
             <div class="menu-section">
-                <div class="menu-section-title">マニュアル</div>
-                <a href="/manual/list" class="menu-item">
-                    <span class="material-icons">list</span>
-                    <span>マニュアル一覧</span>
+                <div class="menu-section-title">スーパー管理者</div>
+                <a href="/super-admin/dashboard" class="menu-item">
+                    <span class="material-icons">dashboard</span>
+                    <span>ダッシュボード</span>
                 </a>
-                <a href="/manuals/create" class="menu-item" style="background: rgba(76, 175, 80, 0.15); border-left: 3px solid #4caf50;">
-                    <span class="material-icons">auto_awesome</span>
-                    <span>マニュアル作成</span>
+                <a href="/super-admin/companies" class="menu-item">
+                    <span class="material-icons">business</span>
+                    <span>企業管理</span>
                 </a>
-                <div style="padding: 8px 20px; font-size: 11px; color: rgba(255,255,255,0.5); border-top: 1px solid rgba(255,255,255,0.1); margin-top: 8px;">旧バージョン（非推奨）</div>
-                <a href="/manual/create" class="menu-item" style="opacity: 0.6;">
-                    <span class="material-icons">note_add</span>
-                    <span>画像なし版</span>
+                <a href="/super-admin/users" class="menu-item">
+                    <span class="material-icons">people</span>
+                    <span>ユーザー管理</span>
                 </a>
-                <a href="/manual/video/three-stage" class="menu-item" style="opacity: 0.6;">
-                    <span class="material-icons">add_photo_alternate</span>
-                    <span>画像あり版</span>
-                </a>
-            </div>
-
-            <div class="menu-section">
-                <div class="menu-section-title">リソース</div>
-                <a href="/materials" class="menu-item">
-                    <span class="material-icons">folder_open</span>
-                    <span>学習資料</span>
-                </a>
-            </div>
-
-            <div class="menu-section">
-                <div class="menu-section-title">処理状況</div>
-                <a href="/jobs" class="menu-item">
-                    <span class="material-icons">work</span>
-                    <span>ジョブ状況</span>
+                <a href="/super-admin/activity-logs" class="menu-item">
+                    <span class="material-icons">history</span>
+                    <span>活動ログ</span>
                 </a>
             </div>
         {% endif %}

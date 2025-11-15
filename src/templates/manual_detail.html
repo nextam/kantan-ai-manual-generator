@@ -5,6 +5,10 @@
 
 {% block extra_styles %}
 <style>
+    * {
+        font-size: 14px;
+    }
+
     .breadcrumb {
         margin-bottom: 30px;
         padding: 15px;
@@ -60,45 +64,83 @@
     .actions {
         display: flex;
         gap: 10px;
-        justify-content: flex-end;
-        padding-top: 15px;
-        border-top: 1px solid #e9ecef;
+        justify-content: flex-start;
+        margin-bottom: 10px;
     }
 
-    .btn {
+    /* Button size classes */
+    .btn-large {
+        padding: 12px 24px;
+        font-size: 15px;
+        font-weight: 500;
+    }
+
+    .btn-medium {
         padding: 10px 20px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
         font-size: 14px;
         font-weight: 500;
-        transition: all 0.2s ease;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
     }
 
+    .btn-small {
+        padding: 6px 12px;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    /* Button base styles */
+    .btn {
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+    }
+
+    /* Button color variants */
     .btn-primary {
-        background-color: #007bff;
+        background: #2196F3;
         color: white;
     }
 
     .btn-primary:hover {
-        background-color: #0056b3;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(0,123,255,0.2);
+        background: #1976D2;
+    }
+
+    .btn-success {
+        background: #4CAF50;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #45a049;
+    }
+
+    .btn-danger {
+        background: #f44336;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #da190b;
     }
 
     .btn-secondary {
-        background-color: #6c757d;
+        background: #6c757d;
         color: white;
     }
 
     .btn-secondary:hover {
-        background-color: #545b62;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(108,117,125,0.2);
+        background: #545b62;
+    }
+
+    video{
+        max-width: 500px;
     }
 
     .video-section {
@@ -143,7 +185,7 @@
     .manual-content {
         background: white;
         border-radius: 8px;
-        padding: 30px;
+        padding: 0px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         border: 1px solid #e9ecef;
     }
@@ -233,48 +275,320 @@
         margin: 0;
         color: #666;
         font-size: 14px;
-        line-height: 1.4;
+        line-height: 1.3;
     }
 
     .manual-text {
-        line-height: 1.8;
+        line-height: 1.3;
+        font-size: 14px;
+        color: #333;
     }
 
+    /* Headings */
+    .manual-text h1,
+    .manual-text h2,
+    .manual-text h3,
+    .manual-text h4,
+    .manual-text h5,
+    .manual-text h6 {
+        font-weight: 600;
+        line-height: 1.3;
+        color: #1a1a1a;
+    }
+
+    .manual-text h1 {
+        font-size: 24px;
+        border-bottom: 3px solid #007bff;
+        padding-bottom: 5px;
+        margin: 10px 0px;
+    }
+
+    .manual-text h2 {
+        background-color: #007bff;
+        font-size: 18px;
+        padding: 10px;
+        margin: 10px 0px;
+        color: white;
+    }
+
+    .manual-text h3, .manual-text h3 strong {
+        font-size: 16px;
+        color: #007bff;
+        padding: 5px 0px;
+        margin: 10px 0px;
+        border-bottom: 1px solid lightgray;
+    }
+
+    .manual-text h4, .manual-text h4 strong {
+        font-size: 16px;
+        color: #555;
+        margin-bottom: 5px;
+    }
+
+    .manual-text h5 {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 5px;
+    }
+
+    .manual-text h6 {
+        font-size: 14px;
+        color: #777;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Paragraphs */
+    .manual-text p {
+        line-height: 1.3;
+        margin-left: 10px;
+    }
+
+    /* Lists */
+    .manual-text ul,
+    .manual-text ol {
+        margin: 16px 0;
+        padding-left: 32px;
+    }
+
+    .manual-text li {
+        margin-bottom: 5px;
+        line-height: 1.3;
+    }
+
+    .manual-text ul li {
+        list-style-type: disc;
+    }
+
+    .manual-text ol li {
+        list-style-type: decimal;
+    }
+
+    .manual-text ul ul,
+    .manual-text ol ul {
+        margin-top: 8px;
+        margin-bottom: 8px;
+    }
+
+    /* Links */
+    .manual-text a {
+        color: #007bff;
+        text-decoration: none;
+        border-bottom: 1px solid transparent;
+        transition: all 0.2s ease;
+    }
+
+    .manual-text a:hover {
+        color: #0056b3;
+        border-bottom-color: #0056b3;
+    }
+
+    /* Images */
     .manual-text img {
         max-width: 100%;
         height: auto;
         border-radius: 8px;
-        margin: 20px 0;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin: 24px 0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         cursor: pointer;
-        transition: transform 0.2s ease;
+        transition: all 0.3s ease;
+        display: block;
     }
 
     .manual-text img:hover {
         transform: scale(1.02);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
     }
 
+    /* Figures */
+    .manual-text figure {
+        margin: 24px 0;
+        text-align: center;
+    }
+
+    .manual-text figcaption {
+        margin-top: 12px;
+        font-size: 14px;
+        color: #666;
+        font-style: italic;
+    }
+
+    /* Tables */
     .manual-text table {
         width: 100%;
         border-collapse: collapse;
-        margin: 20px 0;
+        margin: 24px 0;
+        background: white;
+        overflow: hidden;
     }
 
     .manual-text th,
     .manual-text td {
-        border: 1px solid #ddd;
-        padding: 12px;
+        border: 1px solid #e9ecef;
+        padding: 5px 10px;
         text-align: left;
     }
 
     .manual-text th {
-        background-color: #f8f9fa;
-        font-weight: 600;
-        color: #333;
+        background: gray;
+        color: white;
+        font-weight: 500;
+        text-transform: uppercase;
     }
 
-    .manual-text tr:hover {
+    .manual-text tbody tr {
+        transition: background-color 0.2s ease;
+    }
+
+    .manual-text tbody tr:nth-child(even) {
         background-color: #f8f9fa;
+    }
+
+    .manual-text tbody tr:hover {
+        background-color: #e3f2fd;
+    }
+
+    /* Blockquotes */
+    .manual-text blockquote {
+        margin: 24px 0;
+        padding: 16px 24px;
+        border-left: 4px solid #007bff;
+        background: #f8f9fa;
+        border-radius: 0 8px 8px 0;
+        color: #555;
+    }
+
+    .manual-text blockquote p:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Code blocks */
+    .manual-text code {
+        background: #f5f5f5;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        color: #d63384;
+    }
+
+    .manual-text pre {
+        background: #282c34;
+        color: #abb2bf;
+        padding: 20px;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin: 24px 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .manual-text pre code {
+        background: none;
+        padding: 0;
+        color: inherit;
+        font-size: 14px;
+        line-height: 1.3;
+    }
+
+    /* Horizontal rules */
+    .manual-text hr {
+        border: none;
+    }
+
+    /* Strong and emphasis */
+    .manual-text strong {
+        font-weight: 700;
+        color: #1a1a1a;
+    }
+
+    .manual-text em {
+        font-style: italic;
+        color: #555;
+    }
+
+    /* Warning/Info boxes */
+    .manual-text .warning,
+    .manual-text .info,
+    .manual-text .danger,
+    .manual-text .success {
+        padding: 16px 20px;
+        margin: 24px 0;
+        border-radius: 8px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .manual-text .warning {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        color: #856404;
+    }
+
+    .manual-text .info {
+        background: #d1ecf1;
+        border-left: 4px solid #17a2b8;
+        color: #0c5460;
+    }
+
+    .manual-text .danger {
+        background: #f8d7da;
+        border-left: 4px solid #dc3545;
+        color: #721c24;
+    }
+
+    .manual-text .success {
+        background: #d4edda;
+        border-left: 4px solid #28a745;
+        color: #155724;
+    }
+
+    .manual-text .warning .material-icons,
+    .manual-text .info .material-icons,
+    .manual-text .danger .material-icons,
+    .manual-text .success .material-icons {
+        font-size: 24px;
+        flex-shrink: 0;
+    }
+
+    /* Step boxes for manual steps */
+    .manual-text .step-box {
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 24px;
+        margin: 24px 0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+    }
+
+    .manual-text .step-box:hover {
+        border-color: #007bff;
+        box-shadow: 0 6px 20px rgba(0,123,255,0.1);
+    }
+
+    .manual-text .step-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        border-radius: 50%;
+        font-weight: 700;
+        font-size: 18px;
+        margin-right: 12px;
+    }
+
+    .manual-text .step-title {
+        display: inline-block;
+        font-size: 20px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 12px;
     }
 
     .rotation-controls {
@@ -417,25 +731,27 @@
     }
     
     /* Images Grid Styles */
+    /* Images Grid */
     .images-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 20px;
-        margin: 20px 0;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 24px;
+        margin: 32px 0;
     }
     
     .image-item {
-        background: #fff;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
     }
     
     .image-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        border-color: #007bff;
     }
     
     .image-item img {
@@ -443,31 +759,124 @@
         height: auto;
         display: block;
         max-height: 400px;
-        object-fit: contain;
+        object-fit: cover;
         background: #f8f9fa;
     }
     
     .image-item .caption {
-        padding: 12px;
+        padding: 16px;
         font-size: 14px;
-        color: #495057;
-        border-top: 1px solid #dee2e6;
-        background: #f8f9fa;
+        color: #555;
+        border-top: 1px solid #e9ecef;
+        background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+        line-height: 1.3;
+    }
+
+    /* Generated HTML content wrapper */
+    .generated-content-wrapper {
+        padding: 24px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    }
+
+    /* Markdown content specific styles */
+    .markdown-content {
+        background: white;
+        padding: 32px;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    }
+
+    /* HTML content specific styles */
+    .html-content {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+
+    /* Stage tabs content styling */
+    #stage1-text,
+    #stage2-text,
+    #stage3-text {
+        padding: 24px;
+        background: white;
+        border-radius: 8px;
+        min-height: 400px;
+    }
+
+    /* Improve readability for long content */
+    .manual-content {
+        max-width: 100%;
+    }
+
+    .manual-text,
+    #stage1-text,
+    #stage2-text,
+    #stage3-text {
+        margin: 0 auto;
+    }
+
+    /* Print styles */
+    @media print {
+        .breadcrumb,
+        .actions,
+        .video-section,
+        .tab-headers,
+        .stage-header {
+            display: none !important;
+        }
+
+        .manual-text,
+        #stage3-text {
+            max-width: 100%;
+            padding: 0;
+        }
+
+        .manual-text img {
+            max-height: 600px;
+            page-break-inside: avoid;
+        }
     }
 </style>
 {% endblock %}
 {% block content %}
 <div style="max-width: 1200px;">
-    <!-- パンくずリスト -->
-    <div class="breadcrumb">
-        <a href="/manual/list">
-            <span class="material-icons">menu_book</span>マニュアル一覧
-        </a> >
-        <span class="material-icons">visibility</span>マニュアル詳細
-    </div>
-
     <!-- マニュアル情報 -->
     <div class="manual-meta">
+        
+        <div class="actions">
+            <button type="button" class="btn btn-secondary btn-medium" onclick="window.location.href='/manual/list'">
+                <span class="material-icons" style="font-size: 18px;">arrow_back</span>
+                一覧に戻る
+            </button>
+            <button type="button" id="edit-images-btn" class="btn btn-primary btn-medium" onclick="openImageEditMode()" style="display: none;">
+                <span class="material-icons" style="font-size: 18px;">edit</span>
+                画像を編集
+            </button>
+            <button type="button" id="recapture-images-btn" class="btn btn-primary btn-medium" onclick="openRecaptureModal()" style="display: none;">
+                <span class="material-icons" style="font-size: 18px;">photo_camera</span>
+                画像を再キャプチャ
+            </button>
+            <button type="button" id="convert-format-btn" class="btn btn-primary btn-medium" onclick="showConvertModal()" style="display: none;">
+                <span class="material-icons" style="font-size: 18px;">transform</span>
+                別の形式で再生成
+            </button>
+            <button type="button" id="edit-manual-btn" class="btn btn-primary btn-medium" onclick="window.location.href='#'" style="display: none;">
+                <span class="material-icons" style="font-size: 18px;">edit_note</span>
+                編集
+            </button>
+        </div>
+
+        <!-- Format Switcher -->
+        <div id="format-switcher" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; display: none;">
+            <div style="margin-bottom: 10px; font-weight: 600; color: #333;">📋 表示形式を切り替え</div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;" id="format-buttons">
+                <!-- Dynamically generated format buttons -->
+            </div>
+        </div>
+
         <div class="meta-info">
             <div class="meta-item">
                 <div class="meta-label">作成日時</div>
@@ -482,29 +891,7 @@
                 <div class="meta-value" id="manual-type">-</div>
             </div>
         </div>
-        
-        <!-- Format Switcher -->
-        <div id="format-switcher" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; display: none;">
-            <div style="margin-bottom: 10px; font-weight: 600; color: #333;">📋 表示形式を切り替え</div>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;" id="format-buttons">
-                <!-- Dynamically generated format buttons -->
-            </div>
-        </div>
-        
-        <div class="actions">
-            <a href="/manual/list" class="btn btn-secondary">
-                <span class="material-icons">arrow_back</span>
-                一覧に戻る
-            </a>
-            <button type="button" id="convert-format-btn" class="btn btn-primary" onclick="showConvertModal()" style="display: none;">
-                <span class="material-icons">transform</span>
-                別の形式で再生成
-            </button>
-            <a href="#" id="edit-manual-btn" class="btn btn-primary" style="display: none;">
-                <span class="material-icons">edit</span>
-                編集
-            </a>
-        </div>
+
     </div>
 
     <!-- 動画セクション -->
@@ -661,6 +1048,17 @@
             const editBtn = document.getElementById('edit-manual-btn');
             editBtn.href = `/manual/${manual.id}/edit`;
             editBtn.style.display = 'inline-flex';
+
+            // 画像編集ボタンの表示制御（画像ありマニュアルのみ）
+            const editImagesBtn = document.getElementById('edit-images-btn');
+            const recaptureImagesBtn = document.getElementById('recapture-images-btn');
+            const hasImages = manual.extracted_images && manual.extracted_images.length > 0;
+            const isImageManual = manual.manual_type === 'manual_with_images';
+            
+            if (hasImages || isImageManual) {
+                editImagesBtn.style.display = 'inline-flex';
+                recaptureImagesBtn.style.display = 'inline-flex';
+            }
 
             // マニュアル表示タイプの判定を修正
             const hasStageContent = manual.stage1_content && manual.stage2_content && manual.stage3_content;
@@ -1100,7 +1498,10 @@
                     <span class="material-icons" style="font-size: 16px; vertical-align: middle; margin-right: 5px;">error</span>${message}
                 </div>
                 <div style="margin-top: 20px;">
-                    <a href="/manual/list" class="btn btn-secondary"><span class="material-icons">arrow_back</span>一覧に戻る</a>
+                    <button type="button" class="btn btn-secondary btn-medium" onclick="window.location.href='/manual/list'">
+                        <span class="material-icons" style="font-size: 18px;">arrow_back</span>
+                        一覧に戻る
+                    </button>
                 </div>
             `;
         }
@@ -1670,6 +2071,112 @@
 </style>
 
 <script>
+// Image editing mode functions
+function openImageEditMode() {
+    if (!manualData) {
+        showNotification('マニュアルデータが読み込まれていません', 'error');
+        return;
+    }
+    
+    // Check if manual has images
+    if (!manualData.extracted_images || manualData.extracted_images.length === 0) {
+        showNotification('編集可能な画像がありません', 'error');
+        return;
+    }
+    
+    // Scroll to images and highlight them
+    const imagesInContent = document.querySelectorAll('.manual-text img, #stage3-text img');
+    if (imagesInContent.length > 0) {
+        // Add edit overlay to each image
+        imagesInContent.forEach((img, index) => {
+            if (!img.parentElement.classList.contains('image-edit-wrapper')) {
+                wrapImageForEditing(img, index);
+            }
+        });
+        
+        // Scroll to first image
+        imagesInContent[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        showNotification('画像をクリックして編集してください', 'info');
+    } else {
+        showNotification('表示可能な画像が見つかりません', 'error');
+    }
+}
+
+function wrapImageForEditing(img, index) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'image-edit-wrapper';
+    wrapper.style.cssText = 'position: relative; display: inline-block; width: 100%;';
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'image-edit-overlay';
+    overlay.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 123, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        cursor: pointer;
+        border: 3px solid transparent;
+    `;
+    
+    const editButton = document.createElement('button');
+    editButton.className = 'btn btn-primary';
+    editButton.innerHTML = '<span class="material-icons">edit</span> この画像を編集';
+    editButton.style.cssText = 'pointer-events: none;';
+    
+    overlay.appendChild(editButton);
+    
+    // Wrap image
+    img.parentNode.insertBefore(wrapper, img);
+    wrapper.appendChild(img);
+    wrapper.appendChild(overlay);
+    
+    // Add hover effect
+    wrapper.addEventListener('mouseenter', () => {
+        overlay.style.opacity = '1';
+        overlay.style.borderColor = '#007bff';
+    });
+    
+    wrapper.addEventListener('mouseleave', () => {
+        overlay.style.opacity = '0';
+        overlay.style.borderColor = 'transparent';
+    });
+    
+    // Add click handler
+    overlay.addEventListener('click', () => {
+        openImageEditorModal(img, index);
+    });
+}
+
+function openImageEditorModal(img, index) {
+    // This function should open the image_editor_modal.html
+    // Assuming the modal exists in the template
+    const modal = document.getElementById('imageEditorModal');
+    if (modal && window.openImageEditor) {
+        window.openImageEditor(img.src, index);
+    } else {
+        showNotification('画像編集機能は現在利用できません', 'error');
+    }
+}
+
+function openRecaptureModal() {
+    const modal = document.getElementById('recaptureModal');
+    if (modal) {
+        modal.classList.remove('fade');
+        modal.classList.add('show');
+        modal.style.display = 'flex';
+    } else {
+        showNotification('再キャプチャモーダルが見つかりません', 'error');
+    }
+}
+
 function showConvertModal() {
     const modal = document.getElementById('convertModal');
     if (modal) {

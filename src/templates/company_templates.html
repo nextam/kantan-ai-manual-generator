@@ -31,123 +31,156 @@
         font-size: 14px;
     }
     
-    .btn-create {
+    /* Button size classes */
+    .btn-large {
+        padding: 12px 24px;
+        font-size: 15px;
+        font-weight: 500;
+    }
+
+    .btn-medium {
         padding: 10px 20px;
-        background: #2196F3;
-        color: white;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .btn-small {
+        padding: 6px 12px;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    /* Button base styles */
+    .btn {
         border: none;
         border-radius: 4px;
         cursor: pointer;
-        font-size: 14px;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+    }
+
+    /* Button color variants */
+    .btn-primary {
+        background: #2196F3;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #1976D2;
+    }
+
+    .btn-success {
+        background: #4CAF50;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #45a049;
+    }
+
+    .btn-danger {
+        background: #f44336;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #da190b;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #545b62;
     }
     
-    .templates-list {
+    /* Table styles */
+    .template-table-container {
         background: white;
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         overflow: hidden;
     }
-    
-    .template-item {
-        display: flex;
-        align-items: center;
-        padding: 16px 20px;
-        border-bottom: 1px solid #f0f0f0;
-        transition: background-color 0.2s;
+
+    .template-table {
+        width: 100%;
+        border-collapse: collapse;
     }
-    
-    .template-item:last-child {
-        border-bottom: none;
+
+    .template-table thead {
+        background: #f5f5f5;
+        color: #333;
     }
-    
-    .template-item:hover {
-        background-color: #f9f9f9;
-    }
-    
-    .template-info {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-    
-    .template-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-    
-    .template-title {
-        font-size: 16px;
+
+    .template-table th {
+        padding: 15px;
+        text-align: left;
         font-weight: 600;
         color: #333;
-        margin: 0;
+        border-bottom: 2px solid #e0e0e0;
     }
-    
-    .template-type {
+
+    .template-table tbody tr {
+        border-bottom: 1px solid #e9ecef;
+        transition: background-color 0.2s ease;
+    }
+
+    .template-table tbody tr:hover {
+        background-color: #f8f9ff;
+    }
+
+    .template-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .template-table td {
+        padding: 16px;
+        vertical-align: middle;
+    }
+
+    .template-table td.title-cell {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .template-table td.actions-cell {
+        white-space: nowrap;
+    }
+
+    .template-type-badge {
         display: inline-block;
-        padding: 3px 10px;
+        padding: 4px 12px;
         border-radius: 12px;
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 500;
         background: #e3f2fd;
         color: #1565c0;
     }
-    
-    .badge-default {
-        background: #ffd700;
-        color: #856404;
-        padding: 3px 10px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: 500;
-    }
-    
-    .template-description {
-        color: #666;
-        font-size: 13px;
-        line-height: 1.4;
-        max-width: 600px;
-    }
-    
-    .template-meta {
-        display: flex;
-        gap: 20px;
-        font-size: 12px;
-        color: #999;
-    }
-    
-    .template-meta-item {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-    
-    .template-actions {
-        display: flex;
-        gap: 8px;
-        margin-left: 20px;
-    }
-    
-    .btn-action {
-        flex: 1;
-        padding: 8px 12px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 13px;
-    }
-    
-    .btn-detail {
-        background: #4CAF50;
-        color: white;
-    }
-    
-    .btn-delete {
-        background: #f44336;
-        color: white;
-        flex: 0 0 auto;
-        padding: 8px 16px;
+
+
+
+    @media (max-width: 768px) {
+        .template-table-container {
+            overflow-x: auto;
+        }
+
+        .template-table {
+            min-width: 800px;
+        }
+
+        .template-table th,
+        .template-table td {
+            padding: 12px 8px;
+            font-size: 13px;
+        }
     }
     
     .loading {
@@ -168,10 +201,10 @@
 <div class="templates-container">
     <div class="actions-bar">
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Search templates...">
+            <input type="text" id="searchInput" placeholder="テンプレートを検索...">
         </div>
-        <button class="btn-create" onclick="createTemplate()">
-            <span class="material-icons" style="vertical-align: middle; font-size: 18px;">add</span>
+        <button class="btn btn-primary btn-medium" onclick="createTemplate()">
+            <span class="material-icons" style="font-size: 18px;">add</span>
             新規追加
         </button>
     </div>
@@ -180,13 +213,28 @@
         読み込み中...
     </div>
     
-    <div id="templatesList" class="templates-list" style="display: none;">
+    <div id="templateTableContainer" class="template-table-container" style="display: none;">
+        <table class="template-table">
+            <thead>
+                <tr>
+                    <th style="width: 30%;">テンプレート名</th>
+                    <th style="width: 35%;">説明</th>
+                    <th style="width: 12%;">タイプ</th>
+                    <th style="width: 12%;">作成日</th>
+                    <th style="width: 11%;">操作</th>
+                </tr>
+            </thead>
+            <tbody id="templateTableBody">
+                <!-- JavaScriptで動的に生成 -->
+            </tbody>
+        </table>
     </div>
     
     <div id="emptyState" class="empty-state" style="display: none;">
         <span class="material-icons" style="font-size: 64px; color: #ccc;">description</span>
         <p>テンプレートが見つかりません</p>
-        <button class="btn-create" onclick="createTemplate()" style="margin-top: 20px;">
+        <button class="btn btn-primary btn-medium" onclick="createTemplate()" style="margin-top: 20px;">
+            <span class="material-icons" style="font-size: 18px;">add</span>
             最初のテンプレートを作成
         </button>
     </div>
@@ -197,55 +245,88 @@
 <script>
     async function loadTemplates() {
         try {
+            const loadingElement = document.getElementById('loadingIndicator');
+            const tableContainer = document.getElementById('templateTableContainer');
+            const emptyState = document.getElementById('emptyState');
+            
             const response = await fetch('/api/company/templates');
             if (!response.ok) throw new Error('Failed to load templates');
             
             const data = await response.json();
             const templates = data.templates || [];
             
-            document.getElementById('loadingIndicator').style.display = 'none';
+            if (loadingElement) loadingElement.style.display = 'none';
             
             if (templates.length === 0) {
-                document.getElementById('emptyState').style.display = 'block';
+                if (emptyState) emptyState.style.display = 'block';
                 return;
             }
             
-            const list = document.getElementById('templatesList');
-            list.innerHTML = templates.map(template => `
-                <div class="template-item" data-template-id="${template.id}">
-                    <div class="template-info">
-                        <div class="template-header">
-                            <h3 class="template-title">${template.name}</h3>
-                            <span class="template-type">${template.template_type || 'Standard'}</span>
-                        </div>
-                        <p class="template-description">${template.description || 'No description provided'}</p>
-                        <div class="template-meta">
-                            <div class="template-meta-item">
-                                <span class="material-icons" style="font-size: 14px;">event</span>
-                                <span>作成日: ${new Date(template.created_at).toLocaleDateString()}</span>
-                            </div>
-                            <div class="template-meta-item">
-                                <span class="material-icons" style="font-size: 14px;">update</span>
-                                <span>更新日: ${new Date(template.updated_at).toLocaleDateString()}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="template-actions">
-                        <button class="btn-action btn-detail" onclick="editTemplate(${template.id})" title="Detail">
-                            <span class="material-icons" style="font-size: 16px;">description</span>
+            const tableBody = document.getElementById('templateTableBody');
+            if (!tableBody) {
+                console.error('Template table body not found');
+                return;
+            }
+            
+            tableBody.innerHTML = templates.map(template => `
+                <tr data-template-id="${template.id}">
+                    <td class="title-cell">
+                        ${escapeHtml(template.name)}
+                    </td>
+                    <td>
+                        <span style="font-size: 13px; color: #555;">${escapeHtml(template.description || '説明なし')}</span>
+                    </td>
+                    <td>
+                        <span class="template-type-badge">${escapeHtml(template.template_type || 'Standard')}</span>
+                    </td>
+                    <td>
+                        <span style="font-size: 13px; color: #555;">${formatDate(template.created_at)}</span>
+                    </td>
+                    <td class="actions-cell">
+                        <button class="btn btn-primary btn-small" onclick="editTemplate(${template.id})" title="編集">
+                            <span class="material-icons" style="font-size: 16px;">edit</span>
+                            編集
                         </button>
-                        <button class="btn-action btn-delete" onclick="deleteTemplate(${template.id})" title="Delete">
+                        <button class="btn btn-danger btn-small" onclick="deleteTemplate(${template.id})" title="削除">
                             <span class="material-icons" style="font-size: 16px;">delete</span>
+                            削除
                         </button>
-                    </div>
-                </div>
+                    </td>
+                </tr>
             `).join('');
             
-            list.style.display = 'block';
+            if (tableContainer) tableContainer.style.display = 'block';
         } catch (error) {
             console.error('Error loading templates:', error);
-            document.getElementById('loadingIndicator').innerHTML = '<p style="color: red;">Error loading templates</p>';
+            const loadingElement = document.getElementById('loadingIndicator');
+            if (loadingElement) {
+                loadingElement.innerHTML = '<p style="color: red;">テンプレートの読み込みに失敗しました</p>';
+            }
         }
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function formatDate(dateString) {
+        if (!dateString) return '未設定';
+        
+        let date;
+        if (dateString.includes('T') && !dateString.includes('+') && !dateString.includes('Z')) {
+            date = new Date(dateString + '+09:00');
+        } else {
+            date = new Date(dateString);
+        }
+        
+        return date.toLocaleDateString('ja-JP', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
     }
     
     function createTemplate() {
@@ -279,11 +360,20 @@
     
     document.getElementById('searchInput').addEventListener('input', function(e) {
         const searchTerm = e.target.value.toLowerCase();
-        const items = document.querySelectorAll('.template-item');
+        const rows = document.querySelectorAll('.template-table tbody tr');
         
-        items.forEach(item => {
-            const text = item.textContent.toLowerCase();
-            item.style.display = text.includes(searchTerm) ? 'flex' : 'none';
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length === 0) return;
+            
+            const title = cells[0].textContent.toLowerCase();
+            const description = cells[1].textContent.toLowerCase();
+            
+            if (title.includes(searchTerm) || description.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
         });
     });
     
