@@ -1,0 +1,259 @@
+/**
+ * File: image_editor.css
+ * Purpose: Styling for standalone image editor modal
+ * Main functionality: Modal layout, toolbar, canvas display
+ * Dependencies: Material Icons
+ */
+
+/* ===== Image Editor Modal ===== */
+.image-editor-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 10002;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.2s ease;
+}
+
+.image-editor-content {
+    background: #1e1e1e;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 1000px;
+    height: 85vh;
+    max-height: 800px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    color: #fff;
+}
+
+/* ===== Header ===== */
+.image-editor-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.image-editor-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.image-editor-close {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.image-editor-close:hover {
+    background: #333;
+    color: #fff;
+}
+
+/* ===== Toolbar ===== */
+.image-editor-toolbar {
+    padding: 12px 20px;
+    background: #2a2a2a;
+    border-bottom: 1px solid #333;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.toolbar-group {
+    display: flex;
+    gap: 8px;
+    padding: 0 12px;
+    border-right: 1px solid #444;
+}
+
+.toolbar-group:last-child {
+    border-right: none;
+}
+
+.toolbar-btn {
+    background: #333;
+    border: 1px solid #444;
+    padding: 8px 12px;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.toolbar-btn:hover {
+    background: #404040;
+    border-color: #0073aa;
+}
+
+.toolbar-btn .material-icons {
+    font-size: 18px;
+}
+
+/* ===== Canvas Area ===== */
+.image-editor-canvas-wrapper {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: auto;
+    background: #1a1a1a;
+    position: relative;
+}
+
+.image-editor-canvas {
+    max-width: 100%;
+    max-height: 100%;
+    border: 1px solid #444;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    background: #fff;
+}
+
+.image-editor-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #aaa;
+}
+
+.image-editor-loading .material-icons {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.rotating {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ===== Info Bar ===== */
+.image-editor-info {
+    padding: 12px 20px;
+    background: #2a2a2a;
+    border-top: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: #aaa;
+    flex-shrink: 0;
+}
+
+/* ===== Footer ===== */
+.image-editor-footer {
+    padding: 16px 20px;
+    border-top: 1px solid #333;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background: #1e1e1e;
+    flex-shrink: 0;
+}
+
+.image-editor-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.image-editor-btn-primary {
+    background: #0073aa;
+    color: #fff;
+}
+
+.image-editor-btn-primary:hover {
+    background: #005a87;
+}
+
+.image-editor-btn-secondary {
+    background: #333;
+    color: #fff;
+    border: 1px solid #555;
+}
+
+.image-editor-btn-secondary:hover {
+    background: #404040;
+}
+
+.image-editor-btn .material-icons {
+    font-size: 18px;
+}
+
+/* ===== Responsive Design ===== */
+@media (max-width: 768px) {
+    .image-editor-content {
+        width: 100%;
+        height: 100vh;
+        max-height: none;
+        border-radius: 0;
+    }
+
+    .image-editor-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .toolbar-group {
+        border-right: none;
+        border-bottom: 1px solid #444;
+        padding: 8px 0;
+    }
+
+    .toolbar-group:last-child {
+        border-bottom: none;
+    }
+
+    .toolbar-btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .image-editor-footer {
+        flex-direction: column;
+    }
+
+    .image-editor-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

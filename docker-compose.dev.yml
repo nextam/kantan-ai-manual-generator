@@ -29,10 +29,33 @@ services:
     networks:
       - manual-generator-network
 
+  # PostgreSQL database for development
+  postgres:
+    image: postgres:16-alpine
+    container_name: manual-generator-postgres
+    environment:
+      - POSTGRES_USER=kantan_user
+      - POSTGRES_PASSWORD=kantan_password
+      - POSTGRES_DB=kantan_ai_manual_generator
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --locale=C
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - manual-generator-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kantan_user -d kantan_ai_manual_generator"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   elasticsearch_data:
     driver: local
   redis_data:
+    driver: local
+  postgres_data:
     driver: local
 
 networks:

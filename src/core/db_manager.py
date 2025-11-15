@@ -20,7 +20,9 @@ def create_app():
     
     # 設定
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///manual_generator.db')
+    # Use DATABASE_URL from environment (PostgreSQL for development/production)
+    # Falls back to SQLite only if DATABASE_URL is not set
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///instance/manual_generator.db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # データベース初期化

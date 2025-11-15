@@ -11,6 +11,12 @@
 <!-- Turndown for HTML to Markdown conversion -->
 <script src="https://cdn.jsdelivr.net/npm/turndown@7.1.1/dist/turndown.js"></script>
 
+<!-- Media Library Components -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/image_editor.css') }}">
+<link rel="stylesheet" href="/components/media_library/media_library.css">
+<script src="{{ url_for('static', filename='js/image_editor_standalone.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/media_library.js') }}" defer></script>
+
 <style>
     .breadcrumb {
         margin-bottom: 30px;
@@ -235,6 +241,9 @@
 
 <!-- プレビューモーダルをインクルード -->
 {% include 'modals/preview_modal.html' %}
+
+<!-- メディアライブラリモーダルをインクルード -->
+{% include 'components/media_library/media_library_modal.html' %}
 {% endblock %}
 
 {% block extra_scripts %}
@@ -250,8 +259,27 @@
             selector: '#editor',
             height: 500,
             plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
-            toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+            toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mediaLibraryBtn | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
             promotion: false,
+            setup: function(ed) {
+                // Add custom Media Library button
+                ed.ui.registry.addButton('mediaLibraryBtn', {
+                    text: 'メディアライブラリ',
+                    icon: 'gallery',
+                    onAction: function() {
+                        openMediaLibraryForTinyMCE(ed);
+                    }
+                });
+                
+                editor = ed;
+                ed.on('init', function () {
+                    if (content) {
+                        ed.setContent(content);
+                    }
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('edit-form').style.display = 'block';
+                });
+            },
             content_style: `
                 body { font-family: 'Noto Sans JP', 'Segoe UI', sans-serif; font-size: 14px; }
                 h1 { font-size: 24px; }
@@ -263,16 +291,41 @@
                 table, th, td { border: 1px solid #ddd; }
                 th, td { padding: 8px; text-align: left; }
                 th { background-color: #f2f2f2; }
-            `,
-            setup: function (ed) {
-                editor = ed;
-                ed.on('init', function () {
-                    if (content) {
-                        ed.setContent(content);
-                    }
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('edit-form').style.display = 'block';
-                });
+            `
+        });
+    }
+
+    /**
+     * Open media library for TinyMCE image insertion
+     */
+    function openMediaLibraryForTinyMCE(editorInstance) {
+        if (!window.MediaLibrary) {
+            alert('メディアライブラリが読み込まれていません');
+            return;
+        }
+
+        window.MediaLibrary.open({
+            mode: 'select',
+            mediaType: 'image',
+            onSelect: function(media) {
+                // Insert image into TinyMCE
+                const imgHtml = `<img src="${media.signed_url}" alt="${media.alt_text || media.title || ''}" style="max-width: 100%; height: auto;" data-media-id="${media.id}" />`;
+                editorInstance.insertContent(imgHtml);
+                console.log('Image inserted into TinyMCE:', media.title);
+            },
+            onEdit: function(media) {
+                // Open image editor
+                if (window.ImageEditorStandalone) {
+                    window.ImageEditorStandalone.open({
+                        imageUrl: media.signed_url,
+                        mediaId: media.id,
+                        onSave: function(editedData) {
+                            console.log('Image edited:', editedData);
+                            // Reload media library to show updated image
+                            window.MediaLibrary.loadMedia(window.MediaLibrary.currentPage);
+                        }
+                    });
+                }
             }
         });
     }

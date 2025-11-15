@@ -38,12 +38,12 @@
       }
     },
     {
-      "label": "ElasticSearch & Redis 再起動",
+      "label": "ElasticSearch & Redis & PostgreSQL 再起動",
       "type": "shell",
       "command": "powershell",
       "args": [
         "-Command",
-        "Write-Host \"=== ElasticSearch and Redis 再起動 ===\"; Write-Host \"\"; Write-Host \"既存コンテナを停止中...\"; docker-compose -f docker-compose.dev.yml down elasticsearch redis 2>$null; Start-Sleep -Seconds 2; Write-Host \"完了\"; Write-Host \"\"; Write-Host \"コンテナを起動中...\"; docker-compose -f docker-compose.dev.yml up -d elasticsearch redis; Start-Sleep -Seconds 5; Write-Host \"完了\"; Write-Host \"\"; Write-Host \"サービス状態確認中...\"; docker ps --filter 'name=elasticsearch' --filter 'name=redis' --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'; Write-Host \"\"; Write-Host \"✅ ElasticSearch and Redis 再起動完了\""
+        "Write-Host \"=== ElasticSearch, Redis, PostgreSQL 再起動 ===\"; Write-Host \"\"; Write-Host \"既存コンテナを停止中...\"; docker-compose -f docker-compose.dev.yml down elasticsearch redis postgres 2>$null; Start-Sleep -Seconds 2; Write-Host \"完了\"; Write-Host \"\"; Write-Host \"コンテナを起動中...\"; docker-compose -f docker-compose.dev.yml up -d elasticsearch redis postgres; Start-Sleep -Seconds 5; Write-Host \"完了\"; Write-Host \"\"; Write-Host \"サービス状態確認中...\"; docker ps --filter 'name=elasticsearch' --filter 'name=redis' --filter 'name=postgres' --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'; Write-Host \"\"; Write-Host \"✅ ElasticSearch, Redis, PostgreSQL 再起動完了\""
       ],
       "group": "none",
       "presentation": {
@@ -76,7 +76,7 @@
       "problemMatcher": [],
       "dependsOn": [
         "すべてのPythonプロセスを強制終了",
-        "ElasticSearch & Redis 再起動"
+        "ElasticSearch & Redis & PostgreSQL 再起動"
       ],
       "dependsOrder": "sequence"
     },
@@ -123,7 +123,7 @@
       "command": "powershell",
       "args": [
         "-Command",
-        "Write-Host '=== サービス状態確認（詳細）==='; Write-Host ''; Write-Host '[1] Pythonプロセス:'; $pythonProcesses = Get-Process | Where-Object {$_.ProcessName -eq 'python'}; if ($pythonProcesses) { $pythonProcesses | ForEach-Object { Write-Host \"  PID $($_.Id) - 起動: $($_.StartTime)\" } } else { Write-Host '  なし' }; Write-Host ''; Write-Host '[2] Docker コンテナ (ElasticSearch & Redis):'; docker ps --filter 'name=elasticsearch' --filter 'name=redis' --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'; Write-Host ''; Write-Host '[3] Flask サーバー:'; try { $response = Invoke-WebRequest -Uri 'http://localhost:5000/auth/status' -TimeoutSec 3 -ErrorAction Stop; Write-Host \"  ✅ Port 5000: 動作中 (Status: $($response.StatusCode))\" } catch { Write-Host '  ❌ Port 5000: 停止中' }; Write-Host ''; Write-Host '[4] ElasticSearch API:'; try { $esResponse = Invoke-WebRequest -Uri 'http://localhost:9200' -TimeoutSec 3 -ErrorAction Stop -UseBasicParsing; $esData = $esResponse.Content | ConvertFrom-Json; Write-Host \"  ✅ Port 9200: 動作中 - $($esData.cluster_name)\" } catch { Write-Host '  ❌ Port 9200: 停止中' }; Write-Host ''"
+        "Write-Host '=== サービス状態確認（詳細）==='; Write-Host ''; Write-Host '[1] Pythonプロセス:'; $pythonProcesses = Get-Process | Where-Object {$_.ProcessName -eq 'python'}; if ($pythonProcesses) { $pythonProcesses | ForEach-Object { Write-Host \"  PID $($_.Id) - 起動: $($_.StartTime)\" } } else { Write-Host '  なし' }; Write-Host ''; Write-Host '[2] Docker コンテナ (ElasticSearch, Redis, PostgreSQL):'; docker ps --filter 'name=elasticsearch' --filter 'name=redis' --filter 'name=postgres' --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'; Write-Host ''; Write-Host '[3] Flask サーバー:'; try { $response = Invoke-WebRequest -Uri 'http://localhost:5000/auth/status' -TimeoutSec 3 -ErrorAction Stop; Write-Host \"  ✅ Port 5000: 動作中 (Status: $($response.StatusCode))\" } catch { Write-Host '  ❌ Port 5000: 停止中' }; Write-Host ''; Write-Host '[4] ElasticSearch API:'; try { $esResponse = Invoke-WebRequest -Uri 'http://localhost:9200' -TimeoutSec 3 -ErrorAction Stop -UseBasicParsing; $esData = $esResponse.Content | ConvertFrom-Json; Write-Host \"  ✅ Port 9200: 動作中 - $($esData.cluster_name)\" } catch { Write-Host '  ❌ Port 9200: 停止中' }; Write-Host ''; Write-Host '[5] PostgreSQL:'; try { docker exec manual-generator-postgres pg_isready -U kantan_user 2>&1 | Out-Null; if ($LASTEXITCODE -eq 0) { Write-Host '  ✅ Port 5432: 動作中' } else { Write-Host '  ❌ Port 5432: 停止中' } } catch { Write-Host '  ❌ Port 5432: 停止中' }; Write-Host ''"
       ],
       "group": "none",
       "presentation": {

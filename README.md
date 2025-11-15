@@ -21,6 +21,7 @@
 9. [トラブルシューティング](#トラブルシューティング)
 10. [実装検証レポート](#実装検証レポート)
 11. [エンタープライズ機能開発](#エンタープライズ機能開発)
+12. [メディアライブラリ機能](#メディアライブラリ機能)
 
 ---
 
@@ -833,6 +834,8 @@ sudo docker-compose logs --tail=100 manual
 - **manual_generator/README.md**: アプリケーション詳細
 - **manual_generator/GEMINI_ENHANCED_SPECIFICATION.md**: Gemini技術仕様
 - **.github/copilot-instructions.md**: 開発ガイドライン
+- **[docs/MEDIA_LIBRARY_SETUP.md](docs/MEDIA_LIBRARY_SETUP.md)**: メディアライブラリ セットアップガイド
+- **[docs/MEDIA_LIBRARY_IMPLEMENTATION.md](docs/MEDIA_LIBRARY_IMPLEMENTATION.md)**: メディアライブラリ 実装ガイド
 
 ---
 
@@ -917,7 +920,79 @@ sudo docker-compose logs --tail=100 manual
 
 ---
 
-## �📄 ライセンス
+## 🎨 メディアライブラリ機能
+
+### 概要
+WordPress風の統合メディア管理システム。画像・動画の一元管理、動画からのフレームキャプチャ、画像編集機能を提供します。
+
+### 主要機能
+- ✅ **メディア一覧管理**: 画像・動画の統合ビュー、検索、フィルタリング
+- ✅ **ファイルアップロード**: ドラッグ&ドロップ対応、メタデータ編集
+- ✅ **動画キャプチャ**: 任意のタイムスタンプでフレーム抽出
+- ✅ **画像編集統合**: テキスト・図形描画、回転、フィルタ
+- ✅ **テナント分離**: 完全なcompany_id分離、GCS統合
+- ✅ **TinyMCE統合**: 編集画面での画像選択・差し替え
+
+### アーキテクチャ
+
+#### Backend
+- **Media Model** (`src/models/models.py`): テナント分離、GCS URI管理
+- **MediaManager** (`src/services/media_manager.py`): GCS操作、メタデータ管理
+- **Media API** (`src/api/media_routes.py`): RESTful API (8 endpoints)
+
+#### Frontend
+- **MediaLibrary Component** (`src/components/media_library/`): 再利用可能なモーダルコンポーネント
+- **Image Editor** (`src/static/js/`): Canvas-based editing tool
+- **TinyMCE Integration**: File picker callback for image selection
+
+### API Endpoints
+```
+GET    /api/media/library       # メディア一覧取得
+POST   /api/media/upload        # アップロード
+POST   /api/media/capture-frame # フレームキャプチャ
+GET    /api/media/<id>          # 詳細取得
+PUT    /api/media/<id>          # 更新
+DELETE /api/media/<id>          # 削除
+GET    /api/media/stats         # 統計情報
+```
+
+### セットアップ
+
+#### 1. データベースマイグレーション
+```bash
+python scripts/migrate_add_media_table.py
+```
+
+#### 2. 環境変数確認
+```bash
+GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-credentials.json
+GCS_BUCKET_NAME=kantan-ai-manual-generator
+PROJECT_ID=kantan-ai-database
+```
+
+#### 3. APIルート登録
+`src/core/app.py`に自動登録されます。
+
+### 使用方法
+
+#### マニュアル編集画面
+```javascript
+// TinyMCEで画像をクリックすると自動的にメディアライブラリが開きます
+// 画像の選択・編集・差し替えが可能
+```
+
+#### マニュアル生成画面
+```javascript
+// 動画選択時にメディアライブラリから選択可能
+// 新規アップロードもメディアライブラリに自動追加
+```
+
+### 詳細ドキュメント
+- [Media Library Implementation Guide](docs/MEDIA_LIBRARY_IMPLEMENTATION.md) - 実装詳細・残タスク
+
+---
+
+## 📄 ライセンス
 
 このプロジェクトのライセンスは社内/委託条件に準じます。
 

@@ -394,7 +394,9 @@ print(f"Instance directory: {instance_dir}")
 print(f"Instance directory exists: {os.path.exists(instance_dir)}")
 print(f"Instance directory is writable: {os.access(instance_dir, os.W_OK)}")
 
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+# Database Configuration: Use DATABASE_URL from environment or default to SQLite
+database_url = os.getenv('DATABASE_URL', f'sqlite:///{db_path}')
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 print(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -1088,6 +1090,27 @@ def uploaded_file(filename):
         logger.error(f"ファイル配信エラー: {str(e)}")
         return jsonify({'error': 'ファイル配信中にエラーが発生しました'}), 500
 
+@app.route('/components/<path:filename>')
+def serve_component(filename):
+    """Serve component files (CSS, HTML, JS)"""
+    import os
+    from flask import send_from_directory
+    
+    # Security: prevent path traversal attacks
+    if '..' in filename or filename.startswith('/'):
+        return jsonify({'error': 'Invalid file path'}), 400
+    
+    components_dir = os.path.join(os.getcwd(), 'src', 'components')
+    
+    try:
+        return send_from_directory(components_dir, filename)
+    except FileNotFoundError:
+        logger.warning(f"Component file not found: {filename}")
+        return jsonify({'error': 'Component not found'}), 404
+    except Exception as e:
+        logger.error(f"Component serve error: {str(e)}")
+        return jsonify({'error': 'Error serving component'}), 500
+
 @app.route('/video_preview/<int:file_id>')
 def video_preview_by_id(file_id):
     """ファイルIDによる動画プレビュー"""
@@ -1780,6 +1803,14 @@ if HAS_AUTH_SYSTEM:
         logger.info("Job management routes (Phase 8) registered successfully")
     except Exception as e:
         logger.warning(f"Failed to register job routes: {e}")
+    
+    # Media Library APIエンドポイント登録
+    try:
+        from src.api.media_routes import media_bp
+        app.register_blueprint(media_bp)
+        logger.info("Media library routes registered successfully")
+    except Exception as e:
+        logger.warning(f"Failed to register media routes: {e}")
     
     # UI Routes for Admin and Company Dashboards
     try:

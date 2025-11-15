@@ -712,3 +712,187 @@ class ProcessingJob(db.Model):
             'error_message': self.error_message,
             'created_at': utc_to_jst_isoformat(self.created_at)
         }
+
+
+class Media(db.Model):
+    """
+    Media Library Model
+    Stores images, videos, and other media files with tenant isolation
+    """
+    __tablename__ = 'media'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Tenant isolation - CRITICAL
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False, index=True)
+    
+    # User who uploaded/created this media
+    uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # Media type: 'image', 'video', 'document'
+    media_type = db.Column(db.String(20), nullable=False, index=True)
+    
+    # File information
+    filename = db.Column(db.String(255), nullable=False)
+    original_filename = db.Column(db.String(255), nullable=False)
+    file_size = db.Column(db.Integer)  # Size in bytes
+    mime_type = db.Column(db.String(100))
+    
+    # GCS storage path - ALWAYS uses GCS
+    gcs_uri = db.Column(db.String(1024), nullable=False, unique=True)
+    gcs_bucket = db.Column(db.String(255), nullable=False)
+    gcs_path = db.Column(db.String(1024), nullable=False)
+    
+    # Media metadata
+    title = db.Column(db.String(255))
+    description = db.Column(db.Text)
+    alt_text = db.Column(db.String(500))  # For accessibility
+    
+    # Tags for categorization and search (JSON array)
+    tags = db.Column(db.Text)  # JSON array: ["tag1", "tag2"]
+    
+    # Source information
+    source_type = db.Column(db.String(50))  # 'upload', 'video_capture', 'ai_generated', 'edited'
+    source_media_id = db.Column(db.Integer, db.ForeignKey('media.id'), nullable=True)  # If derived from another media
+    source_video_timestamp = db.Column(db.Float)  # If captured from video
+    
+    # Image-specific metadata (JSON)
+    image_metadata = db.Column(db.Text)  # JSON: {"width": 1920, "height": 1080, "rotation": 0, "edited": true}
+    
+    # Video-specific metadata (JSON)
+    video_metadata = db.Column(db.Text)  # JSON: {"duration": 120.5, "fps": 30, "resolution": "1920x1080"}
+    
+    # Usage tracking
+    usage_count = db.Column(db.Integer, default=0)  # How many times used in manuals
+    last_used_at = db.Column(db.DateTime)
+    
+    # Status
+    is_active = db.Column(db.Boolean, default=True)
+    is_public = db.Column(db.Boolean, default=False)  # For sharing across company
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    source_media = db.relationship('Media', remote_side=[id], backref='derived_media', uselist=False)
+    
+    # Indexes for performance
+    __table_args__ = (
+        db.Index('idx_media_company_type', 'company_id', 'media_type'),
+        db.Index('idx_media_company_active', 'company_id', 'is_active'),
+        db.Index('idx_media_created', 'created_at'),
+    )
+    
+    def to_dict(self):
+        """Convert to dictionary for API response"""
+        # Parse tags: comma-separated string or JSON array
+        tags_list = []
+        if self.tags:
+            try:
+                # Try parsing as JSON array first (PostgreSQL with JSON type)
+                tags_list = json.loads(self.tags)
+            except (json.JSONDecodeError, TypeError):
+                # Fall back to comma-separated string (SQLite or TEXT field)
+                tags_list = [t.strip() for t in self.tags.split(',') if t.strip()]
+        
+        # Parse metadata: JSON string or dict
+        def parse_json_field(field_value):
+            if not field_value:
+                return {}
+            if isinstance(field_value, dict):
+                return field_value
+            try:
+                return json.loads(field_value)
+            except (json.JSONDecodeError, TypeError):
+                return {}
+        
+        return {
+            'id': self.id,
+            'company_id': self.company_id,
+            'uploaded_by': self.uploaded_by,
+            'media_type': self.media_type,
+            'filename': self.filename,
+            'original_filename': self.original_filename,
+            'file_size': self.file_size,
+            'mime_type': self.mime_type,
+            'gcs_uri': self.gcs_uri,
+            'title': self.title,
+            'description': self.description,
+            'alt_text': self.alt_text,
+            'tags': tags_list,
+            'source_type': self.source_type,
+            'source_media_id': self.source_media_id,
+            'source_video_timestamp': self.source_video_timestamp,
+            'image_metadata': parse_json_field(self.image_metadata),
+            'video_metadata': parse_json_field(self.video_metadata),
+            'usage_count': self.usage_count,
+            'last_used_at': utc_to_jst_isoformat(self.last_used_at),
+            'is_active': self.is_active,
+            'is_public': self.is_public,
+            'created_at': utc_to_jst_isoformat(self.created_at),
+            'updated_at': utc_to_jst_isoformat(self.updated_at)
+        }
+    
+    def get_signed_url(self, expiration=3600):
+        """
+        Generate signed URL for GCS file
+        To be implemented in MediaManager service
+        """
+        from src.services.media_manager import MediaManager
+        manager = MediaManager()
+        return manager.get_signed_url(self.gcs_uri, expiration)
+    
+    def increment_usage(self):
+        """Increment usage count and update last_used_at"""
+        self.usage_count = (self.usage_count or 0) + 1
+        self.last_used_at = datetime.utcnow()
+        db.session.commit()
+    
+    def set_tags(self, tags_list):
+        """Set tags from list"""
+        if isinstance(tags_list, list):
+            self.tags = json.dumps(tags_list)
+        else:
+            self.tags = json.dumps([])
+    
+    def get_tags(self):
+        """Get tags as list"""
+        if self.tags:
+            try:
+                return json.loads(self.tags)
+            except:
+                return []
+        return []
+    
+    def set_image_metadata(self, metadata_dict):
+        """Set image metadata from dict"""
+        if isinstance(metadata_dict, dict):
+            self.image_metadata = json.dumps(metadata_dict)
+        else:
+            self.image_metadata = json.dumps({})
+    
+    def get_image_metadata(self):
+        """Get image metadata as dict"""
+        if self.image_metadata:
+            try:
+                return json.loads(self.image_metadata)
+            except:
+                return {}
+        return {}
+    
+    def set_video_metadata(self, metadata_dict):
+        """Set video metadata from dict"""
+        if isinstance(metadata_dict, dict):
+            self.video_metadata = json.dumps(metadata_dict)
+        else:
+            self.video_metadata = json.dumps({})
+    
+    def get_video_metadata(self):
+        """Get video metadata as dict"""
+        if self.video_metadata:
+            try:
+                return json.loads(self.video_metadata)
+            except:
+                return {}
+        return {}

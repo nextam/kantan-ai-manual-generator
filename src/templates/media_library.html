@@ -1,0 +1,1496 @@
+{% extends "base.html" %}
+
+{% block title %}メディア管理{% endblock %}
+{% block page_title %}メディア管理{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .content-wrapper {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .media-library-container {
+        margin: 0 auto;
+    }
+
+    .media-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .media-header h1 {
+        margin: 0;
+        font-size: 28px;
+        color: #333;
+    }
+
+    .upload-button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+    }
+
+    .upload-button:hover {
+        background: #0056b3;
+        box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+        transform: translateY(-1px);
+    }
+
+    .filter-section {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .filter-group label {
+        font-weight: 500;
+        color: #495057;
+        font-size: 14px;
+    }
+
+    .filter-group select,
+    .filter-group input {
+        padding: 8px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 14px;
+        background: white;
+        transition: border-color 0.15s ease;
+    }
+
+    .filter-group select:focus,
+    .filter-group input:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .media-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .media-card {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.3s;
+        position: relative;
+    }
+
+    .media-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .media-thumbnail {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .media-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .media-thumbnail video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .media-thumbnail .video-icon {
+        font-size: 64px;
+        color: #999;
+    }
+
+    .media-info {
+        padding: 12px;
+    }
+
+    .media-title {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .media-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: #777;
+        margin-top: 8px;
+    }
+
+    .media-type-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 4px 8px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .media-actions {
+        padding: 8px 12px;
+        border-top: 1px solid #f0f0f0;
+        display: flex;
+        gap: 8px;
+    }
+
+    .media-action-btn {
+        flex: 1;
+        padding: 6px;
+        border: none;
+        background: #f5f5f5;
+        color: #555;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: background 0.2s;
+    }
+
+    .media-action-btn:hover {
+        background: #e0e0e0;
+    }
+
+    .media-action-btn.delete {
+        background: #ffebee;
+        color: #d32f2f;
+    }
+
+    .media-action-btn.delete:hover {
+        background: #ffcdd2;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 30px;
+    }
+
+    .pagination button {
+        padding: 8px 16px;
+        border: 1px solid #ddd;
+        background: white;
+        color: #555;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .pagination button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .pagination button:not(:disabled):hover {
+        background: #f5f5f5;
+    }
+
+    .pagination .page-info {
+        color: #777;
+        font-size: 14px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+    }
+
+    .empty-state .material-icons {
+        font-size: 64px;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+
+    /* Upload Modal */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+    }
+
+    .close-modal {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #999;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #555;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .file-drop-zone {
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        padding: 40px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .file-drop-zone:hover,
+    .file-drop-zone.drag-over {
+        border-color: #4CAF50;
+        background: #f1f8f4;
+    }
+
+    .file-drop-zone .material-icons {
+        font-size: 48px;
+        color: #999;
+        margin-bottom: 10px;
+    }
+
+    .submit-button {
+        width: 100%;
+        padding: 12px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .submit-button:hover {
+        background: #0056b3;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+    }
+
+    .submit-button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: #999;
+    }
+
+    .loading .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #4CAF50;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="media-library-container">
+        <div class="media-header">
+            <button class="upload-button" onclick="openUploadModal()">
+                <span class="material-icons">add_photo_alternate</span>
+                メディアをアップロード
+            </button>
+        </div>
+
+    <div class="filter-section">
+        <div class="filter-group">
+            <label for="media-type-filter">種類:</label>
+            <select id="media-type-filter" onchange="filterMedia()">
+                <option value="">すべて</option>
+                <option value="image">画像</option>
+                <option value="video">動画</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="search-input">検索:</label>
+            <input type="text" id="search-input" placeholder="タイトル、説明、タグで検索" onkeyup="searchMedia()">
+        </div>
+
+        <div class="filter-group">
+            <label for="sort-by">並び替え:</label>
+            <select id="sort-by" onchange="sortMedia()">
+                <option value="created_at">作成日（新しい順）</option>
+                <option value="created_at_asc">作成日（古い順）</option>
+                <option value="title">タイトル（A-Z）</option>
+                <option value="size">ファイルサイズ</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="media-grid" class="media-grid">
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>読み込み中...</p>
+        </div>
+    </div>
+
+    <div id="pagination" class="pagination" style="display: none;">
+        <button id="prev-page" onclick="previousPage()" disabled>
+            <span class="material-icons">chevron_left</span>
+        </button>
+        <span class="page-info" id="page-info"></span>
+        <button id="next-page" onclick="nextPage()">
+            <span class="material-icons">chevron_right</span>
+        </button>
+    </div>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div id="upload-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>アップロード</h2>
+            <button class="close-modal" onclick="closeUploadModal()">&times;</button>
+        </div>
+
+        <form id="upload-form" onsubmit="uploadMedia(event)">
+            <div class="form-group">
+                <label>ファイル *</label>
+                <div class="file-drop-zone" id="file-drop-zone" onclick="document.getElementById('file-input').click()">
+                    <span class="material-icons">cloud_upload</span>
+                    <p>クリックまたはドラッグ&ドロップでファイルを選択</p>
+                    <p style="font-size: 12px; color: #999;">画像: JPG, PNG, GIF | 動画: MP4, MOV, AVI</p>
+                </div>
+                <input type="file" id="file-input" accept="image/*,video/*" style="display: none;" onchange="handleFileSelect(event)">
+                <div id="file-preview" style="margin-top: 10px;"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="media-title">タイトル</label>
+                <input type="text" id="media-title" placeholder="メディアのタイトル">
+            </div>
+
+            <div class="form-group">
+                <label for="media-description">説明</label>
+                <textarea id="media-description" placeholder="メディアの説明"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="media-alt-text">代替テキスト</label>
+                <input type="text" id="media-alt-text" placeholder="画像の代替テキスト（アクセシビリティ用）">
+            </div>
+
+            <div class="form-group">
+                <label for="media-tags">タグ（カンマ区切り）</label>
+                <input type="text" id="media-tags" placeholder="例: 製品, マニュアル, 手順">
+            </div>
+
+            <button type="submit" class="submit-button" id="upload-submit-btn">アップロード</button>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="edit-modal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <h2>メディアを編集</h2>
+            <button class="close-modal" onclick="closeEditModal()">&times;</button>
+        </div>
+
+        <form id="edit-form" onsubmit="updateMedia(event)">
+            <input type="hidden" id="edit-media-id">
+            
+            <!-- Preview Section -->
+            <div class="form-group">
+                <label>プレビュー</label>
+                <div id="edit-preview" style="background: #f5f5f5; border-radius: 8px; padding: 20px; text-align: center; min-height: 200px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                    <!-- Preview will be inserted here -->
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>ファイル名</label>
+                <input type="text" id="edit-filename" disabled style="background: #f5f5f5;">
+            </div>
+            
+            <div class="form-group">
+                <label>ファイル情報</label>
+                <div style="padding: 8px; background: #f5f5f5; border-radius: 4px; font-size: 13px; color: #666;">
+                    <div><strong>タイプ:</strong> <span id="edit-type"></span></div>
+                    <div><strong>サイズ:</strong> <span id="edit-size"></span></div>
+                    <div><strong>作成日時:</strong> <span id="edit-created"></span></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="edit-title">タイトル</label>
+                <input type="text" id="edit-title" placeholder="メディアのタイトル">
+            </div>
+
+            <div class="form-group">
+                <label for="edit-description">説明</label>
+                <textarea id="edit-description" placeholder="メディアの説明"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="edit-alt-text">代替テキスト</label>
+                <input type="text" id="edit-alt-text" placeholder="画像の代替テキスト（アクセシビリティ用）">
+            </div>
+
+            <div class="form-group">
+                <label for="edit-tags">タグ（カンマ区切り）</label>
+                <input type="text" id="edit-tags" placeholder="例: 製品, マニュアル, 手順">
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" class="submit-button" id="edit-image-btn" onclick="openImageEditor()" style="flex: 1; background: #6c757d; display: none;">
+                    <span class="material-icons" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">画像編集</span>
+                    画像編集
+                </button>
+                <button type="button" class="submit-button" id="capture-video-btn" onclick="openVideoCapture()" style="flex: 1; background: #17a2b8; display: none;">
+                    <span class="material-icons" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">videocam</span>
+                    キャプチャ
+                </button>
+                <button type="submit" class="submit-button" id="edit-submit-btn" style="flex: 2;">更新</button>
+                <button type="button" class="submit-button" onclick="deleteFromEdit()" style="flex: 1; background: #dc3545;">削除</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Image Editor Modal -->
+<div id="image-editor-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 1200px; max-height: 90vh; overflow: auto;">
+        <div class="modal-header">
+            <h2>画像編集</h2>
+            <button class="close-modal" onclick="closeImageEditor()">&times;</button>
+        </div>
+        
+        <div style="padding: 20px;">
+            <!-- Canvas Toolbar -->
+            <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <label style="font-weight: 500;">ツール:</label>
+                    <button type="button" class="submit-button" onclick="setDrawMode('text')" style="padding: 8px 15px; background: #007bff;">
+                        <span class="material-icons" style="font-size: 16px;">text_fields</span> テキスト
+                    </button>
+                    <button type="button" class="submit-button" onclick="setDrawMode('arrow')" style="padding: 8px 15px; background: #28a745;">
+                        <span class="material-icons" style="font-size: 16px;">arrow_forward</span> 矢印
+                    </button>
+                    <button type="button" class="submit-button" onclick="setDrawMode('rect')" style="padding: 8px 15px; background: #ffc107; color: #000;">
+                        <span class="material-icons" style="font-size: 16px;">crop_square</span> 四角形
+                    </button>
+                    <button type="button" class="submit-button" onclick="setDrawMode('circle')" style="padding: 8px 15px; background: #17a2b8;">
+                        <span class="material-icons" style="font-size: 16px;">panorama_fish_eye</span> 円
+                    </button>
+                    <button type="button" class="submit-button" onclick="clearCanvas()" style="padding: 8px 15px; background: #dc3545;">
+                        <span class="material-icons" style="font-size: 16px;">clear</span> クリア
+                    </button>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <label style="font-weight: 500;">色:</label>
+                    <input type="color" id="draw-color" value="#ff0000" style="width: 50px; height: 35px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <label style="font-weight: 500;">太さ:</label>
+                    <input type="range" id="line-width" min="1" max="10" value="3" style="width: 120px;">
+                    <span id="line-width-value">3</span>px
+                </div>
+            </div>
+            
+            <!-- Canvas Container -->
+            <div style="position: relative; border: 2px solid #ddd; border-radius: 8px; overflow: hidden; background: #000;">
+                <canvas id="image-canvas" style="display: block; max-width: 100%; height: auto; cursor: crosshair;"></canvas>
+            </div>
+            
+            <!-- Actions -->
+            <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
+                <button type="button" class="submit-button" onclick="closeImageEditor()" style="background: #6c757d;">キャンセル</button>
+                <button type="button" class="submit-button" onclick="saveEditedImage()" style="background: #28a745;">
+                    <span class="material-icons" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">save</span>
+                    画像を保存
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Video Capture Modal -->
+<div id="video-capture-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 1000px;">
+        <div class="modal-header">
+            <h2>動画キャプチャ</h2>
+            <button class="close-modal" onclick="closeVideoCapture()">&times;</button>
+        </div>
+        
+        <div style="padding: 20px;">
+            <!-- Video Player -->
+            <div style="background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 20px;">
+                <video id="capture-video" controls style="width: 100%; max-height: 500px; display: block;">
+                    <source id="capture-video-source" type="video/mp4">
+                    お使いのブラウザは動画再生に対応していません。
+                </video>
+            </div>
+            
+            <!-- Controls -->
+            <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    <button type="button" class="submit-button" onclick="captureFrame()" style="background: #007bff;">
+                        <span class="material-icons" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">photo_camera</span>
+                        現在のフレームをキャプチャ
+                    </button>
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="font-weight: 500; display: block; margin-bottom: 5px;">キャプチャタイトル:</label>
+                        <input type="text" id="capture-title" class="form-control" placeholder="例: 手順画像 1" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Captured Frame Preview -->
+            <div id="captured-frame-container" style="display: none; margin-bottom: 20px;">
+                <h3 style="margin-bottom: 10px;">キャプチャしたフレーム</h3>
+                <div style="border: 2px solid #28a745; border-radius: 8px; overflow: hidden; background: #000;">
+                    <canvas id="capture-canvas" style="width: 100%; display: block;"></canvas>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="submit-button" onclick="closeVideoCapture()" style="background: #6c757d;">キャンセル</button>
+                <button type="button" class="submit-button" id="save-captured-frame-btn" onclick="saveCapturedFrame()" style="background: #28a745; display: none;">
+                    <span class="material-icons" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">save</span>
+                    メディアライブラリに保存
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentPage = 1;
+    let totalPages = 1;
+    let currentFilters = {
+        media_type: '',
+        search: '',
+        sort_by: 'created_at',
+        sort_order: 'desc'
+    };
+
+    // Load media on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadMedia();
+    });
+
+    async function loadMedia() {
+        const params = new URLSearchParams({
+            page: currentPage,
+            per_page: 20,
+            ...currentFilters
+        });
+
+        try {
+            const response = await fetch(`/api/media/library?${params}`);
+            const data = await response.json();
+
+            if (response.ok) {
+                displayMedia(data.items);
+                updatePagination(data);
+            } else {
+                console.error('Failed to load media:', data);
+                showError('メディアの読み込みに失敗しました');
+            }
+        } catch (error) {
+            console.error('Error loading media:', error);
+            showError('通信エラーが発生しました');
+        }
+    }
+
+    function displayMedia(items) {
+        const grid = document.getElementById('media-grid');
+        
+        if (items.length === 0) {
+            grid.innerHTML = `
+                <div class="empty-state">
+                    <span class="material-icons">photo_library</span>
+                    <h3>メディアがありません</h3>
+                    <p>「メディアをアップロード」ボタンから画像や動画を追加できます</p>
+                </div>
+            `;
+            return;
+        }
+
+        grid.innerHTML = items.map(item => {
+            // Use signed_url if available, otherwise construct URL or show error icon
+            const imageUrl = item.signed_url || item.gcs_uri || '';
+            
+            return `
+                <div class="media-card" onclick="editMedia(${item.id})">
+                    <div class="media-thumbnail">
+                        ${item.media_type === 'image' 
+                            ? (imageUrl 
+                                ? `<img src="${imageUrl}" alt="${item.alt_text || item.title}" onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<span class=\\'material-icons\\' style=\\'font-size:64px;color:#ccc;\\'>broken_image</span>';">`
+                                : `<span class="material-icons" style="font-size:64px;color:#ccc;">broken_image</span>`)
+                            : `<span class="material-icons video-icon">play_circle_outline</span>`
+                        }
+                    </div>
+                    <span class="media-type-badge">${item.media_type === 'image' ? '画像' : '動画'}</span>
+                    <div class="media-info">
+                        <div class="media-title">${item.title || item.filename}</div>
+                        <div class="media-meta">
+                            <span>${formatFileSize(item.file_size)}</span>
+                            <span>${formatDate(item.created_at)}</span>
+                        </div>
+                    </div>
+                    <div class="media-actions" onclick="event.stopPropagation()">
+                        <button class="media-action-btn" onclick="editMedia(${item.id})">編集</button>
+                        <button class="media-action-btn delete" onclick="deleteMedia(${item.id})">削除</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function updatePagination(data) {
+        totalPages = data.total_pages;
+        document.getElementById('page-info').textContent = `${data.page} / ${data.total_pages} ページ`;
+        document.getElementById('prev-page').disabled = !data.has_prev;
+        document.getElementById('next-page').disabled = !data.has_next;
+        document.getElementById('pagination').style.display = totalPages > 1 ? 'flex' : 'none';
+    }
+
+    function filterMedia() {
+        currentFilters.media_type = document.getElementById('media-type-filter').value;
+        currentPage = 1;
+        loadMedia();
+    }
+
+    function searchMedia() {
+        currentFilters.search = document.getElementById('search-input').value;
+        currentPage = 1;
+        loadMedia();
+    }
+
+    function sortMedia() {
+        const sortValue = document.getElementById('sort-by').value;
+        if (sortValue === 'created_at_asc') {
+            currentFilters.sort_by = 'created_at';
+            currentFilters.sort_order = 'asc';
+        } else {
+            currentFilters.sort_by = sortValue;
+            currentFilters.sort_order = 'desc';
+        }
+        loadMedia();
+    }
+
+    function previousPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            loadMedia();
+        }
+    }
+
+    function nextPage() {
+        if (currentPage < totalPages) {
+            currentPage++;
+            loadMedia();
+        }
+    }
+
+    function openUploadModal() {
+        document.getElementById('upload-modal').classList.add('active');
+    }
+
+    function closeUploadModal() {
+        document.getElementById('upload-modal').classList.remove('active');
+        document.getElementById('upload-form').reset();
+        document.getElementById('file-preview').innerHTML = '';
+    }
+
+    function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const preview = document.getElementById('file-preview');
+            const fileType = file.type.startsWith('image/') ? 'image' : 'video';
+            
+            preview.innerHTML = `
+                <div style="padding: 10px; background: #f5f5f5; border-radius: 4px;">
+                    <strong>選択されたファイル:</strong> ${file.name}<br>
+                    <small>サイズ: ${formatFileSize(file.size)} | 種類: ${fileType}</small>
+                </div>
+            `;
+
+            // Auto-fill title from filename
+            if (!document.getElementById('media-title').value) {
+                document.getElementById('media-title').value = file.name.replace(/\.[^/.]+$/, '');
+            }
+        }
+    }
+
+    async function uploadMedia(event) {
+        event.preventDefault();
+        
+        const fileInput = document.getElementById('file-input');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            alert('ファイルを選択してください');
+            return;
+        }
+
+        const submitBtn = document.getElementById('upload-submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'アップロード中...';
+
+        // Determine media type from file
+        const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+        
+        // Parse tags
+        const tagsInput = document.getElementById('media-tags').value;
+        const tagsArray = tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(t => t) : [];
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('media_type', mediaType);
+        formData.append('title', document.getElementById('media-title').value || file.name);
+        formData.append('description', document.getElementById('media-description').value || '');
+        formData.append('alt_text', document.getElementById('media-alt-text').value || '');
+        formData.append('tags', JSON.stringify(tagsArray));
+
+        try {
+            const response = await fetch('/api/media/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert('アップロードが完了しました');
+                closeUploadModal();
+                loadMedia();
+            } else {
+                console.error('Upload failed:', data);
+                alert(`エラー: ${data.error || 'アップロードに失敗しました'}\n詳細: ${data.details || ''}`);
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            alert('通信エラーが発生しました');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'アップロード';
+        }
+    }
+
+    async function deleteMedia(id) {
+        if (!confirm('このメディアを削除してもよろしいですか？')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/media/${id}`, {
+                method: 'DELETE'
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert('削除しました');
+                loadMedia();
+            } else {
+                alert(`エラー: ${data.error || '削除に失敗しました'}`);
+            }
+        } catch (error) {
+            console.error('Delete error:', error);
+            alert('通信エラーが発生しました');
+        }
+    }
+
+    async function editMedia(id) {
+        try {
+            const response = await fetch(`/api/media/${id}`);
+            const data = await response.json();
+            
+            if (response.ok) {
+                // Fill form with current data
+                document.getElementById('edit-media-id').value = data.id;
+                document.getElementById('edit-filename').value = data.filename;
+                document.getElementById('edit-title').value = data.title || '';
+                document.getElementById('edit-description').value = data.description || '';
+                document.getElementById('edit-alt-text').value = data.alt_text || '';
+                document.getElementById('edit-tags').value = (data.tags || []).join(', ');
+                
+                // Fill file info
+                document.getElementById('edit-type').textContent = data.media_type === 'image' ? '画像' : '動画';
+                document.getElementById('edit-size').textContent = formatFileSize(data.file_size);
+                document.getElementById('edit-created').textContent = new Date(data.created_at).toLocaleString('ja-JP');
+                
+                // Display preview
+                const previewDiv = document.getElementById('edit-preview');
+                const imageUrl = data.signed_url || data.gcs_uri;
+                
+                if (data.media_type === 'image') {
+                    previewDiv.innerHTML = `<img src="${imageUrl}" style="max-width: 100%; max-height: 300px; border-radius: 8px;" alt="${data.alt_text || data.title}" onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<span class=\\'material-icons\\' style=\\'font-size:64px;color:#ccc;\\'>broken_image</span>';">`;
+                    // Show image edit button
+                    document.getElementById('edit-image-btn').style.display = 'block';
+                    document.getElementById('capture-video-btn').style.display = 'none';
+                    // Store media ID for editor
+                    window.currentEditMediaId = data.id;
+                    window.currentEditImageUrl = imageUrl;
+                    
+                    // Auto-open image editor for image type media
+                    setTimeout(() => {
+                        openImageEditor();
+                    }, 100);
+                } else {
+                    previewDiv.innerHTML = `
+                        <div style="text-align: center;">
+                            <span class="material-icons" style="font-size: 80px; color: #007bff;">play_circle_outline</span>
+                            <p style="margin-top: 10px; color: #666;">動画ファイル</p>
+                            ${imageUrl ? `<a href="${imageUrl}" target="_blank" class="submit-button" style="display: inline-block; margin-top: 10px; padding: 8px 16px;">動画を開く</a>` : ''}
+                        </div>
+                    `;
+                    // Show video capture button
+                    document.getElementById('edit-image-btn').style.display = 'none';
+                    document.getElementById('capture-video-btn').style.display = 'block';
+                    // Store media ID and URL for capture
+                    window.currentEditMediaId = data.id;
+                    window.currentEditVideoUrl = imageUrl;
+                    
+                    // Auto-open video capture for video type media
+                    setTimeout(() => {
+                        openVideoCapture();
+                    }, 100);
+                }
+                
+                // Show modal
+                document.getElementById('edit-modal').classList.add('active');
+            } else {
+                alert('メディア情報の取得に失敗しました');
+            }
+        } catch (error) {
+            console.error('Error loading media details:', error);
+            alert('通信エラーが発生しました');
+        }
+    }
+    
+    function closeEditModal() {
+        document.getElementById('edit-modal').classList.remove('active');
+    }
+    
+    async function deleteFromEdit() {
+        const id = document.getElementById('edit-media-id').value;
+        if (id) {
+            closeEditModal();
+            await deleteMedia(id);
+        }
+    }
+    
+    async function updateMedia(event) {
+        event.preventDefault();
+        
+        const id = document.getElementById('edit-media-id').value;
+        const formData = {
+            title: document.getElementById('edit-title').value,
+            description: document.getElementById('edit-description').value,
+            alt_text: document.getElementById('edit-alt-text').value,
+            tags: document.getElementById('edit-tags').value
+                .split(',')
+                .map(tag => tag.trim())
+                .filter(tag => tag.length > 0)
+        };
+        
+        const submitBtn = document.getElementById('edit-submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = '更新中...';
+        
+        try {
+            const response = await fetch(`/api/media/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                alert('メディアを更新しました');
+                closeEditModal();
+                loadMedia(); // Reload grid
+            } else {
+                alert('更新に失敗しました: ' + (data.error || '不明なエラー'));
+            }
+        } catch (error) {
+            console.error('Error updating media:', error);
+            alert('通信エラーが発生しました');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '更新';
+        }
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = now - date;
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        
+        if (days === 0) return '今日';
+        if (days === 1) return '昨日';
+        if (days < 7) return `${days}日前`;
+        
+        return date.toLocaleDateString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    function showError(message) {
+        const grid = document.getElementById('media-grid');
+        grid.innerHTML = `
+            <div class="empty-state">
+                <span class="material-icons">error_outline</span>
+                <h3>エラー</h3>
+                <p>${message}</p>
+            </div>
+        `;
+    }
+
+    // Drag and drop support
+    const dropZone = document.getElementById('file-drop-zone');
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.classList.add('drag-over');
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.classList.remove('drag-over');
+        }, false);
+    });
+
+    dropZone.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        if (files.length > 0) {
+            document.getElementById('file-input').files = files;
+            handleFileSelect({ target: { files: files } });
+        }
+    }
+
+    // ==================== Image Editor Functions ====================
+    let canvas, ctx;
+    let drawMode = 'text';
+    let isDrawing = false;
+    let startX, startY;
+    let annotations = [];
+
+    async function openImageEditor() {
+        // Try to get mediaId from different sources
+        let mediaId = document.getElementById('edit-media-id').value;
+        if (!mediaId && window.currentEditMediaId) {
+            mediaId = window.currentEditMediaId;
+        }
+        
+        if (!mediaId) {
+            alert('メディアIDが取得できません');
+            console.error('No media ID available');
+            return;
+        }
+
+        console.log('Opening image editor for media ID:', mediaId);
+        
+        const modal = document.getElementById('image-editor-modal');
+        canvas = document.getElementById('image-canvas');
+        ctx = canvas.getContext('2d');
+        
+        try {
+            // Fetch image via proxy endpoint to avoid CORS
+            const response = await fetch(`/api/media/${mediaId}/proxy`);
+            
+            if (!response.ok) {
+                const errorData = await response.text();
+                console.error('Failed to fetch image:', errorData);
+                throw new Error('画像の取得に失敗しました');
+            }
+            
+            const blob = await response.blob();
+            console.log('Image blob loaded:', blob.type, blob.size, 'bytes');
+            const blobUrl = URL.createObjectURL(blob);
+            
+            // Load image from blob URL
+            const img = new Image();
+            img.onload = function() {
+                console.log('Image loaded successfully:', img.width, 'x', img.height);
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                annotations = [];
+                window.originalImageBlob = blob;
+                window.originalImageBlobUrl = blobUrl;
+                modal.style.display = 'flex';
+                modal.classList.add('active');
+                
+                // Setup canvas events
+                canvas.onmousedown = startDrawing;
+                canvas.onmousemove = draw;
+                canvas.onmouseup = stopDrawing;
+                canvas.onmouseout = stopDrawing;
+            };
+            img.onerror = function() {
+                console.error('Failed to load image from blob URL');
+                alert('画像の読み込みに失敗しました');
+            };
+            img.src = blobUrl;
+        } catch (error) {
+            console.error('Image load error:', error);
+            alert('画像の取得に失敗しました: ' + error.message);
+        }
+    }
+
+    function closeImageEditor() {
+        const modal = document.getElementById('image-editor-modal');
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+        
+        if (canvas) {
+            canvas.onmousedown = null;
+            canvas.onmousemove = null;
+            canvas.onmouseup = null;
+            canvas.onmouseout = null;
+        }
+        // Cleanup blob URL
+        if (window.originalImageBlobUrl) {
+            URL.revokeObjectURL(window.originalImageBlobUrl);
+            window.originalImageBlobUrl = null;
+            window.originalImageBlob = null;
+        }
+    }
+
+    function setDrawMode(mode) {
+        drawMode = mode;
+    }
+
+    function clearCanvas() {
+        if (!confirm('すべての描画をクリアしますか？')) return;
+        
+        if (!window.originalImageBlobUrl) {
+            alert('画像が読み込まれていません');
+            return;
+        }
+        
+        const img = new Image();
+        img.onload = function() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+            annotations = [];
+        };
+        img.src = window.originalImageBlobUrl;
+    }
+
+    function startDrawing(e) {
+        isDrawing = true;
+        const rect = canvas.getBoundingClientRect();
+        startX = (e.clientX - rect.left) * (canvas.width / rect.width);
+        startY = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+        if (drawMode === 'text') {
+            const text = prompt('テキストを入力してください:');
+            if (text) {
+                const color = document.getElementById('draw-color').value;
+                const fontSize = parseInt(document.getElementById('line-width').value) * 8;
+                ctx.font = `bold ${fontSize}px Arial`;
+                ctx.fillStyle = color;
+                ctx.fillText(text, startX, startY);
+                annotations.push({type: 'text', x: startX, y: startY, text, color, fontSize});
+            }
+            isDrawing = false;
+        }
+    }
+
+    function draw(e) {
+        if (!isDrawing || drawMode === 'text') return;
+
+        const rect = canvas.getBoundingClientRect();
+        const currentX = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const currentY = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+        // Redraw image and all annotations
+        if (!window.originalImageBlobUrl) return;
+        
+        const img = new Image();
+        img.src = window.originalImageBlobUrl;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        
+        // Redraw saved annotations
+        annotations.forEach(ann => {
+            ctx.strokeStyle = ann.color;
+            ctx.lineWidth = ann.lineWidth;
+            ctx.fillStyle = ann.color;
+            
+            if (ann.type === 'text') {
+                ctx.font = `bold ${ann.fontSize}px Arial`;
+                ctx.fillText(ann.text, ann.x, ann.y);
+            } else if (ann.type === 'arrow') {
+                drawArrow(ctx, ann.startX, ann.startY, ann.endX, ann.endY);
+            } else if (ann.type === 'rect') {
+                ctx.strokeRect(ann.x, ann.y, ann.width, ann.height);
+            } else if (ann.type === 'circle') {
+                ctx.beginPath();
+                ctx.arc(ann.x, ann.y, ann.radius, 0, 2 * Math.PI);
+                ctx.stroke();
+            }
+        });
+
+        // Draw current shape
+        const color = document.getElementById('draw-color').value;
+        const lineWidth = parseInt(document.getElementById('line-width').value);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth;
+
+        if (drawMode === 'arrow') {
+            drawArrow(ctx, startX, startY, currentX, currentY);
+        } else if (drawMode === 'rect') {
+            ctx.strokeRect(startX, startY, currentX - startX, currentY - startY);
+        } else if (drawMode === 'circle') {
+            const radius = Math.sqrt(Math.pow(currentX - startX, 2) + Math.pow(currentY - startY, 2));
+            ctx.beginPath();
+            ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
+            ctx.stroke();
+        }
+    }
+
+    function stopDrawing(e) {
+        if (!isDrawing || drawMode === 'text') return;
+
+        const rect = canvas.getBoundingClientRect();
+        const endX = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const endY = (e.clientY - rect.top) * (canvas.height / rect.height);
+        const color = document.getElementById('draw-color').value;
+        const lineWidth = parseInt(document.getElementById('line-width').value);
+
+        if (drawMode === 'arrow') {
+            annotations.push({type: 'arrow', startX, startY, endX, endY, color, lineWidth});
+        } else if (drawMode === 'rect') {
+            annotations.push({type: 'rect', x: startX, y: startY, width: endX - startX, height: endY - startY, color, lineWidth});
+        } else if (drawMode === 'circle') {
+            const radius = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+            annotations.push({type: 'circle', x: startX, y: startY, radius, color, lineWidth});
+        }
+
+        isDrawing = false;
+    }
+
+    function drawArrow(ctx, fromX, fromY, toX, toY) {
+        const headlen = 15;
+        const angle = Math.atan2(toY - fromY, toX - fromX);
+
+        ctx.beginPath();
+        ctx.moveTo(fromX, fromY);
+        ctx.lineTo(toX, toY);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(toX, toY);
+        ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+        ctx.moveTo(toX, toY);
+        ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+        ctx.stroke();
+    }
+
+    async function saveEditedImage() {
+        if (!canvas) {
+            alert('キャンバスが初期化されていません');
+            return;
+        }
+
+        try {
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+            const mediaId = document.getElementById('edit-media-id').value;
+            const filename = document.getElementById('edit-filename').value;
+            const newFilename = filename.replace(/\.[^/.]+$/, '') + '_edited.png';
+
+            const formData = new FormData();
+            formData.append('file', blob, newFilename);
+            formData.append('media_type', 'image');
+            formData.append('title', document.getElementById('edit-title').value + ' (編集済み)');
+            formData.append('description', '画像編集で作成');
+            formData.append('tags', JSON.stringify(['編集済み']));
+
+            const response = await fetch('/api/media/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert('編集した画像を新しいメディアとして保存しました');
+                closeImageEditor();
+                closeEditModal();
+                loadMedia();
+            } else {
+                const data = await response.json();
+                alert('保存に失敗しました: ' + (data.error || '不明なエラー'));
+            }
+        } catch (error) {
+            console.error('Save error:', error);
+            alert('保存中にエラーが発生しました');
+        }
+    }
+
+    // Update line width display
+    document.getElementById('line-width').addEventListener('input', function(e) {
+        document.getElementById('line-width-value').textContent = e.target.value;
+    });
+
+    // ==================== Video Capture Functions ====================
+    async function openVideoCapture() {
+        // Try to get mediaId from different sources
+        let mediaId = document.getElementById('edit-media-id').value;
+        if (!mediaId && window.currentEditMediaId) {
+            mediaId = window.currentEditMediaId;
+        }
+        
+        if (!mediaId) {
+            alert('メディアIDが取得できません');
+            console.error('No media ID available');
+            return;
+        }
+
+        console.log('Opening video capture for media ID:', mediaId);
+        
+        const modal = document.getElementById('video-capture-modal');
+        const video = document.getElementById('capture-video');
+        
+        try {
+            // Fetch video via proxy endpoint to avoid CORS
+            const response = await fetch(`/api/media/${mediaId}/proxy`);
+            
+            if (!response.ok) {
+                const errorData = await response.text();
+                console.error('Failed to fetch video:', errorData);
+                throw new Error('動画の取得に失敗しました');
+            }
+            
+            const blob = await response.blob();
+            console.log('Video blob loaded:', blob.type, blob.size, 'bytes');
+            const blobUrl = URL.createObjectURL(blob);
+            
+            video.src = blobUrl;
+            video.load();
+            
+            // Store blob URL for cleanup
+            window.currentVideoBlobUrl = blobUrl;
+            
+            // Reset capture
+            document.getElementById('captured-frame-container').style.display = 'none';
+            document.getElementById('save-captured-frame-btn').style.display = 'none';
+            document.getElementById('capture-title').value = '';
+            
+            modal.style.display = 'flex';
+            modal.classList.add('active');
+        } catch (error) {
+            console.error('Video load error:', error);
+            alert('動画の取得に失敗しました: ' + error.message);
+        }
+    }
+
+    function closeVideoCapture() {
+        const modal = document.getElementById('video-capture-modal');
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+        
+        const video = document.getElementById('capture-video');
+        video.pause();
+        video.src = '';
+        
+        // Cleanup blob URL
+        if (window.currentVideoBlobUrl) {
+            URL.revokeObjectURL(window.currentVideoBlobUrl);
+            window.currentVideoBlobUrl = null;
+        }
+    }
+
+    function captureFrame() {
+        const video = document.getElementById('capture-video');
+        const canvas = document.getElementById('capture-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Check if video has loaded
+        if (!video.videoWidth || !video.videoHeight) {
+            alert('動画が読み込まれていません。再生ボタンを押してからお試しください。');
+            return;
+        }
+
+        // Set canvas size to video size
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        // Draw current frame
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Show captured frame
+        document.getElementById('captured-frame-container').style.display = 'block';
+        document.getElementById('save-captured-frame-btn').style.display = 'block';
+
+        // Set default title
+        const currentTime = Math.floor(video.currentTime);
+        const minutes = Math.floor(currentTime / 60);
+        const seconds = currentTime % 60;
+        document.getElementById('capture-title').value = `フレーム ${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    async function saveCapturedFrame() {
+        const canvas = document.getElementById('capture-canvas');
+        const title = document.getElementById('capture-title').value || 'キャプチャ画像';
+
+        try {
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+            
+            const formData = new FormData();
+            formData.append('file', blob, title + '.png');
+            formData.append('media_type', 'image');
+            formData.append('title', title);
+            formData.append('description', '動画からキャプチャ');
+            formData.append('tags', JSON.stringify(['動画キャプチャ']));
+
+            const response = await fetch('/api/media/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert('キャプチャ画像をメディアライブラリに保存しました');
+                closeVideoCapture();
+                closeEditModal();
+                loadMedia();
+            } else {
+                const data = await response.json();
+                alert('保存に失敗しました: ' + (data.error || '不明なエラー'));
+            }
+        } catch (error) {
+            console.error('Capture save error:', error);
+            alert('保存中にエラーが発生しました');
+        }
+    }
+</script>
+{% endblock %}

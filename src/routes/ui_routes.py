@@ -97,3 +97,10 @@ def create_manual():
     if not session.get('company_id') and not session.get('is_super_admin'):
         return redirect(url_for('login_page'))
     return render_template('manual_create_unified.html')
+
+@ui_bp.route('/media/library')
+def media_library():
+    """Media library management page"""
+    if not session.get('company_id') and not session.get('is_super_admin'):
+        return redirect(url_for('login_page'))
+    return render_template('media_library.html')

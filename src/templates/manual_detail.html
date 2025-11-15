@@ -306,8 +306,8 @@
     .manual-text h2 {
         background-color: #007bff;
         font-size: 18px;
-        padding: 10px;
-        margin: 10px 0px;
+        padding: 5px 10px;
+        margin: 10px 0px 10px 5px;
         color: white;
     }
 
@@ -315,26 +315,26 @@
         font-size: 16px;
         color: #007bff;
         padding: 5px 0px;
-        margin: 10px 0px;
+        margin: 10px 0px 10px 10px;
         border-bottom: 1px solid lightgray;
     }
 
     .manual-text h4, .manual-text h4 strong {
         font-size: 16px;
         color: #555;
-        margin-bottom: 5px;
+        margin: 0px 0px 5px 10px;
     }
 
     .manual-text h5 {
         font-size: 14px;
         color: #666;
-        margin-bottom: 5px;
+        margin: 0px 0px 5px 10px;
     }
 
     .manual-text h6 {
         font-size: 14px;
         color: #777;
-        margin-bottom: 5px;
+        margin: 0px 0px 5px 10px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
@@ -851,14 +851,6 @@
                 <span class="material-icons" style="font-size: 18px;">arrow_back</span>
                 一覧に戻る
             </button>
-            <button type="button" id="edit-images-btn" class="btn btn-primary btn-medium" onclick="openImageEditMode()" style="display: none;">
-                <span class="material-icons" style="font-size: 18px;">edit</span>
-                画像を編集
-            </button>
-            <button type="button" id="recapture-images-btn" class="btn btn-primary btn-medium" onclick="openRecaptureModal()" style="display: none;">
-                <span class="material-icons" style="font-size: 18px;">photo_camera</span>
-                画像を再キャプチャ
-            </button>
             <button type="button" id="convert-format-btn" class="btn btn-primary btn-medium" onclick="showConvertModal()" style="display: none;">
                 <span class="material-icons" style="font-size: 18px;">transform</span>
                 別の形式で再生成
@@ -970,8 +962,6 @@
 </div>
 
 <!-- モーダルをインクルード -->
-{% include 'modals/image_editor_modal.html' %}
-{% include 'modals/recapture_modal.html' %}
 {% endblock %}
 
 {% block extra_scripts %}
@@ -2149,32 +2139,7 @@ function wrapImageForEditing(img, index) {
         overlay.style.borderColor = 'transparent';
     });
     
-    // Add click handler
-    overlay.addEventListener('click', () => {
-        openImageEditorModal(img, index);
-    });
-}
-
-function openImageEditorModal(img, index) {
-    // This function should open the image_editor_modal.html
-    // Assuming the modal exists in the template
-    const modal = document.getElementById('imageEditorModal');
-    if (modal && window.openImageEditor) {
-        window.openImageEditor(img.src, index);
-    } else {
-        showNotification('画像編集機能は現在利用できません', 'error');
-    }
-}
-
-function openRecaptureModal() {
-    const modal = document.getElementById('recaptureModal');
-    if (modal) {
-        modal.classList.remove('fade');
-        modal.classList.add('show');
-        modal.style.display = 'flex';
-    } else {
-        showNotification('再キャプチャモーダルが見つかりません', 'error');
-    }
+    // Image editing moved to edit screen - no interactive overlay in detail view
 }
 
 function showConvertModal() {

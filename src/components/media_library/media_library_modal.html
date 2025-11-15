@@ -1,0 +1,275 @@
+<!--
+File: media_library_modal.html
+Purpose: Reusable media library modal component (WordPress-like)
+Main functionality: Grid display, search, filter, upload, video capture
+Dependencies: media_library.js, media_library.css
+-->
+
+<div id="mediaLibraryModal" class="media-modal" style="display: none;">
+    <div class="media-modal-backdrop" onclick="MediaLibrary.close()"></div>
+    <div class="media-modal-content">
+        <!-- Header -->
+        <div class="media-modal-header">
+            <h2 class="media-modal-title">
+                <span class="material-icons">perm_media</span>
+                メディアライブラリ
+            </h2>
+            <button class="media-modal-close" onclick="MediaLibrary.close()" title="閉じる">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="media-toolbar">
+            <!-- Search -->
+            <div class="media-search">
+                <span class="material-icons">search</span>
+                <input type="text" id="mediaSearchInput" placeholder="検索..." onkeyup="MediaLibrary.search()">
+            </div>
+
+            <!-- Filters -->
+            <div class="media-filters">
+                <select id="mediaTypeFilter" onchange="MediaLibrary.applyFilters()">
+                    <option value="">すべてのメディア</option>
+                    <option value="image">画像</option>
+                    <option value="video">動画</option>
+                </select>
+
+                <select id="mediaSortFilter" onchange="MediaLibrary.applyFilters()">
+                    <option value="created_at_desc">新しい順</option>
+                    <option value="created_at_asc">古い順</option>
+                    <option value="title_asc">タイトル順</option>
+                    <option value="file_size_desc">サイズ大</option>
+                </select>
+            </div>
+
+            <!-- Actions -->
+            <div class="media-actions">
+                <button class="btn btn-primary btn-small" onclick="MediaLibrary.openUploadDialog()">
+                    <span class="material-icons">upload_file</span>
+                    アップロード
+                </button>
+                <button class="btn btn-secondary btn-small" onclick="MediaLibrary.openCaptureDialog()">
+                    <span class="material-icons">photo_camera</span>
+                    動画キャプチャ
+                </button>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="media-content-wrapper">
+            <!-- Left Panel: Media Grid -->
+            <div class="media-grid-panel">
+                <!-- Loading -->
+                <div id="mediaLoading" class="media-loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>読み込み中...</p>
+                </div>
+
+                <!-- Media Grid -->
+                <div id="mediaGrid" class="media-grid">
+                    <!-- Dynamically populated -->
+                </div>
+
+                <!-- Empty State -->
+                <div id="mediaEmptyState" class="media-empty-state" style="display: none;">
+                    <span class="material-icons">image_not_supported</span>
+                    <p>メディアが見つかりません</p>
+                    <button class="btn btn-primary" onclick="MediaLibrary.openUploadDialog()">
+                        最初のメディアをアップロード
+                    </button>
+                </div>
+
+                <!-- Pagination -->
+                <div id="mediaPagination" class="media-pagination">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+
+            <!-- Right Panel: Media Details -->
+            <div id="mediaDetailsPanel" class="media-details-panel" style="display: none;">
+                <div class="media-details-content">
+                    <h3>メディア詳細</h3>
+                    
+                    <!-- Preview -->
+                    <div class="media-preview">
+                        <img id="mediaDetailImage" src="" alt="" style="display: none;">
+                        <video id="mediaDetailVideo" controls style="display: none;"></video>
+                    </div>
+
+                    <!-- Metadata Form -->
+                    <form id="mediaDetailsForm" class="media-details-form">
+                        <div class="form-group">
+                            <label>タイトル</label>
+                            <input type="text" id="mediaDetailTitle" class="form-control">
+                        </div>
+
+                        <div class="form-group">
+                            <label>説明</label>
+                            <textarea id="mediaDetailDescription" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>代替テキスト</label>
+                            <input type="text" id="mediaDetailAltText" class="form-control">
+                        </div>
+
+                        <div class="form-group">
+                            <label>タグ (カンマ区切り)</label>
+                            <input type="text" id="mediaDetailTags" class="form-control" placeholder="例: 製造, 作業手順">
+                        </div>
+
+                        <div class="form-group media-info-group">
+                            <label>ファイル情報</label>
+                            <div class="media-info">
+                                <span id="mediaDetailFilename"></span><br>
+                                <span id="mediaDetailSize"></span><br>
+                                <span id="mediaDetailDimensions"></span><br>
+                                <span id="mediaDetailCreatedAt"></span>
+                            </div>
+                        </div>
+
+                        <div class="media-details-actions">
+                            <button type="button" class="btn btn-primary" onclick="MediaLibrary.updateMediaDetails()">
+                                <span class="material-icons">save</span>
+                                保存
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="MediaLibrary.editMedia()">
+                                <span class="material-icons">edit</span>
+                                編集
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="MediaLibrary.deleteMedia()">
+                                <span class="material-icons">delete</span>
+                                削除
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="media-modal-footer">
+            <div class="media-footer-info">
+                <span id="mediaSelectionInfo">メディアを選択してください</span>
+            </div>
+            <div class="media-footer-actions">
+                <button class="btn btn-secondary" onclick="MediaLibrary.close()">
+                    キャンセル
+                </button>
+                <button class="btn btn-primary" onclick="MediaLibrary.selectMedia()" id="mediaSelectButton" disabled>
+                    選択
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Dialog -->
+<div id="mediaUploadDialog" class="media-dialog" style="display: none;">
+    <div class="media-dialog-backdrop" onclick="MediaLibrary.closeUploadDialog()"></div>
+    <div class="media-dialog-content">
+        <div class="media-dialog-header">
+            <h3>メディアをアップロード</h3>
+            <button class="media-dialog-close" onclick="MediaLibrary.closeUploadDialog()">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div class="media-dialog-body">
+            <form id="mediaUploadForm">
+                <div class="upload-area" id="uploadDropArea">
+                    <span class="material-icons">cloud_upload</span>
+                    <p>ファイルをドラッグ&ドロップ または</p>
+                    <input type="file" id="mediaFileInput" accept="image/*,video/*" style="display: none;" onchange="MediaLibrary.handleFileSelect(event)">
+                    <button type="button" class="btn btn-primary" onclick="document.getElementById('mediaFileInput').click()">
+                        ファイルを選択
+                    </button>
+                    <p class="upload-hint">対応形式: JPG, PNG, GIF, MP4, MOV</p>
+                </div>
+
+                <div id="uploadPreviewArea" style="display: none;">
+                    <img id="uploadPreviewImage" src="" alt="">
+                    <div class="upload-metadata">
+                        <div class="form-group">
+                            <label>タイトル</label>
+                            <input type="text" id="uploadTitle" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>説明</label>
+                            <textarea id="uploadDescription" class="form-control" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>タグ (カンマ区切り)</label>
+                            <input type="text" id="uploadTags" class="form-control">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="upload-progress" id="uploadProgress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="uploadProgressFill"></div>
+                    </div>
+                    <p id="uploadProgressText">アップロード中... 0%</p>
+                </div>
+            </form>
+        </div>
+        <div class="media-dialog-footer">
+            <button class="btn btn-secondary" onclick="MediaLibrary.closeUploadDialog()">キャンセル</button>
+            <button class="btn btn-primary" onclick="MediaLibrary.uploadFile()" id="uploadSubmitButton" disabled>
+                アップロード
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Capture Dialog -->
+<div id="mediaCaptureDialog" class="media-dialog" style="display: none;">
+    <div class="media-dialog-backdrop" onclick="MediaLibrary.closeCaptureDialog()"></div>
+    <div class="media-dialog-content media-dialog-large">
+        <div class="media-dialog-header">
+            <h3>動画からキャプチャ</h3>
+            <button class="media-dialog-close" onclick="MediaLibrary.closeCaptureDialog()">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div class="media-dialog-body">
+            <div class="capture-video-selector">
+                <label>動画を選択:</label>
+                <select id="captureVideoSelect" class="form-control" onchange="MediaLibrary.loadCaptureVideo()">
+                    <option value="">動画を選択してください</option>
+                </select>
+            </div>
+
+            <div id="captureVideoPlayer" style="display: none;">
+                <video id="captureVideo" controls style="width: 100%;"></video>
+                
+                <div class="capture-controls">
+                    <button class="btn btn-primary" onclick="MediaLibrary.captureCurrentFrame()">
+                        <span class="material-icons">photo_camera</span>
+                        現在のフレームをキャプチャ
+                    </button>
+                    <span id="captureTimestamp">00:00</span>
+                </div>
+
+                <div class="capture-metadata" id="captureMetadata" style="display: none;">
+                    <h4>キャプチャしたフレーム</h4>
+                    <img id="capturedFramePreview" src="" alt="Captured frame">
+                    <div class="form-group">
+                        <label>タイトル</label>
+                        <input type="text" id="captureTitle" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>説明</label>
+                        <textarea id="captureDescription" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="media-dialog-footer">
+            <button class="btn btn-secondary" onclick="MediaLibrary.closeCaptureDialog()">キャンセル</button>
+            <button class="btn btn-primary" onclick="MediaLibrary.saveCapture()" id="captureSaveButton" disabled>
+                保存
+            </button>
+        </div>
+    </div>
+</div>
